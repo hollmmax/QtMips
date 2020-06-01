@@ -206,23 +206,7 @@ const RegisterDesc regbycode[REGISTER_CODES] = {
 #define NOALU .alu = ALU_OP_SLL
 #define NOMEM .mem_ctl = AC_NONE
 
-#define IM_UNKNOWN {"UNKNOWN", Instruction::T_UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0}
-
-struct InstructionMap {
-    const char *name;
-    enum Instruction::Type type;
-    enum AluOp alu;
-    enum AccessControl mem_ctl;
-    const struct InstructionMap *subclass; // when subclass is used then flags has special meaning
-    const QStringList args;
-    std::uint32_t code;
-    std::uint32_t mask;
-    unsigned int flags;
-};
-
-#define IT_R Instruction::T_R
-#define IT_I Instruction::T_I
-#define IT_J Instruction::T_J
+#define IM_UNKNOWN {"UNKNOWN", T_UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0}
 
 static const struct InstructionMap  srl_rotr_instruction_map[] = {
     {"SRL",    IT_R, ALU_OP_SRL, NOMEM, nullptr, {"d", "w", "<"}, 0x00000002, 0xffe0003f,
@@ -813,7 +797,7 @@ static const struct InstructionMap instruction_map[] = {
 
 #undef IM_UNKNOWN
 
-static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code) {
+static inline const struct InstructionMap *InstructionMapFind(std::uint32_t code) {
     const struct InstructionMap *im = instruction_map;
     std::uint32_t flags = instruction_map_opcode_field;
     do {
@@ -821,7 +805,7 @@ static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code
         unsigned int shift = IMF_SUB_GET_SHIFT(flags);
         im = im + ((code >> shift) & ((1 << bits) - 1));
         if (im->subclass == nullptr)
-            return *im;
+            return im;
         flags = im->flags;
         im = im->subclass;
     } while(1);
@@ -829,10 +813,12 @@ static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code
 
 Instruction::Instruction() {
     this->dt = 0;
+    this->im = InstructionMapFind(this->dt);
 }
 
 Instruction::Instruction(std::uint32_t inst) {
     this->dt = inst;
+    this->im = InstructionMapFind(this->dt);
 }
 
 Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct) {
@@ -843,6 +829,7 @@ Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, 
     this->dt |= rd << 11;
     this->dt |= shamt << 6;
     this->dt |= funct;
+    this->im = InstructionMapFind(this->dt);
 }
 
 Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate) {
@@ -851,16 +838,19 @@ Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, 
     this->dt |= rs << 21;
     this->dt |= rt << 16;
     this->dt |= immediate;
+    this->im = InstructionMapFind(this->dt);
 }
 
 Instruction::Instruction(std::uint8_t opcode, Address address) {
     this->dt = 0;
     this->dt |= opcode << 26;
     this->dt |= address.get_raw();
+    this->im = InstructionMapFind(this->dt);
 }
 
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
+    this->im = InstructionMapFind(this->dt);
 }
 
 #define MASK(LEN,OFF) ((this->dt >> (OFF)) & ((1 << (LEN)) - 1))
@@ -883,7 +873,6 @@ std::uint8_t Instruction::rd() const {
 
 std::uint8_t Instruction::shamt() const {
     return (std::uint8_t) MASK(5, SHAMT_SHIFT);
-
 }
 
 std::uint8_t Instruction::funct() const {
@@ -906,42 +895,36 @@ std::uint32_t Instruction::data() const {
     return this->dt;
 }
 
-enum Instruction::Type Instruction::type() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.type;
+enum Type Instruction::type() const {
+    return this->im->type;
 }
 
 enum InstructionFlags Instruction::flags() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return (enum InstructionFlags)im.flags;
+    return (enum InstructionFlags)this->im->flags;
 }
 enum AluOp Instruction::alu_op() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.alu;
+    return this->im->alu;
 }
 
 enum AccessControl Instruction::mem_ctl() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.mem_ctl;
+    return this->im->mem_ctl;
 }
 
 void Instruction::flags_alu_op_mem_ctl(enum InstructionFlags &flags,
                   enum AluOp &alu_op, enum AccessControl &mem_ctl) const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    flags = (enum InstructionFlags)im.flags;
-    alu_op = im.alu;
-    mem_ctl = im.mem_ctl;
+    flags = (enum InstructionFlags)this->im->flags;
+    alu_op = this->im->alu;
+    mem_ctl = this->im->mem_ctl;
    #if 1
-    if ((dt ^ im.code) & (im.mask))
+    if ((dt ^ this->im->code) & (this->im->mask))
         flags = (enum InstructionFlags)(flags & ~IMF_SUPPORTED);
    #endif
 }
 
 enum ExceptionCause Instruction::encoded_exception() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    if (!(im.flags & IMF_EXCEPTION))
+    if (!(this->im->flags & IMF_EXCEPTION))
         return EXCAUSE_NONE;
-    switch (im.alu) {
+    switch (this->im->alu) {
         case ALU_OP_BREAK:
             return EXCAUSE_BREAK;
         case ALU_OP_SYSCALL:
@@ -952,8 +935,7 @@ enum ExceptionCause Instruction::encoded_exception() const {
 }
 
 bool Instruction::is_break() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    return im.alu == ALU_OP_BREAK;
+    return this->im->alu == ALU_OP_BREAK;
 }
 
 bool Instruction::operator==(const Instruction &c) const {
@@ -965,24 +947,25 @@ bool Instruction::operator!=(const Instruction &c) const {
 }
 
 Instruction &Instruction::operator=(const Instruction &c) {
-    if (this != &c)
+    if (this != &c) {
         this->dt = c.data();
+        this->im = InstructionMapFind(this->dt);
+    }
     return *this;
 }
 
 QString Instruction::to_str(Address inst_addr) const {
-    const InstructionMap &im = InstructionMapFind(dt);
     // TODO there are exception where some fields are zero and such so we should not print them in such case
     if (dt == 0)
         return QString("NOP");
     SANITY_ASSERT(argdesbycode_filled, QString("argdesbycode_filled not initialized"));
     QString res;
     QString next_delim = " ";
-    if (im.type == T_UNKNOWN)
+    if (this->im->type == T_UNKNOWN)
         return QString("UNKNOWN");
 
-    res += im.name;
-    foreach (const QString &arg, im.args) {
+    res += this->im->name;
+    foreach (const QString &arg, this->im->args) {
         res += next_delim;
         next_delim = ", ";
         foreach (QChar ao, arg) {
@@ -1156,10 +1139,10 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
         if (i.key() != inst_base)
             break;
         inst_code = i.value();
-        const InstructionMap &im = InstructionMapFind(inst_code);
+        const InstructionMap *im = InstructionMapFind(inst_code);
 
         field = 0;
-        foreach (const QString &arg, im.args) {
+        foreach (const QString &arg, im->args) {
             if (field >= inst_fields.count()) {
                 err = "number of arguments does not match";
                 field = -1;

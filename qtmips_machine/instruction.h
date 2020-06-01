@@ -109,6 +109,25 @@ struct RelocExpression {
 
 typedef QVector<RelocExpression *> RelocExpressionList;
 
+enum Type {
+    IT_R,
+    IT_I,
+    IT_J,
+    T_UNKNOWN
+};
+
+struct InstructionMap {
+    const char *name;
+    enum Type type;
+    enum AluOp alu;
+    enum AccessControl mem_ctl;
+    const struct InstructionMap *subclass; // when subclass is used then flags has special meaning
+    const QStringList args;
+    std::uint32_t code;
+    std::uint32_t mask;
+    unsigned int flags;
+};
+
 class Instruction {
 public:
     Instruction();
@@ -117,13 +136,6 @@ public:
     Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate); // Type I
     Instruction(std::uint8_t opcode, Address address); // Type J
     Instruction(const Instruction&);
-
-    enum Type {
-        T_R,
-        T_I,
-        T_J,
-        T_UNKNOWN
-    };
 
     std::uint8_t opcode() const;
     std::uint8_t rs() const;
@@ -171,6 +183,7 @@ public:
 private:
     std::uint32_t dt;
     static bool symbolic_registers_fl;
+    const struct InstructionMap *im;
 };
 
 }
