@@ -41,9 +41,6 @@ using namespace machine;
 // Test that we are correctly encoding instructions in constructor
 void MachineTests::instruction() {
     QCOMPARE(Instruction(0x0), Instruction());
-    QCOMPARE(Instruction(0x4432146), Instruction(1, 2, 3, 4, 5, 6));
-    QCOMPARE(Instruction(0x4430004), Instruction(1, 2, 3, 4));
-    QCOMPARE(Instruction(0x4000002), Instruction(1, 2));
 }
 
 // Test that we are correctly decoding instruction fields

@@ -54,23 +54,23 @@ static void core_regs_data() {
     regs_init.write_gp(25, 12);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 36);
-    QTest::newRow("ADD") << Instruction(0, 24, 25, 26, 0, 32) \
+    QTest::newRow("ADD") << Instruction(0x319d020) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("ADDU") << Instruction(0, 24, 25, 26, 0, 33) \
+    QTest::newRow("ADDU") << Instruction(0x319d021) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("ADDI") << Instruction(8, 24, 26, 12) \
+    QTest::newRow("ADDI") << Instruction(0x231a000c) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("ADDIU") << Instruction(9, 24, 26, 12) \
+    QTest::newRow("ADDIU") << Instruction(0x271a000c) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 12);
-    QTest::newRow("SUB") << Instruction(0, 24, 25, 26, 0, 34) \
+    QTest::newRow("SUB") << Instruction(0x319d022) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SUBU") << Instruction(0, 24, 25, 26, 0, 35) \
+    QTest::newRow("SUBU") << Instruction(0x319d023) \
                          << regs_init \
                          << regs_res;
     }
@@ -80,16 +80,16 @@ static void core_regs_data() {
     regs_init.write_gp(25, 24);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 1);
-    QTest::newRow("SLT") << Instruction(0, 24, 25, 26, 0, 42) \
+    QTest::newRow("SLT") << Instruction(0x319d02a) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SLTU") << Instruction(0, 24, 25, 26, 0, 43) \
+    QTest::newRow("SLTU") << Instruction(0x319d02b) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SLTI") << Instruction(10, 24, 26, 24) \
+    QTest::newRow("SLTI") << Instruction(0x2b1a0018) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SLTIU") << Instruction(11, 24, 26, 24) \
+    QTest::newRow("SLTIU") << Instruction(0x2f1a0018) \
                          << regs_init \
                          << regs_res;
     }
@@ -101,17 +101,17 @@ static void core_regs_data() {
     regs_init.write_gp(25, 3);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 0x780);
-    QTest::newRow("SLL") << Instruction(0, 0, 24, 26, 3, 0) \
+    QTest::newRow("SLL") << Instruction(0x18d0c0) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SLLV") << Instruction(0, 25, 24, 26, 0, 4) \
+    QTest::newRow("SLLV") << Instruction(0x338d004) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0x1e);
-    QTest::newRow("SLR") << Instruction(0, 0, 24, 26, 3, 2) \
+    QTest::newRow("SLR") << Instruction(0x18d0c2) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SLRV") << Instruction(0, 25, 24, 26, 0, 6) \
+    QTest::newRow("SLRV") << Instruction(0x338d006) \
                          << regs_init \
                          << regs_res;
     }
@@ -121,10 +121,10 @@ static void core_regs_data() {
     regs_init.write_gp(25, 3);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 0xF000001e);
-    QTest::newRow("SRA") << Instruction(0, 0, 24, 26, 3, 3) \
+    QTest::newRow("SRA") << Instruction(0x18d0c3) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("SRAV") << Instruction(0, 25, 24, 26, 0, 7) \
+    QTest::newRow("SRAV") << Instruction(0x338d007) \
                          << regs_init \
                          << regs_res;
     }
@@ -136,32 +136,32 @@ static void core_regs_data() {
     regs_init.write_gp(25, 0xe1);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 0xe0);
-    QTest::newRow("AND") << Instruction(0, 24, 25, 26, 0, 36) \
+    QTest::newRow("AND") << Instruction(0x319d024) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("ANDI") << Instruction(12, 24, 26, 0xe1) \
+    QTest::newRow("ANDI") << Instruction(0x331a00e1) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0xf1);
-    QTest::newRow("OR") << Instruction(0, 24, 25, 26, 0, 37) \
+    QTest::newRow("OR") << Instruction(0x319d025) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("ORI") << Instruction(13, 24, 26, 0xe1) \
+    QTest::newRow("ORI") << Instruction(0x371a00e1) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0x11);
-    QTest::newRow("XOR") << Instruction(0, 24, 25, 26, 0, 38) \
+    QTest::newRow("XOR") << Instruction(0x319d026) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("XORI") << Instruction(14, 24, 26, 0xe1) \
+    QTest::newRow("XORI") << Instruction(0x3b1a00e1) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0xffffff0e);
-    QTest::newRow("NOR") << Instruction(0, 24, 25, 26, 0, 39) \
+    QTest::newRow("NOR") << Instruction(0x319d027) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0xf00f0000);
-    QTest::newRow("LUI") << Instruction(15, 0, 26, 0xf00f) \
+    QTest::newRow("LUI") << Instruction(0x3c1af00f) \
                          << regs_init \
                          << regs_res;
     }
@@ -177,35 +177,35 @@ static void core_regs_data() {
     regs_init.write_gp(28, 22);
     Registers regs_res(regs_init);
     regs_res.write_gp(26, 24);
-    QTest::newRow("MFHI") << Instruction(0, 0, 0, 26, 0, 16) \
+    QTest::newRow("MFHI") << Instruction(0xd010) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 28);
-    QTest::newRow("MFLO") << Instruction(0, 0, 0, 26, 0, 18) \
+    QTest::newRow("MFLO") << Instruction(0xd012) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(26, 0);
     regs_res.write_hi_lo(true, 21);
-    QTest::newRow("MTHI") << Instruction(0, 27, 0, 0, 0, 17) \
+    QTest::newRow("MTHI") << Instruction(0x3600011) \
                          << regs_init \
                          << regs_res;
     regs_res.write_hi_lo(true, 24);
     regs_res.write_hi_lo(false, 22);
-    QTest::newRow("MTLO") << Instruction(0, 28, 0, 0, 0, 19) \
+    QTest::newRow("MTLO") << Instruction(0x3800013) \
                          << regs_init \
                          << regs_res;
     regs_res.write_hi_lo(false, 28);
-    QTest::newRow("MOVZ-F") << Instruction(0, 24, 24, 25, 0, 10) \
+    QTest::newRow("MOVZ-F") << Instruction(0x318c80a) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("MOVN-F") << Instruction(0, 24, 1, 25, 0, 11) \
+    QTest::newRow("MOVN-F") << Instruction(0x301c80b) \
                          << regs_init \
                          << regs_res;
     regs_res.write_gp(25, 55);
-    QTest::newRow("MOVZ-T") << Instruction(0, 24, 1, 25, 0, 10) \
+    QTest::newRow("MOVZ-T") << Instruction(0x301c80a) \
                          << regs_init \
                          << regs_res;
-    QTest::newRow("MOVN-T") << Instruction(0, 24, 24, 25, 0, 11) \
+    QTest::newRow("MOVN-T") << Instruction(0x318c80b) \
                          << regs_init \
                          << regs_res;
     }
@@ -269,34 +269,34 @@ static void core_jmp_data() {
     regs.write_gp(15, 22);
     regs.write_gp(16, -22);
     regs.write_gp(12, 0x80040000);
-    QTest::newRow("B") << Instruction(4, 0, 0, 61) \
+    QTest::newRow("B") << Instruction(0x1000003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BEQ") << Instruction(4, 14, 16, 61) \
+    QTest::newRow("BEQ") << Instruction(0x11d0003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BEQ-BACK") << Instruction(4, 14, 16, -4) \
+    QTest::newRow("BEQ-BACK") << Instruction(0x11d0fffc) \
                          << regs \
                          << regs.read_pc() + 4 - 16;
-    QTest::newRow("BNE") << Instruction(5, 14, 15, 61) \
+    QTest::newRow("BNE") << Instruction(0x15cf003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BGEZ") << Instruction(1, 15, 1, 61) \
+    QTest::newRow("BGEZ") << Instruction(0x5e1003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BGTZ") << Instruction(7, 15, 0, 61) \
+    QTest::newRow("BGTZ") << Instruction(0x1de0003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BLEZ") << Instruction(6, 14, 0, 61) \
+    QTest::newRow("BLEZ") << Instruction(0x19c0003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BLTZ") << Instruction(1, 14, 0, 61) \
+    QTest::newRow("BLTZ") << Instruction(0x5c0003d) \
                          << regs \
                          << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("J") << Instruction(2, 24) \
+    QTest::newRow("J") << Instruction(0x8000018) \
                          << regs \
                          << 0x80000000 + (24 << 2);
-    QTest::newRow("JR") << Instruction(0, 12, 0, 0, 0, 8) \
+    QTest::newRow("JR") << Instruction(0x1800008) \
                          << regs \
                          << 0x80040000;
 }
@@ -368,31 +368,31 @@ static void core_mem_data() {
     regs.write_gp(1, 0x22);
     Registers regs_res(regs);
     regs_res.write_gp(21, 0xFFFFFFA3);
-    QTest::newRow("LB") << Instruction(32, 1, 21, 0x2) \
+    QTest::newRow("LB") << Instruction(0x80350002) \
                          << regs \
                          << regs_res \
                          << mem \
                          << mem;
     regs_res.write_gp(21, 0xFFFFA324);
-    QTest::newRow("LH") << Instruction(33, 1, 21, 0x2) \
+    QTest::newRow("LH") << Instruction(0x84350002) \
                          << regs \
                          << regs_res \
                          << mem \
                          << mem;
     regs_res.write_gp(21, 0xA3242526);
-    QTest::newRow("LW") << Instruction(35, 1, 21, 0x2) \
+    QTest::newRow("LW") << Instruction(0x8c350002) \
                          << regs \
                          << regs_res \
                          << mem \
                          << mem;
     regs_res.write_gp(21, 0x000000A3);
-    QTest::newRow("LBU") << Instruction(36, 1, 21, 0x2) \
+    QTest::newRow("LBU") << Instruction(0x90350002) \
                          << regs \
                          << regs_res \
                          << mem \
                          << mem;
     regs_res.write_gp(21, 0x0000A324);
-    QTest::newRow("LHU") << Instruction(37, 1, 21, 0x2) \
+    QTest::newRow("LHU") << Instruction(0x94350002) \
                          << regs \
                          << regs_res \
                          << mem \
@@ -405,19 +405,19 @@ static void core_mem_data() {
     regs.write_gp(21, 0x23242526);
     Memory mem;
     mem.write_byte(0x24, 0x26); // Note: store least significant byte
-    QTest::newRow("SB") << Instruction(40, 1, 21, 0x2) \
+    QTest::newRow("SB") << Instruction(0xa0350002) \
                          << regs \
                          << regs \
                          << Memory() \
                          << mem;
     mem.write_hword(0x24, 0x2526);
-    QTest::newRow("SH") << Instruction(41, 1, 21, 0x2) \
+    QTest::newRow("SH") << Instruction(0xa4350002) \
                          << regs \
                          << regs \
                          << Memory() \
                          << mem;
     mem.write_word(0x24, 0x23242526);
-    QTest::newRow("SH") << Instruction(43, 1, 21, 0x2) \
+    QTest::newRow("SH") << Instruction(0xac350002) \
                          << regs \
                          << regs \
                          << Memory() \

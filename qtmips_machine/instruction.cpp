@@ -835,30 +835,6 @@ Instruction::Instruction(std::uint32_t inst) {
     this->dt = inst;
 }
 
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= rd << 11;
-    this->dt |= shamt << 6;
-    this->dt |= funct;
-}
-
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= immediate;
-}
-
-Instruction::Instruction(std::uint8_t opcode, Address address) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= address.get_raw();
-}
-
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
 }

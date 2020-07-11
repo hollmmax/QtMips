@@ -112,10 +112,7 @@ typedef QVector<RelocExpression *> RelocExpressionList;
 class Instruction {
 public:
     Instruction();
-    explicit Instruction(std::uint32_t inst);
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct); // Type R
-    Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate); // Type I
-    Instruction(std::uint8_t opcode, Address address); // Type J
+    Instruction(std::uint32_t inst);
     Instruction(const Instruction&);
 
     enum Type {
