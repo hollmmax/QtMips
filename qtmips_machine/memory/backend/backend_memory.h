@@ -12,6 +12,8 @@
  *
  * Copyright (c) 2017-2019 Karel Koci<cynerd@email.cz>
  * Copyright (c) 2019      Pavel Pisa <pisa@cmp.felk.cvut.cz>
+ * Copyright (c) 2020      Jakub Dupak <dupak.jakub@gmail.com>
+ * Copyright (c) 2020      Max Hollmann <hollmmax@fel.cvut.cz>
  *
  * Faculty of Electrical Engineering (http://www.fel.cvut.cz)
  * Czech Technical University        (http://www.cvut.cz/)
@@ -33,46 +35,58 @@
  *
  ******************************************************************************/
 
-#ifndef PROGRAMTABLEVIEW_H
-#define PROGRAMTABLEVIEW_H
+#ifndef QTMIPS_MACHINE_BACKEND_MEMORY_H
+#define QTMIPS_MACHINE_BACKEND_MEMORY_H
 
 #include <QObject>
-#include <QSettings>
-#include <QTableView>
-#include <QSharedPointer>
-#include "../qtmips_machine/memory/address.h"
+#include "../access_size.h"
 
-class ProgramTableView : public QTableView
-{
-    Q_OBJECT
 
-    using Super = QTableView;
+namespace machine {
+
+typedef uint64_t Offset;
+
+
+/**
+ * Interface for physical memory or periphery
+ *
+ * Properties:
+ *  - Values returned have simulated endianness
+ *  - Stored endianness is undefined
+ */
+class BackendMemory : public QObject {
+Q_OBJECT
 
 public:
-    ProgramTableView(QWidget *parent, QSettings *settings);
+    virtual bool write(
+        Offset offset,
+        AccessSize size,
+        AccessItem value
+    ) = 0;
 
-    void resizeEvent(QResizeEvent *event) override;
+    virtual AccessItem read(
+        Offset offset,
+        AccessSize size,
+        bool debug_read = false
+    ) const = 0;
+
+
 signals:
-    void address_changed(machine::Address address);
-    void adjust_scroll_pos_queue();
-public slots:
-    void go_to_address(machine::Address address);
-    void focus_address(machine::Address address);
-    void focus_address_with_save(machine::Address address);
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
-private slots:
-    void adjust_scroll_pos_check();
-    void adjust_scroll_pos_process();
-private:
-    void go_to_address_priv(machine::Address address);
-    void addr0_save_change(machine::Address val);
-    void adjustColumnCount();
-    QSettings *settings;
-
-    machine::Address initial_address;
-    bool adjust_scroll_pos_in_progress;
-    bool need_addr0_save;
+    /**
+     * Notify MMU about a change in managed physical memory of periphery
+     *
+     * @param mem_access    this
+     * @param start_addr    affected area start
+     * @param last_addr     affected area end
+     * @param external
+     */
+    void external_backend_change_notify(
+        const BackendMemory *mem_access,
+        std::uint32_t start_addr,
+        std::uint32_t last_addr,
+        bool external
+    ) const;
+};
 };
 
-#endif // PROGRAMTABLEVIEW_H
+#endif //QTMIPS_MACHINE_BACKEND_MEMORY_H

@@ -33,50 +33,34 @@
  *
  ******************************************************************************/
 
-#ifndef PHYSADDRSPACE_H
-#define PHYSADDRSPACE_H
+#ifndef SIMPLEPERIPHERAL_H
+#define SIMPLEPERIPHERAL_H
 
 #include <QObject>
 #include <QMap>
 #include <cstdint>
-#include <qtmipsexception.h>
-#include "machinedefs.h"
-#include "memory.h"
+#include "../../qtmipsexception.h"
+#include "../../machinedefs.h"
+#include "backend_memory.h"
 
 namespace machine {
 
-class PhysAddrSpace : public MemoryAccess {
+class SimplePeripheral : public BackendMemory {
     Q_OBJECT
 public:
-    PhysAddrSpace();
-    ~PhysAddrSpace();
+    SimplePeripheral();
+    ~SimplePeripheral() override;
 
-    bool wword(std::uint32_t address, std::uint32_t value) override;
-    std::uint32_t rword(std::uint32_t address, bool debug_access = false) const override;
-    virtual std::uint32_t get_change_counter() const override;
+signals:
+    void write_notification(std::uint32_t address, std::uint32_t value);
+    void read_notification(std::uint32_t address, std::uint32_t *value) const;
 
-    bool insert_range(MemoryAccess *mem_acces, std::uint32_t start_addr, std::uint32_t last_addr, bool move_ownership);
-    bool remove_range(MemoryAccess *mem_acces);
-    void clean_range(std::uint32_t start_addr, std::uint32_t last_addr);
-    enum LocationStatus location_status(std::uint32_t offset) const override;
-private slots:
-    void range_external_change(const MemoryAccess *mem_access, std::uint32_t start_addr,
-                               std::uint32_t last_addr, bool external);
-private:
-    class RangeDesc {
-    public:
-         RangeDesc(MemoryAccess *mem_acces, std::uint32_t start_addr, std::uint32_t last_addr, bool owned);
-         std::uint32_t start_addr;
-         std::uint32_t last_addr;
-         MemoryAccess *mem_acces;
-         bool owned;
-    };
-    QMap<std::uint32_t, RangeDesc *> ranges_by_addr;
-    QMap<MemoryAccess *, RangeDesc *> ranges_by_access;
-    RangeDesc *find_range(std::uint32_t address) const;
-    mutable std::uint32_t change_counter;
+public:
+    bool write(Offset offset, AccessSize size, AccessItem value) override;
+
+    AccessItem read(Offset offset, AccessSize size, bool debug_read) const override;
 };
 
 }
 
-#endif // PHYSADDRSPACE_H
+#endif // SIMPLEPERIPHERAL_H
