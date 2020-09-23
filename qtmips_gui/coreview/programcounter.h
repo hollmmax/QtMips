@@ -65,7 +65,7 @@ protected:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 
 private slots:
-    void pc_update(std::uint32_t val);
+    void pc_update(machine::Address val);
 
 private:
     const machine::Registers *registers;

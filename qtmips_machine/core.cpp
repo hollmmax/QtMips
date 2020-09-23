@@ -459,7 +459,7 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
         }
     }
 
-    emit execute_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit execute_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_executed(dt.inst, dt.inst_addr, excause, dt.is_valid);
     emit execute_alu_value(alu_val);
     emit execute_reg1_value(dt.val_rs);
@@ -527,7 +527,7 @@ struct Core::dtMemory Core::memory(const struct dtExecute &dt) {
         regwrite = false;
     }
 
-    emit memory_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit memory_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_memory(dt.inst, dt.inst_addr, dt.excause, dt.is_valid);
     emit memory_alu_value(dt.alu_val);
     emit memory_rt_value(dt.val_rt);
@@ -555,7 +555,7 @@ struct Core::dtMemory Core::memory(const struct dtExecute &dt) {
 }
 
 void Core::writeback(const struct dtMemory &dt) {
-    emit writeback_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit writeback_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_writeback(dt.inst, dt.inst_addr, dt.excause, dt.is_valid);
     emit writeback_value(dt.towrite_val);
     emit writeback_memtoreg_value(dt.memtoreg);

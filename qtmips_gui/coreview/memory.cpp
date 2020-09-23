@@ -71,8 +71,8 @@ Memory::Memory(bool cache_used, const machine::Cache *cch) : QGraphicsObject(nul
     cache_hit_t.setVisible(cache);
     cache_miss_t.setVisible(cache);
 
-    connect(cch, SIGNAL(hit_update(uint)), this, SLOT(cache_hit_update(uint)));
-    connect(cch, SIGNAL(miss_update(uint)), this, SLOT(cache_miss_update(uint)));
+    connect(cch, &machine::Cache::hit_update, this, &Memory::cache_hit_update);
+    connect(cch, &machine::Cache::miss_update, this, &Memory::cache_miss_update);
 
     setPos(x(), y()); // set connector's position
 }

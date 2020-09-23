@@ -59,7 +59,7 @@ ProgramCounter::ProgramCounter(machine::QtMipsMachine *machine) : QGraphicsObjec
     value.setPos(1, HEIGHT - value.boundingRect().height());
     value.setFont(font);
 
-    connect(machine->registers(), SIGNAL(pc_update(std::uint32_t)), this, SLOT(pc_update(std::uint32_t)));
+    connect(machine->registers(), &machine::Registers::pc_update, this, &ProgramCounter::pc_update);
 
     con_in = new Connector(Connector::AX_Y);
     con_out = new Connector(Connector::AX_Y);
@@ -102,6 +102,6 @@ void ProgramCounter::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event __att
     emit jump_to_pc(registers->read_pc());
 }
 
-void ProgramCounter::pc_update(std::uint32_t val) {
-    value.setText(QString("0x") + QString::number(val, 16));
+void ProgramCounter::pc_update(machine::Address val) {
+    value.setText(QString("0x") + QString::number(val.get_raw(), 16));
 }

@@ -58,7 +58,7 @@
     } while(false)
 #define NEW_V(X, Y, SIG, ...) do { \
         NEW(Value, val, X, Y, __VA_ARGS__); \
-        connect(machine->core(), SIGNAL(SIG(std::uint32_t)), val, SLOT(value_update(std::uint32_t))); \
+        connect(machine->core(), &machine::Core::SIG, val, &coreview::Value::value_update); \
     } while(false)
 #define NEW_MULTI(VAR, X, Y, SIG, ...) do { \
         NEW(MultiText, VAR, X, Y, __VA_ARGS__); \
@@ -67,11 +67,11 @@
     } while(false)
 #define NEW_MUX(VAR, X, Y, SIG, ...) do { \
         NEW(Multiplexer, VAR, X, Y, __VA_ARGS__); \
-        connect(machine->core(), SIGNAL(SIG(std::uint32_t)), VAR, SLOT(set(std::uint32_t))); \
+        connect(machine->core(), &machine::Core::SIG, VAR, &coreview::Multiplexer::set); \
     } while(false)
 #define NEW_MINIMUX(VAR, X, Y, SIG, ...) do { \
         NEW(MiniMux, VAR, X, Y, __VA_ARGS__); \
-        connect(machine->core(), SIGNAL(SIG(std::uint32_t)), VAR, SLOT(set(std::uint32_t))); \
+        connect(machine->core(), &machine::Core::SIG, VAR, &coreview::MiniMux::set); \
     } while(false)
 
 CoreViewScene::CoreViewScene(machine::QtMipsMachine *machine) : QGraphicsScene() {
@@ -236,15 +236,15 @@ CoreViewScene::CoreViewScene(machine::QtMipsMachine *machine) : QGraphicsScene()
 
     setBackgroundBrush(QBrush(Qt::white));
 
-    connect(regs, SIGNAL(open_registers()), this, SIGNAL(request_registers()));
-    connect(mem_program, SIGNAL(open_mem()), this, SIGNAL(request_program_memory()));
-    connect(mem_data, SIGNAL(open_mem()), this, SIGNAL(request_data_memory()));
-    connect(ft.pc, SIGNAL(open_program()), this, SIGNAL(request_program_memory()));
-    connect(ft.pc, SIGNAL(jump_to_pc(std::uint32_t)), this, SIGNAL(request_jump_to_program_counter(std::uint32_t)));
-    connect(mem_program, SIGNAL(open_cache()), this, SIGNAL(request_cache_program()));
-    connect(mem_data, SIGNAL(open_cache()), this, SIGNAL(request_cache_data()));
-    connect(peripherals, SIGNAL(open_block()), this, SIGNAL(request_peripherals()));
-    connect(terminal, SIGNAL(open_block()), this, SIGNAL(request_terminal()));
+    connect(regs, &coreview::Registers::open_registers, this, &CoreViewScene::request_registers);
+    connect(mem_program, &coreview::Memory::open_mem, this, &CoreViewScene::request_program_memory);
+    connect(mem_data, &coreview::Memory::open_mem, this, &CoreViewScene::request_data_memory);
+    connect(ft.pc, &coreview::ProgramCounter::open_program, this, &CoreViewScene::request_program_memory);
+    connect(ft.pc, &coreview::ProgramCounter::jump_to_pc, this, &CoreViewScene::request_jump_to_program_counter);
+    connect(mem_program, &coreview::Memory::open_cache, this, &CoreViewScene::request_cache_program);
+    connect(mem_data, &coreview::Memory::open_cache, this, &CoreViewScene::request_cache_data);
+    connect(peripherals, &coreview::LogicBlock::open_block, this, &CoreViewScene::request_peripherals);
+    connect(terminal, &coreview::LogicBlock::open_block, this, &CoreViewScene::request_terminal);
 }
 
 CoreViewScene::~CoreViewScene() {

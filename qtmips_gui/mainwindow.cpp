@@ -47,16 +47,16 @@
 
 #include "mainwindow.h"
 #include "aboutdialog.h"
-#include "ossyscall.h"
+#include "../qtmips_osemu/ossyscall.h"
 #include "fontsize.h"
 #include "gotosymboldialog.h"
-#include "fixmatheval.h"
+#include "../qtmips_asm/fixmatheval.h"
 #include "extprocess.h"
 #include "savechangeddialog.h"
 #include "textsignalaction.h"
 #include "../qtmips_asm/simpleasm.h"
 
-#ifdef __EMSCRIPTEN__
+#ifdef __EMSCRIPTEN_tui_
 #include <QFileInfo>
 #include "qhtml5file.h"
 #endif
@@ -115,51 +115,49 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     ui->ips1->setChecked(true);
 
     // Connect signals from menu
-    connect(ui->actionExit, SIGNAL(triggered(bool)), this, SLOT(close()));
-    connect(ui->actionNewMachine, SIGNAL(triggered(bool)), this, SLOT(new_machine()));
-    connect(ui->actionReload, SIGNAL(triggered(bool)), this, SLOT(machine_reload()));
-    connect(ui->actionPrint, SIGNAL(triggered(bool)), this, SLOT(print_action()));
-    connect(ui->actionNew, SIGNAL(triggered(bool)), this, SLOT(new_source()));
-    connect(ui->actionOpen, SIGNAL(triggered(bool)), this, SLOT(open_source()));
-    connect(ui->actionSave, SIGNAL(triggered(bool)), this, SLOT(save_source()));
-    connect(ui->actionSaveAs, SIGNAL(triggered(bool)), this, SLOT(save_source_as()));
-    connect(ui->actionClose, SIGNAL(triggered(bool)), this, SLOT(close_source_check()));
-    connect(ui->actionMnemonicRegisters, SIGNAL(triggered(bool)), this, SLOT(view_mnemonics_registers(bool)));
-    connect(ui->actionCompileSource, SIGNAL(triggered(bool)), this, SLOT(compile_source()));
-    connect(ui->actionBuildExe, SIGNAL(triggered(bool)), this, SLOT(build_execute()));
-    connect(ui->actionShow_Symbol, SIGNAL(triggered(bool)), this, SLOT(show_symbol_dialog()));
-    connect(ui->actionRegisters, SIGNAL(triggered(bool)), this, SLOT(show_registers()));
-    connect(ui->actionProgram_memory, SIGNAL(triggered(bool)), this, SLOT(show_program()));
-    connect(ui->actionMemory, SIGNAL(triggered(bool)), this, SLOT(show_memory()));
-    connect(ui->actionProgram_Cache, SIGNAL(triggered(bool)), this, SLOT(show_cache_program()));
-    connect(ui->actionData_Cache, SIGNAL(triggered(bool)), this, SLOT(show_cache_data()));
-    connect(ui->actionPeripherals, SIGNAL(triggered(bool)), this, SLOT(show_peripherals()));
-    connect(ui->actionTerminal, SIGNAL(triggered(bool)), this, SLOT(show_terminal()));
-    connect(ui->actionLcdDisplay, SIGNAL(triggered(bool)), this, SLOT(show_lcd_display()));
-    connect(ui->actionCop0State, SIGNAL(triggered(bool)), this, SLOT(show_cop0dock()));
-    connect(ui->actionCore_View_show, SIGNAL(triggered(bool)), this, SLOT(show_hide_coreview(bool)));
-    connect(ui->actionMessages, SIGNAL(triggered(bool)), this, SLOT(show_messages()));
-    connect(ui->actionAbout, SIGNAL(triggered(bool)), this, SLOT(about_qtmips()));
-    connect(ui->actionAboutQt, SIGNAL(triggered(bool)), this, SLOT(about_qt()));
-    connect(ui->ips1, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
-    connect(ui->ips2, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
-    connect(ui->ips5, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
-    connect(ui->ips10, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
-    connect(ui->ipsUnlimited, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
-    connect(ui->ipsMax, SIGNAL(toggled(bool)), this, SLOT(set_speed()));
+    connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
+    connect(ui->actionNewMachine, &QAction::triggered, this, &MainWindow::new_machine);
+    connect(ui->actionReload, &QAction::triggered, this, std::bind(&MainWindow::machine_reload, this, false, false));
+    connect(ui->actionPrint, &QAction::triggered, this, &MainWindow::print_action);
+    connect(ui->actionNew, &QAction::triggered, this, &MainWindow::new_source);
+    connect(ui->actionOpen, &QAction::triggered, this, &MainWindow::open_source);
+    connect(ui->actionSave, &QAction::triggered, this, &MainWindow::save_source);
+    connect(ui->actionSaveAs, &QAction::triggered, this, &MainWindow::save_source_as);
+    connect(ui->actionClose, &QAction::triggered, this, &MainWindow::close_source_check);
+    connect(ui->actionMnemonicRegisters, &QAction::triggered, this, &MainWindow::view_mnemonics_registers);
+    connect(ui->actionCompileSource, &QAction::triggered, this, &MainWindow::compile_source);
+    connect(ui->actionBuildExe, &QAction::triggered, this, &MainWindow::build_execute);
+    connect(ui->actionShow_Symbol, &QAction::triggered, this, &MainWindow::show_symbol_dialog);
+    connect(ui->actionRegisters, &QAction::triggered, this, &MainWindow::show_registers);
+    connect(ui->actionProgram_memory, &QAction::triggered, this, &MainWindow::show_program);
+    connect(ui->actionMemory, &QAction::triggered, this, &MainWindow::show_memory);
+    connect(ui->actionProgram_Cache, &QAction::triggered, this, &MainWindow::show_cache_program);
+    connect(ui->actionData_Cache, &QAction::triggered, this, &MainWindow::show_cache_data);
+    connect(ui->actionPeripherals, &QAction::triggered, this, &MainWindow::show_peripherals);
+    connect(ui->actionTerminal, &QAction::triggered, this, &MainWindow::show_terminal);
+    connect(ui->actionLcdDisplay, &QAction::triggered, this, &MainWindow::show_lcd_display);
+    connect(ui->actionCop0State, &QAction::triggered, this, &MainWindow::show_cop0dock);
+    connect(ui->actionCore_View_show, &QAction::triggered, this, &MainWindow::show_hide_coreview);
+    connect(ui->actionMessages, &QAction::triggered, this, &MainWindow::show_messages);
+    connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::about_qtmips);
+    connect(ui->actionAboutQt, &QAction::triggered, this, &MainWindow::about_qt);
+    connect(ui->ips1, &QAction::toggled, this, &MainWindow::set_speed);
+    connect(ui->ips2, &QAction::toggled, this, &MainWindow::set_speed);
+    connect(ui->ips5, &QAction::toggled, this, &MainWindow::set_speed);
+    connect(ui->ips10, &QAction::toggled, this, &MainWindow::set_speed);
+    connect(ui->ipsUnlimited, &QAction::toggled, this, &MainWindow::set_speed);
+    connect(ui->ipsMax, &QAction::toggled, this, &MainWindow::set_speed);
 
-    connect(this, SIGNAL(report_message(messagetype::Type,QString,int,int,QString,QString)),
-            messages, SLOT(insert_line(messagetype::Type,QString,int,int,QString,QString)));
-    connect(this, SIGNAL(clear_messages()), messages, SLOT(clear_messages()));
-    connect(messages, SIGNAL(message_selected(messagetype::Type,QString,int,int,QString,QString)),
-            this, SLOT(message_selected(messagetype::Type,QString,int,int,QString,QString)));
+    connect(this, &MainWindow::report_message, messages, &MessagesDock::insert_line);
+    connect(this, &MainWindow::clear_messages, messages, &MessagesDock::clear_messages);
+    connect(messages, &MessagesDock::message_selected, this, &MainWindow::message_selected);
 
     // Restore application state from settings
     restoreState(settings->value("windowState").toByteArray());
     restoreGeometry(settings->value("windowGeometry").toByteArray());
 
     // Source editor related actions
-    connect(central_window, SIGNAL(currentChanged(int)), this, SLOT(central_tab_changed(int)));
+    connect(central_window, &QTabWidget::currentChanged, this, &MainWindow::central_tab_changed);
 
     foreach (QString file_name, settings->value("openSrcFiles").toStringList()) {
         if (file_name.isEmpty())
@@ -176,7 +174,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     for (QString fname: samples_dir.entryList(QDir::Files)) {
         TextSignalAction *textsigac = new TextSignalAction(fname, ":/samples/" + fname);
         ui->menuExamples->addAction(textsigac);
-        connect(textsigac, SIGNAL( activated(QString)), this, SLOT(example_source(QString)));
+        connect(textsigac, &TextSignalAction::activated, this, &MainWindow::example_source);
     }
 
 #ifdef __EMSCRIPTEN__
@@ -231,14 +229,14 @@ void MainWindow::show_hide_coreview(bool show) {
         corescene = new CoreViewSceneSimple(machine);
     }
     // Connect scene signals to actions
-    connect(corescene, SIGNAL(request_registers()), this, SLOT(show_registers()));
-    connect(corescene, SIGNAL(request_program_memory()), this, SLOT(show_program()));
-    connect(corescene, SIGNAL(request_data_memory()), this, SLOT(show_memory()));
-    connect(corescene, SIGNAL(request_jump_to_program_counter(std::uint32_t)), program, SIGNAL(jump_to_pc(std::uint32_t)));
-    connect(corescene, SIGNAL(request_cache_program()), this, SLOT(show_cache_program()));
-    connect(corescene, SIGNAL(request_cache_data()), this, SLOT(show_cache_data()));
-    connect(corescene, SIGNAL(request_peripherals()), this, SLOT(show_peripherals()));
-    connect(corescene, SIGNAL(request_terminal()), this, SLOT(show_terminal()));
+    connect(corescene, &CoreViewScene::request_registers, this, &MainWindow::show_registers);
+    connect(corescene, &CoreViewScene::request_program_memory, this, &MainWindow::show_program);
+    connect(corescene, &CoreViewScene::request_data_memory, this, &MainWindow::show_memory);
+    connect(corescene, &CoreViewScene::request_jump_to_program_counter, program, &ProgramDock::jump_to_pc);
+    connect(corescene, &CoreViewScene::request_cache_program, this, &MainWindow::show_cache_program);
+    connect(corescene, &CoreViewScene::request_cache_data, this, &MainWindow::show_cache_data);
+    connect(corescene, &CoreViewScene::request_peripherals, this, &MainWindow::show_peripherals);
+    connect(corescene, &CoreViewScene::request_terminal, this, &MainWindow::show_terminal);
     coreview->setScene(corescene);
 }
 
@@ -270,9 +268,10 @@ void MainWindow::create_core(const machine::MachineConfig &config, bool load_exe
                                                      config.osemu_unknown_syscall_stop(),
                                                      config.osemu_fs_root());
         machine->register_exception_handler(machine::EXCAUSE_SYSCALL, osemu_handler);
-        connect(osemu_handler, SIGNAL(char_written(int,uint)), terminal, SLOT(tx_byte(int,uint)));
-        connect(osemu_handler, SIGNAL(rx_byte_pool(int,uint&,bool&)),
-            terminal, SLOT(rx_byte_pool(int,uint&,bool&)));
+        connect(osemu_handler, &osemu::OsSyscallExceptionHandler::char_written,
+                terminal, QOverload<int, unsigned int>::of(&TerminalDock::tx_byte));
+        connect(osemu_handler, &osemu::OsSyscallExceptionHandler::rx_byte_pool,
+            terminal, &TerminalDock::rx_byte_pool);
         machine->set_step_over_exception(machine::EXCAUSE_SYSCALL, true);
         machine->set_stop_on_exception(machine::EXCAUSE_SYSCALL, false);
     } else {
@@ -282,15 +281,15 @@ void MainWindow::create_core(const machine::MachineConfig &config, bool load_exe
     }
 
     // Connect machine signals and slots
-    connect(ui->actionRun, SIGNAL(triggered(bool)), machine, SLOT(play()));
-    connect(ui->actionPause, SIGNAL(triggered(bool)), machine, SLOT(pause()));
-    connect(ui->actionStep, SIGNAL(triggered(bool)), machine, SLOT(step()));
-    connect(ui->actionRestart, SIGNAL(triggered(bool)), machine, SLOT(restart()));
-    connect(machine, SIGNAL(status_change(machine::QtMipsMachine::Status)), this, SLOT(machine_status(machine::QtMipsMachine::Status)));
-    connect(machine, SIGNAL(program_exit()), this, SLOT(machine_exit()));
-    connect(machine, SIGNAL(program_trap(machine::QtMipsException&)), this, SLOT(machine_trap(machine::QtMipsException&)));
+    connect(ui->actionRun, &QAction::triggered, machine, &machine::QtMipsMachine::play);
+    connect(ui->actionPause, &QAction::triggered, machine, &machine::QtMipsMachine::pause);
+    connect(ui->actionStep, &QAction::triggered, machine, &machine::QtMipsMachine::step);
+    connect(ui->actionRestart, &QAction::triggered, machine, &machine::QtMipsMachine::restart);
+    connect(machine, &machine::QtMipsMachine::status_change, this, &MainWindow::machine_status);
+    connect(machine, &machine::QtMipsMachine::program_exit, this, &MainWindow::machine_exit);
+    connect(machine, &machine::QtMipsMachine::program_trap, this, &MainWindow::machine_trap);
     // Connect signal from break to machine pause
-    connect(machine->core(), SIGNAL(stop_on_exception_reached()), machine, SLOT(pause()));
+    connect(machine->core(), &machine::Core::stop_on_exception_reached, machine, &machine::QtMipsMachine::pause);
 
 
     // Setup docks
@@ -304,17 +303,13 @@ void MainWindow::create_core(const machine::MachineConfig &config, bool load_exe
     lcd_display->setup(machine->peripheral_lcd_display());
     cop0dock->setup(machine);
 
+
     // Connect signals for instruction address followup
-    connect(machine->core(), SIGNAL(fetch_inst_addr_value(std::uint32_t)),
-            program, SLOT(fetch_inst_addr(std::uint32_t)));
-    connect(machine->core(), SIGNAL(decode_inst_addr_value(std::uint32_t)),
-            program, SLOT(decode_inst_addr(std::uint32_t)));
-    connect(machine->core(), SIGNAL(execute_inst_addr_value(std::uint32_t)),
-            program, SLOT(execute_inst_addr(std::uint32_t)));
-    connect(machine->core(), SIGNAL(memory_inst_addr_value(std::uint32_t)),
-            program, SLOT(memory_inst_addr(std::uint32_t)));
-    connect(machine->core(), SIGNAL(writeback_inst_addr_value(std::uint32_t)),
-            program, SLOT(writeback_inst_addr(std::uint32_t)));
+    connect(machine->core(), &machine::Core::fetch_inst_addr_value, program, &ProgramDock::fetch_inst_addr);
+    connect(machine->core(), &machine::Core::decode_inst_addr_value, program, &ProgramDock::decode_inst_addr);
+    connect(machine->core(), &machine::Core::execute_inst_addr_value, program, &ProgramDock::execute_inst_addr);
+    connect(machine->core(), &machine::Core::memory_inst_addr_value, program, &ProgramDock::memory_inst_addr);
+    connect(machine->core(), &machine::Core::writeback_inst_addr_value, program, &ProgramDock::writeback_inst_addr);
 
     // Set status to ready
     machine_status(machine::QtMipsMachine::ST_READY);
@@ -398,16 +393,11 @@ void MainWindow::show_symbol_dialog(){
     QStringList *symnames = machine->symbol_table()->names();
     GoToSymbolDialog *gotosyboldialog = new GoToSymbolDialog(this, *symnames);
     delete symnames;
-    connect(gotosyboldialog, SIGNAL(program_focus_addr(std::uint32_t)),
-            program, SIGNAL(focus_addr_with_save(std::uint32_t)));
-    connect(gotosyboldialog, SIGNAL(program_focus_addr(std::uint32_t)),
-            this, SLOT(show_program()));
-    connect(gotosyboldialog, SIGNAL(memory_focus_addr(std::uint32_t)),
-            memory, SIGNAL(focus_addr(std::uint32_t)));
-    connect(gotosyboldialog, SIGNAL(memory_focus_addr(std::uint32_t)),
-            this, SLOT(show_memory()));
-    connect(gotosyboldialog, SIGNAL(obtain_value_for_name(std::uint32_t&,QString)),
-            machine->symbol_table(), SLOT(name_to_value(std::uint32_t&,QString)));
+    connect(gotosyboldialog, &GoToSymbolDialog::program_focus_addr, program, &ProgramDock::focus_addr_with_save);
+    connect(gotosyboldialog, &GoToSymbolDialog::program_focus_addr, this, &MainWindow::show_program);
+    connect(gotosyboldialog, SIGNAL(memory_focus_addr(std::uint32_t)), memory, SIGNAL(focus_addr(std::uint32_t)));
+    connect(gotosyboldialog, &GoToSymbolDialog::memory_focus_addr, this, &MainWindow::show_memory);
+    connect(gotosyboldialog, &GoToSymbolDialog::obtain_value_for_name, machine->symbol_table(), &machine::SymbolTable::name_to_value);
     gotosyboldialog->setAttribute(Qt::WA_DeleteOnClose);
     gotosyboldialog->open();
 }
@@ -461,8 +451,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
         if(!QMetaType::isRegistered(id)) {
                 qRegisterMetaType<QStringList>();
         }
-        connect(dialog, SIGNAL(user_decision(bool,QStringList)),
-                this, SLOT(save_exit_or_ignore(bool,QStringList)),
+        connect(dialog, &SaveChnagedDialog::user_decision, this, &MainWindow::save_exit_or_ignore,
                 Qt::QueuedConnection);
         dialog->open();
     }
@@ -595,7 +584,7 @@ void MainWindow::central_tab_changed(int index) {
 void MainWindow::add_src_editor_to_tabs(SrcEditor *editor) {
     central_window->addTab(editor, editor->title());
     central_window->setCurrentWidget(editor);
-    connect(editor, SIGNAL(destroyed(QObject*)), this, SLOT(tab_widget_destroyed(QObject*)));
+    connect(editor, &QObject::destroyed, this, &MainWindow::tab_widget_destroyed);
 }
 
 void MainWindow::update_open_file_list() {
@@ -746,8 +735,8 @@ void MainWindow::save_source_as() {
     dialog->setTextValue(filename);
     dialog->setMinimumSize(QSize(200, 100));
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-    connect(dialog, SIGNAL(textValueSelected(QString)),
-            this, SLOT(src_editor_save_to(QString)), Qt::QueuedConnection);
+    connect(dialog, &QInputDialog::textValueSelected,
+            this, &MainWindow::src_editor_save_to, Qt::QueuedConnection);
     dialog->open();
 #endif
 }
@@ -796,8 +785,8 @@ void MainWindow::close_source_check() {
     msgbox->setDefaultButton(QMessageBox::Save);
     msgbox->setMinimumSize(QSize(200, 150));
     msgbox->setAttribute(Qt::WA_DeleteOnClose);
-    connect(msgbox, SIGNAL(finished(int)),
-            this, SLOT(close_source_decided(int)), Qt::QueuedConnection);
+    connect(msgbox, &QDialog::finished,
+            this, &MainWindow::close_source_decided, Qt::QueuedConnection);
     msgbox->open();
 }
 
@@ -990,8 +979,8 @@ void MainWindow::build_execute() {
     QStringList list;
     if (modified_file_list(list)) {
         SaveChnagedDialog *dialog = new SaveChnagedDialog(list, this);
-        connect(dialog, SIGNAL(user_decision(bool,QStringList&)),
-                this, SLOT(build_execute_with_save(bool,QStringList&)));
+        connect(dialog, &SaveChnagedDialog::user_decision,
+                this, &MainWindow::build_execute_with_save);
         dialog->open();
     } else {
         build_execute_no_check();
@@ -1021,10 +1010,9 @@ void MainWindow::build_execute_no_check() {
     show_messages();
     proc = new ExtProcess(this);
     build_process = procptr;
-    connect(proc, SIGNAL(report_message(messagetype::Type,QString,int,int,QString,QString)),
-            this, SIGNAL(report_message(messagetype::Type,QString,int,int,QString,QString)));
-    connect(proc, SIGNAL(finished(int,QProcess::ExitStatus)),
-            this, SLOT(build_execute_finished(int,QProcess::ExitStatus)));
+    connect(proc, &ExtProcess::report_message, this, &MainWindow::report_message);
+    connect(proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+        this, &MainWindow::build_execute_finished);
     if (current_srceditor != nullptr) {
         if (!current_srceditor->filename().isEmpty()) {
             QFileInfo fi(current_srceditor->filename());

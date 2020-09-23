@@ -341,8 +341,7 @@ bool assemble(QtMipsMachine &machine, MsgReport &msgrep, QString filename) {
     machine.cache_sync();
     SimpleAsm sasm;
 
-    sasm.connect(&sasm, SIGNAL(report_message(messagetype::Type,QString,int,int,QString,QString)),
-            &msgrep, SLOT(report_message(messagetype::Type,QString,int,int,QString,QString)));
+    sasm.connect(&sasm, &SimpleAsm::report_message, &msgrep, &MsgReport::report_message);
 
     sasm.setup(mem, &symtab, 0x80020000_addr);
 

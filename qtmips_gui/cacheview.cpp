@@ -62,8 +62,7 @@ CacheAddressBlock::CacheAddressBlock(const machine::Cache *cache, unsigned width
     row = 0;
     col = 0;
 
-    connect(cache, SIGNAL(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)),
-            this, SLOT(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)));
+    connect(cache, &machine::Cache::cache_update, this, &CacheAddressBlock::cache_update);
 }
 
 QRectF CacheAddressBlock::boundingRect() const {
@@ -225,8 +224,7 @@ CacheViewBlock::CacheViewBlock(const machine::Cache *cache, unsigned block , boo
     box = l_data->boundingRect();
     l_data->setPos(wd + (columns*DATA_WIDTH - box.width())/2 , -1 - box.height());
 
-    connect(cache, SIGNAL(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)),
-            this, SLOT(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)));
+    connect(cache, &machine::Cache::cache_update, this, &CacheViewBlock::cache_update);
 }
 
 CacheViewBlock::~CacheViewBlock() {

@@ -18,8 +18,7 @@ LcdDisplayView::~LcdDisplayView() {
 void LcdDisplayView::setup(machine::LcdDisplay *lcd_display) {
     if (lcd_display == nullptr)
         return;
-    connect(lcd_display, SIGNAL(pixel_update(uint,uint,uint,uint,uint)),
-            this, SLOT(pixel_update(uint,uint,uint,uint,uint)));
+    connect(lcd_display, &machine::LcdDisplay::pixel_update, this, &LcdDisplayView::pixel_update);
     if (fb_pixels != nullptr)
         delete fb_pixels;
     fb_pixels = nullptr;

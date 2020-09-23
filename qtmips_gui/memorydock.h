@@ -39,7 +39,8 @@
 #include <QDockWidget>
 #include <QLabel>
 #include <QComboBox>
-#include "qtmipsmachine.h"
+#include "../qtmips_machine/qtmipsmachine.h"
+#include "../qtmips_machine/memory/address.h"
 
 class MemoryDock : public QDockWidget  {
     Q_OBJECT
@@ -53,7 +54,7 @@ public:
 
 signals:
     void machine_setup(machine::QtMipsMachine *machine);
-    void focus_addr(std::uint32_t);
+    void focus_addr(machine::Address);
 
 private:
 
