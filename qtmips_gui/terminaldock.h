@@ -42,7 +42,7 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QTextCursor>
-#include "qtmipsmachine.h"
+#include "../qtmips_machine/qtmipsmachine.h"
 
 class TerminalDock : public QDockWidget {
     Q_OBJECT

@@ -38,7 +38,7 @@
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
-#include "qtmipsmachine.h"
+#include "../qtmips_machine/qtmipsmachine.h"
 #include "graphicsview.h"
 #include "coreview/connection.h"
 #include "coreview/programcounter.h"
@@ -67,7 +67,7 @@ signals:
     void request_registers();
     void request_data_memory();
     void request_program_memory();
-    void request_jump_to_program_counter(std::uint32_t addr);
+    void request_jump_to_program_counter(machine::Address addr);
     void request_cache_program();
     void request_cache_data();
     void request_peripherals();

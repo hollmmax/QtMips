@@ -34,7 +34,7 @@
  ******************************************************************************/
 
 #include "connection.h"
-#include <qtmipsexception.h>
+#include "../../qtmips_machine/qtmipsexception.h"
 #include <cmath>
 
 using namespace coreview;
@@ -93,8 +93,10 @@ Connection::Connection(const Connector *a, const Connector *b) : QGraphicsObject
     ax_start = a->vector();
     ax_end = a->vector();
 
-    connect(a, SIGNAL(updated(QLineF)), this, SLOT(moved_start(QLineF)));
-    connect(b, SIGNAL(updated(QLineF)), this, SLOT(moved_end(QLineF)));
+    connect(a, QOverload<QLineF>::of(&Connector::updated),
+            this, &Connection::moved_start);
+    connect(b, QOverload<QLineF>::of(&Connector::updated),
+            this, &Connection::moved_end);
     moved_start(a->vector());
     moved_end(b->vector());
 }

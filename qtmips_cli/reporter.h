@@ -42,7 +42,7 @@
 #include <QCoreApplication>
 #include "../qtmips_machine/qtmipsmachine.h"
 
-class Reporter : QObject {
+class Reporter : public QObject {
     Q_OBJECT
 public:
     Reporter(QCoreApplication *app, machine::QtMipsMachine *machine);

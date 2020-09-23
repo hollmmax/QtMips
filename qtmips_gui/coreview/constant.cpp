@@ -34,7 +34,7 @@
  ******************************************************************************/
 
 #include "constant.h"
-#include "fontsize.h"
+#include "../fontsize.h"
 #include <cmath>
 
 using namespace coreview;
@@ -50,7 +50,7 @@ Constant::Constant(const Connector *con, const QString &text) : QGraphicsObject(
 
     con_our = new Connector(Connector::AX_X);
     conn = new Bus(con_our, con, 2);
-    connect(con, SIGNAL(updated(QPointF)), this, SLOT(ref_con_updated(QPointF)));
+    connect(con, QOverload<QPointF>::of(&Connector::updated), this, &Constant::ref_con_updated);
     ref_con_updated(con->point()); // update initial connector position
 }
 

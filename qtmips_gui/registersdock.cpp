@@ -142,47 +142,47 @@ void RegistersDock::setup(machine::QtMipsMachine *machine) {
     for (int i = 0; i < 32; i++)
         labelVal(gp[i], regs->read_gp(i));
 
-    connect(regs, SIGNAL(pc_update(std::uint32_t)), this, SLOT(pc_changed(std::uint32_t)));
-    connect(regs, SIGNAL(gp_update(std::uint8_t,std::uint32_t)), this, SLOT(gp_changed(std::uint8_t,std::uint32_t)));
-    connect(regs, SIGNAL(hi_lo_update(bool,std::uint32_t)), this, SLOT(hi_lo_changed(bool,std::uint32_t)));
-    connect(regs, SIGNAL(gp_read(std::uint8_t,std::uint32_t)), this, SLOT(gp_read(std::uint8_t,std::uint32_t)));
-    connect(regs, SIGNAL(hi_lo_read(bool,std::uint32_t)), this, SLOT(hi_lo_read(bool,std::uint32_t)));
-    connect(machine, SIGNAL(tick()), this, SLOT(clear_highlights()));
+    connect(regs, &machine::Registers::pc_update, this, &RegistersDock::pc_changed);
+    connect(regs, &machine::Registers::gp_update, this, &RegistersDock::gp_changed);
+    connect(regs, &machine::Registers::hi_lo_update, this, &RegistersDock::hi_lo_changed);
+    connect(regs, &machine::Registers::gp_read, this, &RegistersDock::gp_read);
+    connect(regs, &machine::Registers::hi_lo_read, this, &RegistersDock::hi_lo_read);
+    connect(machine, &machine::QtMipsMachine::tick, this, &RegistersDock::clear_highlights);
 }
 
-void RegistersDock::pc_changed(std::uint32_t val) {
-    labelVal(pc, val);
+void RegistersDock::pc_changed(machine::Address val) {
+    labelVal(pc, val.get_raw());
 }
 
-void RegistersDock::gp_changed(std::uint8_t i, std::uint32_t val) {
-    SANITY_ASSERT(i < 32, QString("RegistersDock received signal with invalid gp register: ") + QString::number(i));
-    labelVal(gp[i], val);
-    gp[i]->setPalette(pal_updated);
-    gp_highlighted |= 1 << i;
+void RegistersDock::gp_changed(machine::RegisterId i, machine::RegisterValue val) {
+    SANITY_ASSERT(i.data < 32, QString("RegistersDock received signal with invalid gp register: ") + QString::number(i.data));
+    labelVal(gp[i.data], val.as_u32());
+    gp[i.data]->setPalette(pal_updated);
+    gp_highlighted |= 1 << i.data;
 }
 
-void RegistersDock::gp_read(std::uint8_t i, std::uint32_t val) {
+void RegistersDock::gp_read(machine::RegisterId i, machine::RegisterValue val) {
     (void)val;
-    SANITY_ASSERT(i < 32, QString("RegistersDock received signal with invalid gp register: ") + QString::number(i));
-    if (!(gp_highlighted & (1 << i))) {
-        gp[i]->setPalette(pal_read);
-        gp_highlighted |= 1 << i;
+    SANITY_ASSERT(i.data < 32, QString("RegistersDock received signal with invalid gp register: ") + QString::number(i.data));
+    if (!(gp_highlighted & (1 << i.data))) {
+        gp[i.data]->setPalette(pal_read);
+        gp_highlighted |= 1 << i.data;
     }
 }
 
-void RegistersDock::hi_lo_changed(bool hi, std::uint32_t val) {
+void RegistersDock::hi_lo_changed(bool hi, machine::RegisterValue val) {
     if (hi) {
-        labelVal(this->hi, val);
+        labelVal(this->hi, val.as_u32());
         this->hi->setPalette(pal_updated);
         hi_highlighted = true;
     } else {
-        labelVal(lo, val);
+        labelVal(lo, val.as_u32());
         this->lo->setPalette(pal_updated);
         lo_highlighted = true;
     }
 }
 
-void RegistersDock::hi_lo_read(bool hi, std::uint32_t val) {
+void RegistersDock::hi_lo_read(bool hi, machine::RegisterValue val) {
     (void)val;
     if (hi) {
         if (!hi_highlighted)

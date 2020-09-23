@@ -54,7 +54,7 @@ public:
 
 signals:
     void machine_setup(machine::QtMipsMachine *machine);
-    void jump_to_pc(std::uint32_t);
+    void jump_to_pc(machine::Address);
     void focus_addr(machine::Address);
     void focus_addr_with_save(machine::Address);
     void stage_addr_changed(uint stage, machine::Address addr);

@@ -95,7 +95,7 @@ private:
 	NewDialogCacheHandler *cache_handler_p, *cache_handler_d;
 };
 
-class NewDialogCacheHandler : QObject {
+class NewDialogCacheHandler : public QObject {
 	Q_OBJECT
 public:
 	NewDialogCacheHandler(NewDialog *nd, Ui::NewDialogCache *ui);

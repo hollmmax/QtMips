@@ -122,9 +122,9 @@ bool MMU::insert_range(
     }
     ranges_by_addr.insert(last_addr, p_range);
     ranges_by_access.insertMulti(mem_access, p_range);
-    connect(
-        mem_access, SIGNAL(external_change_notify(const FrontendMemory*, std::uint32_t, std::uint32_t, bool)), this, SLOT(
-        range_external_change(const FrontendMemory*, std::uint32_t, std::uint32_t, bool)));
+//    connect(
+//        mem_access, &BackendMemory::external_change_notify,this, SLOT(
+//        range_external_change(const FrontendMemory*, std::uint32_t, std::uint32_t, bool)));
     return true;
 }
 

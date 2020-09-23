@@ -55,10 +55,10 @@
 #include "messagesdock.h"
 #include "extprocess.h"
 
-#include "qtmipsmachine.h"
-#include "machineconfig.h"
-#include "srceditor.h"
-#include "simpleasm.h"
+#include "../qtmips_machine/qtmipsmachine.h"
+#include "../qtmips_machine/machineconfig.h"
+#include "../qtmips_gui/srceditor.h"
+#include "../qtmips_asm/simpleasm.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
