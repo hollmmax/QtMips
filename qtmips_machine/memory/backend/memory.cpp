@@ -36,66 +36,73 @@
  ******************************************************************************/
 
 #include "memory.h"
+#include "../memory_utils.h"
 #include "../../qtmipsexception.h"
+#include "../../utils.h"
 
 namespace machine {
 
 
 MemorySection::MemorySection(std::uint32_t length) {
-    this->len = length;
-    this->dt  = new std::uint32_t[length];
-    memset(this->dt, 0, sizeof *this->dt * length);
+    this->dt.resize(length, 0);
 }
 
-MemorySection::MemorySection(const MemorySection &ms)
-    : MemorySection(ms.length()) {
-    memcpy(this->dt, ms.data(), sizeof *this->dt * this->len);
-}
-
-MemorySection::~MemorySection() {
-    delete[] this->dt;
+MemorySection::MemorySection(const MemorySection &other) {
+    this->dt = other.dt;
 }
 
 bool MemorySection::write(
+    void *source,
     Offset offset,
-    AccessSize size,
-    AccessItem value
+    size_t count
 ) {
-    bool changed;
-    offset = offset >> 2;
+    offset = offset >> 2U;
+
     if (offset >= this->len) {
-        throw QTMIPS_EXCEPTION(OutOfMemoryAccess, "Trying to write outside of the memory section",
-                               QString("Accessing using offset: ") + QString::number(offset));
+        throw QTMIPS_EXCEPTION(
+            OutOfMemoryAccess,
+            "Trying to write outside of the memory section",
+            QString("Accessing using offset: ") + QString::number(offset)
+        );
     }
-    changed = this->dt[offset] != value;
-    this->dt[offset] = value;
+
+    bool changed = memory_compare(source, &this->dt[offset], count);
+    if (changed) {
+        memory_copy(&this->dt[offset], source, count);
+    }
     return changed;
 }
 
-AccessItem MemorySection::read(
-    Offset offset,
-    AccessSize size,
+void MemorySection::read(
+    Offset source,
+    void *destination,
+    size_t count,
     bool debug_read
 ) const {
     (void) debug_read;
-    offset = offset >> 2;
-    if (offset >= this->len) {
-        throw QTMIPS_EXCEPTION(OutOfMemoryAccess, "Trying to read outside of the memory section",
-                               QString("Accessing using offset: ") + QString::number(offset));
+    source = source >> 2U;
+
+    if (source >= this->len) {
+        throw QTMIPS_EXCEPTION(
+            OutOfMemoryAccess,
+            "Trying to read outside of the memory section",
+            QString("Accessing using offset: ") + QString::number(source)
+        );
     }
-    return this->dt[offset];
+
+    memory_copy(destination, &this->dt[source], count);
 }
 
-std::uint32_t MemorySection::length() const {
-    return len;
+size_t MemorySection::length() const {
+    return this->dt->size();
 }
 
 const std::uint32_t *MemorySection::data() const {
-    return this->dt;
+    return this->dt->data();
 }
 
-bool MemorySection::operator==(const MemorySection &ms) const {
-    return !memcmp(this->dt, ms.data(), sizeof *this->dt * this->len);
+bool MemorySection::operator==(const MemorySection &other) const {
+    return this->dt == other.dt;
 }
 
 bool MemorySection::operator!=(const MemorySection &ms) const {
@@ -140,7 +147,7 @@ Memory::Memory() {
 Memory::Memory(const Memory &m) {
     this->mt_root = copy_section_tree(m.get_memorytree_root(), 0);
     change_counter = 0;
-    write_counter  = 0;
+    write_counter = 0;
 }
 
 Memory::~Memory() {
@@ -164,8 +171,8 @@ MemorySection *Memory::get_section(
     bool create
 ) const {
     union MemoryTree *w = this->mt_root;
-    size_t           row_num;
-    for (int         i  = 0; i < (MEMORY_TREE_DEPTH - 1); i++) {
+    size_t row_num;
+    for (int i = 0; i < (MEMORY_TREE_DEPTH - 1); i++) {
         row_num = TREE_ROW(address, i);
         if (w[row_num].mt == nullptr) { // We don't have this tree so allocate it
             if (!create) { // If we shouldn't be creating it than just return null
@@ -175,7 +182,7 @@ MemorySection *Memory::get_section(
         }
         w = w[row_num].mt;
     }
-    row_num             = TREE_ROW(address, MEMORY_TREE_DEPTH - 1);
+    row_num = TREE_ROW(address, MEMORY_TREE_DEPTH - 1);
     if (w[row_num].sec == nullptr) {
         if (!create) {
             return nullptr;
@@ -188,13 +195,13 @@ MemorySection *Memory::get_section(
 #define SECTION_OFFSET_MASK(ADDR) (ADDR & GENMASK(MEMORY_SECTION_BITS, 2))
 
 bool Memory::write(
+    const void *source,
     Offset offset,
-    AccessSize size,
-    AccessItem value
+    size_t count
 ) {
-    bool          changed;
+    bool changed;
     MemorySection *section = this->get_section(offset, true);
-    changed = section->write(SECTION_OFFSET_MASK(offset), WORD, value);
+    changed = section->write(source, SECTION_OFFSET_MASK(offset), count);
     write_counter++;
     if (changed) {
         change_counter++;
@@ -203,17 +210,17 @@ bool Memory::write(
 }
 
 
-AccessItem Memory::read(
-    Offset offset,
-    AccessSize size,
+void Memory::read(
+    Offset source,
+    void *destination,
+    size_t count,
     bool debug_read
 ) const {
-    MemorySection *section = this->get_section(offset, false);
+    MemorySection *section = this->get_section(source, false);
     if (section == nullptr) {
-        return 0;
-    }
-    else {
-        return section->read(SECTION_OFFSET_MASK(offset), WORD, debug_read);
+        memset(destination, 0, count);
+    } else {
+        return section->read(SECTION_OFFSET_MASK(source), destination, count, debug_read);
     }
 }
 
@@ -246,8 +253,7 @@ void Memory::free_section_tree(
                 delete[] mt[i].mt;
             }
         }
-    }
-    else { // Following level is memory section
+    } else { // Following level is memory section
         for (int i = 0; i < MEMORY_TREE_ROW_SIZE; i++) {
             if (mt[i].sec != nullptr) {
                 delete mt[i].sec;
@@ -269,8 +275,7 @@ bool Memory::compare_section_tree(
                 return false;
             }
         }
-    }
-    else { // Following level is memory section
+    } else { // Following level is memory section
         for (int i = 0; i < MEMORY_TREE_ROW_SIZE; i++) {
             if (((mt1[i].sec == nullptr || mt2[i].sec == nullptr) && mt1[i].sec != mt2[i].sec)
                 || (mt1[i].sec != nullptr && mt2[i].sec != nullptr && *mt1[i].sec != *mt2[i].sec)) {
@@ -292,8 +297,7 @@ union machine::MemoryTree *Memory::copy_section_tree(
                 nmt[i].mt = copy_section_tree(mt[i].mt, depth + 1);
             }
         }
-    }
-    else { // Following level is memory section
+    } else { // Following level is memory section
         for (int i = 0; i < MEMORY_TREE_ROW_SIZE; i++) {
             if (mt[i].sec != nullptr) {
                 nmt[i].sec = new MemorySection(*mt[i].sec);

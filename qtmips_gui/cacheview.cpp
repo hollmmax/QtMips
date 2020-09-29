@@ -50,11 +50,11 @@
 using namespace std;
 
 CacheAddressBlock::CacheAddressBlock(const machine::Cache *cache, unsigned width) {
-    rows = cache->get_config().sets();
-    columns = cache->get_config().blocks();
-    s_row = cache->get_config().sets() > 1 ? sqrt(cache->get_config().sets()) : 0;
+    rows = cache->get_config().set_count();
+    columns = cache->get_config().block_count();
+    s_row = cache->get_config().set_count() > 1 ? sqrt(cache->get_config().set_count()) : 0;
     this->width = width;
-    s_col = cache->get_config().blocks() > 1 ? sqrt(cache->get_config().blocks()) : 0;
+    s_col = cache->get_config().block_count() > 1 ? sqrt(cache->get_config().block_count()) : 0;
     s_tag = 30 - s_row - s_col; // 32 bits - 2 unused  and then every bit used for different index
     this->width = width;
 
@@ -155,8 +155,8 @@ void CacheAddressBlock::cache_update(unsigned associat, unsigned set, unsigned c
 CacheViewBlock::CacheViewBlock(const machine::Cache *cache, unsigned block , bool last) : QGraphicsObject(nullptr) {
     islast = last;
     this->block = block;
-    rows = cache->get_config().sets();
-    columns = cache->get_config().blocks();
+    rows = cache->get_config().set_count();
+    columns = cache->get_config().block_count();
     curr_row = 0;
     last_set = 0;
     last_col = 0;

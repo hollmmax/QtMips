@@ -212,7 +212,10 @@ void Reporter::report() {
             end = 0xffffffff;
         for (std::int32_t addr = start; addr < end; addr += 4) {
             out << "0x";
-            out_hex(out, machine->memory()->read(addr, WORD), 8);
+            // TODO not nice
+            uint32_t buffer;
+            machine->memory()->read(addr, &buffer, sizeof(buffer), false);
+            out_hex(out, buffer, 8);
             out << endl;
         }
         out.close();

@@ -37,6 +37,7 @@
 #define UTILS_H
 
 #include <cstdint>
+#include <type_traits>
 
 #if  __GNUC__ >= 7
 #define FALLTROUGH  __attribute__((fallthrough));
@@ -45,5 +46,22 @@
 #endif
 
 std::uint32_t sign_extend(std::uint16_t);
+
+#define UNREACHABLE assert(false);
+#define UNIMPLEMENTED throw std::logic_error("unimplemented");
+#define UNUSED(arg) (void)arg;
+
+/**
+ * Test whether given address is aligned to type
+ *
+ * @tparam Address      type used to store the address
+ * @tparam T            type to check alignment
+ * @param address       address to check
+ * @return              true if is aligned
+ */
+template<typename Address, typename T>
+inline bool is_aligned_generic(Address address) {
+    return static_cast<uintptr_t>(address) % std::alignment_of<T>::value;
+}
 
 #endif // UTILS_H

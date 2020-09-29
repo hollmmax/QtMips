@@ -47,29 +47,38 @@ namespace machine {
 class MemorySection : public BackendMemory {
 public:
     explicit MemorySection(std::uint32_t length);
-    MemorySection(const MemorySection&);
-    ~MemorySection() override;
+    MemorySection(const MemorySection& other);
+    ~MemorySection() override = default;
 
-    bool write(Offset offset, AccessSize size, AccessItem value) override;
+    bool write(
+        void *source,
+        Offset destination,
+        size_t count
+    ) override;
 
-    AccessItem read(Offset offset, AccessSize size, bool debug_read) const override;
-//    void merge(MemorySection&);
+    void read(
+        Offset source,
+        void *destination,
+        size_t count,
+        bool debug_read
+    ) const override;
 
-    std::uint32_t length() const;
-    const std::uint32_t* data() const;
+    size_t length() const;
+    const uint32_t* data() const; // TODO Return vector reference?
 
     bool operator==(const MemorySection&) const;
     bool operator!=(const MemorySection&) const;
 
 private:
-    std::uint32_t len;
-    std::uint32_t *dt;
+    std::vector<uint32_t> dt;
 };
+
 
 union MemoryTree {
     union MemoryTree *mt;
     MemorySection *sec;
 };
+
 
 class Memory : public BackendMemory {
     Q_OBJECT
@@ -82,8 +91,18 @@ public:
 
     MemorySection *get_section(std::uint32_t address, bool create) const; // returns section containing given address
 
-    bool write(Offset offset, AccessSize size, AccessItem value) override;
-    AccessItem read(Offset offset, AccessSize size, bool debug_read = false) const override;
+    bool write(
+        const void *source,
+        Offset offset,
+        size_t count
+    ) override;
+
+    void read(
+        Offset source,
+        void *destination,
+        size_t count,
+        bool debug_read
+    ) const override;
 
     bool operator==(const Memory&) const;
     bool operator!=(const Memory&) const;
@@ -100,6 +119,6 @@ private:
 //    static bool is_zero_section_tree(const union MemoryTree*, size_t depth);
     static union MemoryTree *copy_section_tree(const union MemoryTree*, size_t depth);
 };
-};
+}
 
 #endif //QTMIPS_MACHINE_MEMORY_H

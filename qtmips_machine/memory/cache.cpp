@@ -33,13 +33,23 @@
  *
  ******************************************************************************/
 
+#include <cstdlib>
 #include "cache.h"
+#include "memory_utils.h"
+#include "cache_types.h"
 
 using namespace machine;
 
-Cache::Cache(FrontendMemory  *m, const CacheConfig *cc, unsigned memory_access_penalty_r,
-             unsigned memory_access_penalty_w, unsigned memory_access_penalty_b)
-             : cache_config(cc) {
+Cache::Cache(
+    FrontendMemory *m,
+    const CacheConfig *cc,
+    unsigned memory_access_penalty_r,
+    unsigned memory_access_penalty_w,
+    unsigned memory_access_penalty_b
+)
+    : cache_config(cc),
+    mem(m),
+    access_pen_b(memory_access_penalty_b), {
     mem = m;
     access_pen_r = memory_access_penalty_r;
     access_pen_w = memory_access_penalty_w;
@@ -56,8 +66,7 @@ Cache::Cache(FrontendMemory  *m, const CacheConfig *cc, unsigned memory_access_p
     burst_reads = 0;
     burst_writes = 0;
     dt = nullptr;
-    replc.lfu = nullptr;
-    replc.lru = nullptr;
+    replacement_policy = nullptr;
     change_counter = 0;
 
     // Skip any other initialization if cache is disabled
@@ -65,110 +74,79 @@ Cache::Cache(FrontendMemory  *m, const CacheConfig *cc, unsigned memory_access_p
         return;
 
     // Allocate cache data structure
-    dt = new struct cache_data*[cc->associativity()];
+    dt = new struct cache_data *[cc->associativity()];
     for (unsigned i = 0; i < cc->associativity(); i++) {
-        dt[i] = new cache_data[cc->sets()];
-        for (unsigned y = 0; y < cc->sets(); y++) {
+        dt[i] = new cache_data[cc->set_count()];
+        for (unsigned y = 0; y < cc->set_count(); y++) {
             dt[i][y].valid = false;
             dt[i][y].dirty = false;
-            dt[i][y].data = new std::uint32_t[cc->blocks()];
+            dt[i][y].data = new uint32_t[cc->block_count()];
         }
     }
-    // Allocate replacement policy data
-    switch (cache_config.replacement_policy()) {
-    case CacheConfig::RP_LFU:
-        replc.lfu = new unsigned *[cache_config.sets()];
-        for (unsigned int row = 0; row < cache_config.sets(); row++) {
-            replc.lfu[row] = new unsigned[cache_config.associativity()];
-            for (unsigned int  i = 0; i < cache_config.associativity(); i++)
-                 replc.lfu[row][i] = 0;
-        }
-        break;
-    case CacheConfig::RP_LRU:
-        replc.lru = new unsigned int*[cache_config.sets()];
-        for (unsigned int row = 0; row < cache_config.sets(); row++) {
-            replc.lru[row] = new unsigned int[cache_config.associativity()];
-            for (unsigned int i = 0; i < cache_config.associativity(); i++)
-                replc.lru[row][i] = i;
-        }
-        break;
-    case CacheConfig::RP_RAND:
-    default:
-        break;
-    }
+
+    replacement_policy = CachePolicy::get_policy(cc, dt);
 }
 
-Cache::~Cache(){
+Cache::~Cache() {
     if (dt != nullptr) {
         for (unsigned i = 0; i < cache_config.associativity(); i++) {
-	    if (dt[i]) {
-                for (unsigned y = 0; y < cache_config.sets(); y++)
+            if (dt[i]) {
+                for (unsigned y = 0; y < cache_config.set_count(); y++)
                     delete[] dt[i][y].data;
                 delete[] dt[i];
             }
-	}
+        }
         delete[] dt;
     }
-    switch (cache_config.replacement_policy()) {
-    case CacheConfig::RP_LFU:
-        if (replc.lfu == nullptr)
-            break;
-        for (unsigned row = 0; row < cache_config.sets(); row++)
-            delete[] replc.lfu[row];
-        delete [] replc.lfu;
-        break;
-    case CacheConfig::RP_LRU:
-        if (replc.lru == nullptr)
-            break;
-        for (unsigned row = 0; row < cache_config.sets(); row++)
-            delete[] replc.lru[row];
-        delete[] replc.lru;
-    default:
-        break;
-    }
+    delete replacement_policy;
 }
 
 
-bool Cache::write(Address address, std::uint32_t value) {
+bool Cache::write(
+    Address address,
+    const void *source,
+    size_t size
+) {
     bool changed;
 
-    if (!cache_config.enabled() ||
-        (address >= uncached_start && address <= uncached_last)) {
+    if (!cache_config.enabled() || (address >= uncached_start && address <= uncached_last)) {
         mem_writes++;
         emit memory_writes_update(mem_writes);
         update_statistics();
-        return mem->write_word(address, value);
+        return mem->write(address, source, size);
     }
 
-    std::uint32_t data;
-    changed = access(address, &data, true, value);
+    changed = access(address, &source, true, size);
 
     if (cache_config.write_policy() != CacheConfig::WP_BACK) {
         mem_writes++;
         emit memory_writes_update(mem_writes);
         update_statistics();
-        return mem->write_word(address, value);
+        return mem->write(address, source, size);
     }
     return changed;
 }
 
-std::uint32_t Cache::read(Address address, bool debug_access) const {
-    if (!cache_config.enabled() ||
-        (address >= uncached_start && address <= uncached_last)) {
+void Cache::read(
+    Address source,
+    void *destination,
+    size_t size,
+    bool debug_access
+) const {
+    if (!cache_config.enabled() || (source >= uncached_start && source <= uncached_last)) {
         mem_reads++;
         emit memory_reads_update(mem_reads);
         update_statistics();
-        return mem->read_word(address, debug_access);
+        return mem->read(source, destination, size, debug_access);
     }
 
     if (debug_access) {
-        if (!(location_status(address) & LOCSTAT_CACHED))
-            return mem->read_word(address, debug_access);
-        return debug_rword(address);
+        if (!(location_status(source) & LOCSTAT_CACHED))
+            return mem->read(source, destination, size, debug_access);
+        return debug_rword(source);
     }
-    std::uint32_t data;
-    access(address, &data, false);
-    return data;
+
+    access(source, &destination, false, size);
 }
 
 std::uint32_t Cache::get_change_counter() const {
@@ -179,8 +157,8 @@ void Cache::flush() {
     if (!cache_config.enabled())
         return;
 
-    for (unsigned as = cache_config.associativity(); as-- > 0 ; )
-        for (unsigned st = 0; st < cache_config.sets(); st++)
+    for (unsigned as = cache_config.associativity(); as-- > 0;)
+        for (unsigned st = 0; st < cache_config.set_count(); st++)
             if (dt[as][st].valid) {
                 kick(as, st);
                 emit cache_update(as, st, 0, false, false, 0, 0, false);
@@ -230,23 +208,23 @@ double Cache::get_speed_improvement() const {
     if (access_pen_b != 0)
         mem_access_time -= burst_reads * (access_pen_r - access_pen_b) +
                            burst_writes * (access_pen_w - access_pen_b);
-    return (double)((miss_read + hit_read) * access_pen_r + (miss_write + hit_write) * access_pen_w) \
-            / (double)(lookup_time + mem_access_time) \
-            * 100;
+    return (double) ((miss_read + hit_read) * access_pen_r + (miss_write + hit_write) * access_pen_w) \
+ / (double) (lookup_time + mem_access_time) \
+ * 100;
 }
 
 double Cache::get_hit_rate() const {
     unsigned comp = hit_read + hit_write + miss_read + miss_write;
     if (comp == 0)
         return 0.0;
-    return (double)(hit_read + hit_write) / (double)comp * 100.0;
+    return (double) (hit_read + hit_write) / (double) comp * 100.0;
 }
 
 void Cache::reset() {
     // Set all cells to invalid
     if (cache_config.enabled()) {
         for (unsigned as = 0; as < cache_config.associativity(); as++)
-            for (unsigned st = 0; st < cache_config.sets(); st++)
+            for (unsigned st = 0; st < cache_config.set_count(); st++)
                 dt[as][st].valid = false;
     }
     // Note: we don't have to zero replacement policy data as those are zeroed when first used on invalid cell
@@ -267,7 +245,7 @@ void Cache::reset() {
     update_statistics();
     if (cache_config.enabled()) {
         for (unsigned as = 0; as < cache_config.associativity(); as++)
-            for (unsigned st = 0; st < cache_config.sets(); st++)
+            for (unsigned st = 0; st < cache_config.set_count(); st++)
                 emit cache_update(as, st, 0, false, false, 0, 0, false);
     }
 }
@@ -277,17 +255,16 @@ const CacheConfig &Cache::get_config() const {
 }
 
 enum LocationStatus Cache::location_status(Address address) const {
-    std::uint32_t row, col, tag;
-    compute_row_col_tag(row, col, tag, address);
+    CacheLocation loc = compute_location(address);
 
     if (cache_config.enabled()) {
         for (unsigned indx = 0; indx < cache_config.associativity(); indx++) {
-            if (dt[indx][row].valid && dt[indx][row].tag == tag) {
-                if (dt[indx][row].dirty &&
+            if (dt[indx][loc.row].valid && dt[indx][loc.row].tag == loc.tag) {
+                if (dt[indx][loc.row].dirty &&
                     cache_config.write_policy() == CacheConfig::WP_BACK)
-                    return (enum LocationStatus)(LOCSTAT_CACHED | LOCSTAT_DIRTY);
+                    return (enum LocationStatus) (LOCSTAT_CACHED | LOCSTAT_DIRTY);
                 else
-                    return (enum LocationStatus)LOCSTAT_CACHED;
+                    return (enum LocationStatus) LOCSTAT_CACHED;
             }
         }
     }
@@ -295,22 +272,23 @@ enum LocationStatus Cache::location_status(Address address) const {
 }
 
 std::uint32_t Cache::debug_rword(Address address) const {
-    std::uint32_t row, col, tag;
-    compute_row_col_tag(row, col, tag, address);
-    for (unsigned indx = 0; indx < cache_config.associativity(); indx++)
-        if (dt[indx][row].valid && dt[indx][row].tag == tag)
-            return dt[indx][row].data[col];
+    CacheLocation loc = compute_location(address);
+    for (unsigned index = 0; index < cache_config.associativity(); index++)
+        if (dt[index][loc.row].valid && dt[index][loc.row].tag == loc.tag)
+            return dt[index][loc.row].data[loc.col];
     return 0;
 }
 
-bool Cache::access(Address address, std::uint32_t *data, bool write, std::uint32_t value) const {
+bool Cache::access(
+    Address address,
+    void *buffer,
+    bool write,
+    size_t size
+) const {
     bool changed = false;
     CacheLocation loc = compute_location(address);
 
-    unsigned index = 0;
-    // Try to locate exact block
-    while (index < cache_config.associativity() && (!dt[index][loc.row].valid || dt[index][loc.row].tag != loc.tag))
-        index++;
+    size_t index = search_cache_line(loc);
     // Need to find new block
     if (index >= cache_config.associativity()) {
         // if write through we do not need to alloecate cache line does not allocate
@@ -321,32 +299,7 @@ bool Cache::access(Address address, std::uint32_t *data, bool write, std::uint32
             return false;
         }
         // We have to kick something
-        switch (cache_config.replacement_policy()) {
-        case CacheConfig::RP_RAND:
-            index = rand() % cache_config.associativity();
-            break;
-        case CacheConfig::RP_LRU:
-            {
-                index = replc.lru[loc.row][0];
-                break;
-            }
-        case CacheConfig::RP_LFU:
-            {
-                unsigned lowest = replc.lfu[loc.row][0];
-                index = 0;
-                for (unsigned i = 1; i < cache_config.associativity(); i++) {
-                    if (!dt[i][loc.row].valid) {
-                        index = i;
-                        break;
-                    }
-                    if (lowest > replc.lfu[loc.row][i]) {
-                        lowest = replc.lfu[loc.row][i];
-                        index  = i;
-                    }
-                }
-                break;
-            }
-        }
+        index = replacement_policy->select_index_to_evict(loc);
     }
     SANITY_ASSERT(index < cache_config.associativity(), "Probably unimplemented replacement policy");
 
@@ -360,123 +313,150 @@ bool Cache::access(Address address, std::uint32_t *data, bool write, std::uint32
 
     // Update statistics and otherwise read from memory
     if (cd.valid) {
-        if (write)
+        if (write) {
             hit_write++;
-        else
+        }
+        else {
             hit_read++;
+        }
         emit hit_update(get_hit_count());
         update_statistics();
     } else {
-        if (write)
+        if (write) {
             miss_write++;
-        else
+        } else {
             miss_read++;
-        emit miss_update(get_miss_count());
-        for (unsigned i = 0; i < cache_config.blocks(); i++) {
-            cd.data[i] = mem->read_word(base_address(loc.tag, loc.row) + (4*i));
-            change_counter++;
         }
-        mem_reads += cache_config.blocks();
-        burst_reads += cache_config.blocks() - 1;
+        emit miss_update(get_miss_count());
+        mem->read(base_address(loc.tag, loc.row), cd.data, cache_config.block_count() * BLOCK_SIZE, false);
+        change_counter += cache_config.block_count();
+        mem_reads += cache_config.block_count();
+        burst_reads += cache_config.block_count() - 1;
         emit memory_reads_update(mem_reads);
         update_statistics();
     }
 
     // Update replcement data
-    switch (cache_config.replacement_policy()) {
-    case CacheConfig::RP_LRU:
-    {
-        unsigned next_asi = index;
-        int i = cache_config.associativity() - 1;
-        unsigned tmp_asi = replc.lru[loc.row][i];
-        while (tmp_asi != index) {
-            SANITY_ASSERT(i >= 0, "LRU lost the way from priority queue - access");
-            tmp_asi = replc.lru[loc.row][i];
-            replc.lru[loc.row][i] = next_asi;
-            next_asi = tmp_asi;
-            i--;
-        }
-        break;
-    }
-    case CacheConfig::RP_LFU:
-        if (cd.valid)
-            replc.lfu[loc.row][index]++;
-        else
-            replc.lfu[loc.row][index] = 0;
-        break;
-    default:
-        break;
-    }
+    replacement_policy->update_replacement_data(index, loc, cd.valid);
 
     cd.valid = true; // We either write to it or we read from memory. Either way it's valid when we leave Cache class
     cd.dirty = cd.dirty || write;
     cd.tag = loc.tag;
-    *data = cd.data[loc.col];
+
+
+    int64_t overlap = loc.col * BLOCK_SIZE
+                      + size - cache_config.block_count() * BLOCK_SIZE;
+    overlap = std::max(overlap, {0});
+
+    size_t size1 = size - overlap;
 
     if (write) {
-        changed = cd.data[loc.col] != value;
-        cd.data[loc.col] = value;
+        changed = !memory_compare(&cd.data[loc.col] + loc.subblock, buffer, size1);
+        if (changed) {
+            memory_copy(&cd.data[loc.col] + loc.subblock, buffer, size1);
+        }
+    } else {
+        /* Read */
+        memory_copy(buffer, &cd.data[loc.col] + loc.subblock, size1);
     }
 
-    emit cache_update(index, loc.row, loc.col, cd.valid, cd.dirty, cd.tag, cd.data, write);
-    if (changed)
+    uint32_t last_affected_col = (loc.col * BLOCK_SIZE + size1) / BLOCK_SIZE;
+    while (loc.col <= last_affected_col) {
+        emit cache_update(index, loc.row, loc.col, cd.valid, cd.dirty, cd.tag, cd.data, write);
+        loc.col += 1;
+    }
+
+    if (changed) {
         change_counter++;
+    }
+
+    if (overlap > 0) {
+        /*
+         * If access overlaps single cache row, perform access to next
+         *  row recursively.
+         */
+        changed |= access(
+            address + (size1 * 8),
+            (uint8_t *) buffer + (size1 * 8),
+            write, overlap
+        );
+    }
+
     return changed;
 }
 
-void Cache::kick(unsigned associativity_index, unsigned row) const {
+size_t Cache::search_cache_line(const CacheLocation &loc) const {
+    unsigned index = 0;
+    // Try to locate exact block
+    while (index < cache_config.associativity() && (!dt[index][loc.row].valid || dt[index][loc.row].tag != loc.tag))
+        index++;
+    return index;
+}
+
+void Cache::kick(
+    unsigned associativity_index,
+    unsigned row
+) const {
     struct cache_data &cd = dt[associativity_index][row];
     if (cd.dirty && cache_config.write_policy() == CacheConfig::WP_BACK) {
-        for (unsigned i = 0; i < cache_config.blocks(); i++)
+        for (unsigned i = 0; i < cache_config.block_count(); i++)
             mem->write_word(base_address(cd.tag, row) + (4 * i), cd.data[i]);
-        mem_writes += cache_config.blocks();
-        burst_writes += cache_config.blocks() - 1;
+        mem_writes += cache_config.block_count();
+        burst_writes += cache_config.block_count() - 1;
         emit memory_writes_update(mem_writes);
     }
     cd.valid = false;
     cd.dirty = false;
 
+    // TODO move to repl policy
     switch (cache_config.replacement_policy()) {
-    case CacheConfig::RP_LRU:
-    {
-        unsigned next_asi = associativity_index;
-        unsigned tmp_asi = replc.lru[row][0];
-        int i = 1;
-        while (tmp_asi != associativity_index) {
-            SANITY_ASSERT(i < (int)cache_config.associativity(), "LRU lost the way from priority queue - kick");
-            tmp_asi = replc.lru[row][i];
-            replc.lru[row][i] = next_asi;
-            next_asi = tmp_asi;
-            i++;
+        case CacheConfig::RP_LRU: {
+            unsigned next_asi = associativity_index;
+            unsigned tmp_asi = replc.lru[row][0];
+            int i = 1;
+            while (tmp_asi != associativity_index) {
+                SANITY_ASSERT(i < (int) cache_config.associativity(), "LRU lost the way from priority queue - kick");
+                tmp_asi = replc.lru[row][i];
+                replc.lru[row][i] = next_asi;
+                next_asi = tmp_asi;
+                i++;
+            }
+            break;
         }
-        break;
-    }
-    case CacheConfig::RP_LFU:
-        replc.lfu[row][associativity_index] = 0;
-        break;
-    default:
-        break;
+        case CacheConfig::RP_LFU:
+            replc.lfu[row][associativity_index] = 0;
+            break;
+        default:
+            break;
     }
 }
 
-Address Cache::base_address(std::uint32_t tag, unsigned row) const {
-    return Address(((tag * cache_config.blocks() * cache_config.sets()) + (row * cache_config.blocks())) << 2);
-}
 
 void Cache::update_statistics() const {
     emit statistics_update(get_stall_count(), get_speed_improvement(), get_hit_rate());
 }
 
-void Cache::compute_row_col_tag(
-    uint32_t &row,
-    uint32_t &col,
-    uint32_t &tag,
-    Address address
+Address Cache::base_address(
+    std::uint32_t tag,
+    unsigned row
 ) const {
-    uint32_t offset = address.get_byte_index();
-    std::uint32_t ssize = cache_config.blocks() * cache_config.sets();
-    tag = offset / ssize;
-    std::uint32_t index = offset % ssize;
-    row = index / cache_config.blocks();
-    col = index % cache_config.blocks();
+    return Address(
+        (
+            (tag * cache_config.block_count() * cache_config.set_count())
+            + (row * cache_config.block_count())
+        ) << 2U);
 }
+
+
+constexpr CacheLocation Cache::compute_location(Address address) const {
+    uint32_t block_index = address.get_raw() / BLOCK_SIZE;
+    uint32_t block_count = cache_config.block_count() * cache_config.set_count();
+    uint32_t index = block_index % block_count;
+    return {
+        .row = index / cache_config.block_count(),
+        .col = index % cache_config.block_count(),
+        .tag = block_index / block_count,
+        .subblock = static_cast<uint32_t>(address.get_raw() % BLOCK_SIZE)
+    };
+}
+

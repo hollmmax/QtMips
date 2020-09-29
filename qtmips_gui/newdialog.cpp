@@ -386,8 +386,8 @@ void NewDialogCacheHandler::set_config(machine::CacheConfig *config) {
 
 void NewDialogCacheHandler::config_gui() {
     ui->enabled->setChecked(config->enabled());
-    ui->number_of_sets->setValue(config->sets());
-    ui->block_size->setValue(config->blocks());
+    ui->number_of_sets->setValue(config->set_count());
+    ui->block_size->setValue(config->block_count());
     ui->degree_of_associativity->setValue(config->associativity());
     ui->replacement_policy->setCurrentIndex((int)config->replacement_policy());
     ui->writeback_policy->setCurrentIndex((int)config->write_policy());

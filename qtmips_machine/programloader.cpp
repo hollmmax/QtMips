@@ -111,7 +111,8 @@ void ProgramLoader::to_memory(Memory *mem) { // TODO Why are you writing to raw 
         char *f = elf_rawfile(this->elf, NULL);
         size_t phdrs_i = this->map[i];
         for (unsigned y = 0; y < this->phdrs[phdrs_i].p_filesz; y++) {
-            mem->write(base_address + y, BYTE, (std::uint8_t) f[this->phdrs[phdrs_i].p_offset + y]); // TODO Why not by words
+            const auto buffer = (uint8_t)f[this->phdrs[phdrs_i].p_offset + y];
+            mem->write(&buffer, base_address + y, 1); // TODO Why not by words
         }
     }
 }

@@ -38,6 +38,7 @@
 #ifndef QTMIPS_ADDRESS_H
 #define QTMIPS_ADDRESS_H
 #include <cstdint>
+#include "../utils.h"
 
 using std::uint64_t;
 
@@ -64,12 +65,12 @@ public:
     constexpr uint64_t get_raw() const;
 
     /**
-     * Convert to address indexing by bytes (as minimal access unit)
+     * Convert to address indexing by words
      *  instead of bit indexing.
      *
-     * @return index of addressed byte
+     * @return index of addressed word
      */
-    constexpr uint64_t get_byte_index() const;
+    constexpr uint64_t get_word_index() const;
 
     /**
      * More expressive way to assign null
@@ -85,6 +86,9 @@ public:
      *  with existing value to be the common case.
      */
     constexpr bool is_null() const;
+
+    template<typename T>
+    constexpr bool is_aligned() const;
 
     /* Eq */
     constexpr inline bool operator==(const Address &other) const;
@@ -110,7 +114,7 @@ public:
     constexpr inline Address operator<<(const uint64_t &size) const;
 
     /* Distance arithmetic */
-    constexpr inline uint64_t operator-(const Address &other) const;
+    constexpr inline int64_t operator-(const Address &other) const;
 };
 
 constexpr Address operator"" _addr(unsigned long long literal) {
@@ -127,7 +131,7 @@ constexpr uint64_t Address::get_raw() const {
     return data;
 }
 
-constexpr uint64_t Address::get_byte_index() const {
+constexpr uint64_t Address::get_word_index() const {
     return this->get_raw() >> 2U;
 }
 
@@ -138,6 +142,12 @@ constexpr Address Address::null() {
 
 constexpr bool Address::is_null() const {
     return this->get_raw() == 0;
+}
+
+
+template<typename T>
+constexpr bool Address::is_aligned() const {
+    return is_aligned_generic<typeof(this->data), T>(this->data);
 }
 
 /*
@@ -221,7 +231,7 @@ constexpr Address Address::operator<<(const uint64_t &size) const {
  * Distance arithmetic operators
  */
 
-constexpr uint64_t Address::operator-(const Address &other) const {
+constexpr int64_t Address::operator-(const Address &other) const {
     return this->get_raw() - other.get_raw();
 }
 
