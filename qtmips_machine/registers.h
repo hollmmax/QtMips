@@ -39,9 +39,42 @@
 #include <QObject>
 #include <cstdint>
 #include "memory/address.h"
+#include "register_value.h"
+#include "qtmipsexception.h"
 
 namespace machine {
 
+/**
+ * General-purpose register count
+ */
+static const size_t REGISTER_COUNT = 32;
+
+/**
+ * General-purpose register identifier
+ */
+class RegisterId {
+public:
+    // TODO: Should this constructor allow implicit conversion?
+    inline RegisterId(uint8_t value);
+
+    uint8_t data;
+};
+
+inline RegisterId::RegisterId(uint8_t value) : data(value) {
+    SANITY_ASSERT(
+        data < REGISTER_COUNT,
+        QString("Trying to create register id for out-of-bounds register ") + QString(data)
+   );
+};
+
+inline RegisterId operator"" _reg(unsigned long long value) {
+    return {static_cast<uint8_t>(value)};
+}
+
+
+/**
+ * Register file
+ */
 class Registers : public QObject {
     Q_OBJECT
 public:
@@ -50,14 +83,14 @@ public:
 
     Address read_pc() const; // Return current value of program counter
     Address pc_inc(); // Increment program counter by four bytes
-    Address pc_jmp(std::int32_t offset); // Relative jump from current location in program counter
-    void pc_abs_jmp(machine::Address address); // Absolute jump in program counter (write to pc)
+    Address pc_jmp(int32_t offset); // Relative jump from current location in program counter
+    void pc_abs_jmp(Address address); // Absolute jump in program counter (write to pc)
     void pc_abs_jmp_28(Address address); // Absolute jump in current 256MB section (basically J implementation)
 
-    std::uint32_t read_gp(std::uint8_t i) const; // Read general-purpose register
-    void write_gp(std::uint8_t i, std::uint32_t value); // Write general-purpose register
-    std::uint32_t read_hi_lo(bool hi) const; // true - read HI / false - read LO
-    void write_hi_lo(bool hi, std::uint32_t value);
+    RegisterValue read_gp(RegisterId reg) const; // Read general-purpose register
+    void write_gp(RegisterId reg, RegisterValue value); // Write general-purpose register
+    RegisterValue read_hi_lo(bool hi) const; // true - read HI / false - read LO
+    void write_hi_lo(bool hi, RegisterValue value);
 
     bool operator ==(const Registers &c) const;
     bool operator !=(const Registers &c) const;
@@ -66,14 +99,20 @@ public:
 
 signals:
     void pc_update(Address val);
-    void gp_update(std::uint8_t i, std::uint32_t val);
-    void hi_lo_update(bool hi, std::uint32_t val);
-    void gp_read(std::uint8_t i, std::uint32_t val) const;
-    void hi_lo_read(bool hi, std::uint32_t val) const;
+    void gp_update(RegisterId reg, RegisterValue val);
+    void hi_lo_update(bool hi, RegisterValue val);
+    void gp_read(RegisterId reg, RegisterValue val) const;
+    void hi_lo_read(bool hi, RegisterValue val) const;
 
 private:
-    std::uint32_t gp[31]; // general-purpose registers ($0 is intentionally skipped)
-    std::uint32_t hi, lo;
+    /**
+     * General purpose registers
+     *
+     * Zero register is always zero, but is allocated to avoid off-by-one.
+     * Getters and setters will never try to read or write zero register.
+     */
+    std::array<RegisterValue, REGISTER_COUNT> gp;
+    RegisterValue hi, lo;
     Address pc; // program counter
 };
 }

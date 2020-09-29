@@ -127,7 +127,7 @@ std::uint32_t Cop0State::read_cop0reg(std::uint8_t rd, std::uint8_t sel) const {
     return read_cop0reg(reg);
 }
 
-void Cop0State::write_cop0reg(std::uint8_t rd, std::uint8_t sel, std::uint32_t value) {
+void Cop0State::write_cop0reg(std::uint8_t rd, std::uint8_t sel, RegisterValue value) {
     SANITY_ASSERT(rd < 32, QString("Trying to write to cop0 register ") + QString(rd) + ',' + QString(sel));
     SANITY_ASSERT(sel < 8, QString("Trying to write to cop0 register ") + QString(rd) + ',' + QString(sel));
     enum Cop0Registers reg = cop0reg_map[rd][sel];
@@ -140,9 +140,9 @@ std::uint32_t Cop0State::read_cop0reg(enum Cop0Registers reg) const {
     return (this->*cop0reg_desc[reg].reg_read)(reg);
 }
 
-void Cop0State::write_cop0reg(enum Cop0Registers reg, uint32_t value) {
+void Cop0State::write_cop0reg(enum Cop0Registers reg, RegisterValue value) {
     SANITY_ASSERT(reg != Unsupported && reg < COP0REGS_CNT, QString("Trying to write to cop0 register ") + QString(reg));
-    (this->*cop0reg_desc[reg].reg_write)(reg, value);
+    (this->*cop0reg_desc[reg].reg_write)(reg, value.as_u32());
 }
 
 QString Cop0State::cop0reg_name(enum Cop0Registers reg) {

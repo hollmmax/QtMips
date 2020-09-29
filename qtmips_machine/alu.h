@@ -39,9 +39,10 @@
 #include <cstdint>
 #include <QString>
 #include <QObject>
-#include <registers.h>
 
 #include "machinedefs.h"
+#include "registers.h"
+#include "register_value.h"
 
 namespace machine {
 
@@ -54,8 +55,8 @@ namespace machine {
 // sz: This is value directly from instruction it self used in filed extract instructions
 // regs: Registers used. We need direct access to lo and hi registers (those are not accessed from core it self but from alu directly
 // Returned value is commonly saved to rt/rd or any other way passed trough core
-std::uint32_t alu_operate(enum AluOp operation, std::uint32_t s,
-                          std::uint32_t t, std::uint8_t sa, std::uint8_t sz,
+RegisterValue alu_operate(enum AluOp operation, RegisterValue s,
+                          RegisterValue t, std::uint8_t sa, std::uint8_t sz,
                           Registers *regs, bool &discard, ExceptionCause &excause);
 
 }

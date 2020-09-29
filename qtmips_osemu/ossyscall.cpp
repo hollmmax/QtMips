@@ -964,10 +964,10 @@ bool OsSyscallExceptionHandler::handle_exception(Core *core, Registers *regs,
                                                  ExceptionCause excause, Address inst_addr,
                                                  Address next_addr, Address jump_branch_pc,
                                                  bool in_delay_slot, Address mem_ref_addr) {
-    unsigned int syscall_num = regs->read_gp(2);
+    unsigned int syscall_num = regs->read_gp(2).as_u32();
     const mips_syscall_desc_t *sdesc;
-    std::uint32_t a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0, a7 = 0, a8 = 0;
-    Address sp = Address(regs->read_gp(29));
+    RegisterValue a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0, a7 = 0, a8 = 0;
+    Address sp = Address(regs->read_gp(29).as_u32());
     std::uint32_t result;
     int status;
 
@@ -1021,12 +1021,15 @@ bool OsSyscallExceptionHandler::handle_exception(Core *core, Registers *regs,
 #if 1
     printf("Syscall %s number %d/0x%x a1 %ld a2 %ld a3 %ld a4 %ld\n",
            sdesc->name, syscall_num, syscall_num,
-           (unsigned long)a1, (unsigned long)a2,
-           (unsigned long)a3, (unsigned long)a4);
+           a1.as_u64(), a2.as_u64(), a3.as_u64(), a4.as_u64()
+    );
 
 #endif
     status = (this->*sdesc->handler)(result, core, syscall_num,
-                                      a1, a2, a3, a4, a5, a6, a7, a8);
+                                      a1.as_u32(), a2.as_u32(), a3.as_u32(),
+                                      a4.as_u32(), a5.as_u32(), a6.as_u32(),
+                                      a7.as_u32(), a8.as_u32()
+                                    );
     if (known_syscall_stop)
         emit core->stop_on_exception_reached();
 
@@ -1037,7 +1040,7 @@ bool OsSyscallExceptionHandler::handle_exception(Core *core, Registers *regs,
         regs->write_gp(2, result);
 
     return true;
-};
+}
 
 std::int32_t OsSyscallExceptionHandler::write_mem(machine::FrontendMemory *mem, Address addr,
                                                   const QVector<std::uint8_t> &data, std::uint32_t count) {
@@ -1615,8 +1618,8 @@ int OsSyscallExceptionHandler::do_spim_sbrk(std::uint32_t &result, Core *core,
     (void)a1; (void)a2; (void)a3; (void)a4; (void)a5; (void)a6; (void)a7; (void)a8;
 
     std::uint32_t increment = a1;
-    increment = (increment + 15) & ~15;;
-    brk_limit = (brk_limit + 15) & ~15;;
+    increment = (increment + 15) & ~15;
+    brk_limit = (brk_limit + 15) & ~15;
     result = brk_limit;
     brk_limit += increment;
 

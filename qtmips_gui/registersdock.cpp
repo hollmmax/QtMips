@@ -137,10 +137,11 @@ void RegistersDock::setup(machine::QtMipsMachine *machine) {
 
     // Load values
     labelVal(pc, regs->read_pc().get_raw());
-    labelVal(hi, regs->read_hi_lo(true));
-    labelVal(lo, regs->read_hi_lo(false));
-    for (int i = 0; i < 32; i++)
-        labelVal(gp[i], regs->read_gp(i));
+    labelVal(hi, regs->read_hi_lo(true).as_u32());
+    labelVal(lo, regs->read_hi_lo(false).as_u32());
+    for (int i = 0; i < 32; i++) {
+        labelVal(gp[i], regs->read_gp(i).as_u32());
+    }
 
     connect(regs, &machine::Registers::pc_update, this, &RegistersDock::pc_changed);
     connect(regs, &machine::Registers::gp_update, this, &RegistersDock::gp_changed);
