@@ -39,10 +39,10 @@
 #include <QObject>
 #include <QTimer>
 #include <cstdint>
-#include <qtmipsexception.h>
-#include <machineconfig.h>
-#include <registers.h>
-#include <core.h>
+#include "qtmipsexception.h"
+#include "machineconfig.h"
+#include "registers.h"
+#include "core.h"
 #include "memory/cache.h"
 #include "memory/mmu.h"
 #include "memory/backend/peripheral.h"
@@ -50,7 +50,7 @@
 #include "memory/backend/peripspiled.h"
 #include "memory/backend/lcddisplay.h"
 #include "memory/backend/memory.h"
-#include <symboltable.h>
+#include "symboltable.h"
 
 namespace machine {
 
