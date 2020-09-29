@@ -163,16 +163,16 @@ void Reporter::report() {
         cout << endl;
         for (int i = 0; i < 32; i++) {
             cout << "R" << i << ":0x";
-            out_hex(cout, machine->registers()->read_gp(i), 8);
+            out_hex(cout, machine->registers()->read_gp(i).as_u64(), 8);
             if (i != 31)
                 cout << " ";
             else
                 cout << endl;
         }
         cout << "HI:0x";
-        out_hex(cout, machine->registers()->read_hi_lo(true), 8);
+        out_hex(cout, machine->registers()->read_hi_lo(true).as_u64(), 8);
         cout << " LO:0x";
-        out_hex(cout, machine->registers()->read_hi_lo(false), 8);
+        out_hex(cout, machine->registers()->read_hi_lo(false).as_u64(), 8);
         cout << endl;
         for (int i = 1; i < Cop0State::COP0REGS_CNT; i++) {
             cout << Cop0State::cop0reg_name((Cop0State::Cop0Registers)i).toLocal8Bit().data() << ":0x";
