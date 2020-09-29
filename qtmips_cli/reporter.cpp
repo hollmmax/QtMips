@@ -47,9 +47,9 @@ Reporter::Reporter(QCoreApplication *app, QtMipsMachine *machine) : QObject() {
     this->app = app;
     this->machine = machine;
 
-    connect(machine, SIGNAL(program_exit()), this, SLOT(machine_exit()));
-    connect(machine, SIGNAL(program_trap(machine::QtMipsException&)), this, SLOT(machine_trap(machine::QtMipsException&)));
-    connect(machine->core(), SIGNAL(stop_on_exception_reached()), this, SLOT(machine_exception_reached()));
+    connect(machine, &QtMipsMachine::program_exit, this, &Reporter::machine_exit);
+    connect(machine, &QtMipsMachine::program_trap, this, &Reporter::machine_trap);
+    connect(machine->core(), &Core::stop_on_exception_reached, this, &Reporter::machine_exception_reached);
 
     e_regs = false;
     e_cache_stats = false;
@@ -163,16 +163,16 @@ void Reporter::report() {
         cout << endl;
         for (int i = 0; i < 32; i++) {
             cout << "R" << i << ":0x";
-            out_hex(cout, machine->registers()->read_gp(i), 8);
+            out_hex(cout, machine->registers()->read_gp(i).as_u64(), 8);
             if (i != 31)
                 cout << " ";
             else
                 cout << endl;
         }
         cout << "HI:0x";
-        out_hex(cout, machine->registers()->read_hi_lo(true), 8);
+        out_hex(cout, machine->registers()->read_hi_lo(true).as_u64(), 8);
         cout << " LO:0x";
-        out_hex(cout, machine->registers()->read_hi_lo(false), 8);
+        out_hex(cout, machine->registers()->read_hi_lo(false).as_u64(), 8);
         cout << endl;
         for (int i = 1; i < Cop0State::COP0REGS_CNT; i++) {
             cout << Cop0State::cop0reg_name((Cop0State::Cop0Registers)i).toLocal8Bit().data() << ":0x";
@@ -212,7 +212,10 @@ void Reporter::report() {
             end = 0xffffffff;
         for (std::int32_t addr = start; addr < end; addr += 4) {
             out << "0x";
-            out_hex(out, machine->memory()->read(addr, WORD), 8);
+            // TODO not nice
+            uint32_t buffer;
+            machine->memory()->read(addr, &buffer, sizeof(buffer), false);
+            out_hex(out, buffer, 8);
             out << endl;
         }
         out.close();

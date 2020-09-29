@@ -202,8 +202,8 @@ void Core::set_c0_userlocal(std::uint32_t address) { // TODO I dont understand s
 
 enum ExceptionCause  Core::memory_special(enum AccessControl memctl,
                                           int mode, bool memread, bool memwrite,
-                                          std::uint32_t &towrite_val,
-                                          std::uint32_t rt_value, Address mem_addr) {
+                                          RegisterValue towrite_val,
+                                          RegisterValue rt_value, Address mem_addr) {
     std::uint32_t mask;
     std::uint32_t shift;
     std::uint32_t temp;
@@ -230,13 +230,13 @@ enum ExceptionCause  Core::memory_special(enum AccessControl memctl,
             shift = (3 - (mem_addr.get_raw() & 3)) << 3;
             mask = 0xffffffff << shift;
             temp = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            temp = (temp & ~mask) | (rt_value << shift);
+            temp = (temp & ~mask) | (rt_value.as_u32() << shift);
             mem_data->write_ctl(AC_WORD, mem_addr & ~3, temp);
         } else {
             shift = (3 - (mem_addr.get_raw() & 3)) << 3;
             mask = 0xffffffff >> shift;
             towrite_val = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            towrite_val = (towrite_val >> shift) | (rt_value & ~mask);
+            towrite_val = (towrite_val.as_u32() >> shift) | (rt_value.as_u32() & ~mask);
         }
         break;
     case AC_WORD_LEFT:
@@ -244,13 +244,13 @@ enum ExceptionCause  Core::memory_special(enum AccessControl memctl,
             shift = (mem_addr.get_raw() & 3) << 3;
             mask = 0xffffffff >> shift;
             temp = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            temp = (temp & ~mask) | (rt_value >> shift);
+            temp = (temp & ~mask) | (rt_value.as_u32() >> shift);
             mem_data->write_ctl(AC_WORD, mem_addr & ~3, temp);
         } else {
             shift = (mem_addr.get_raw() & 3) << 3;
             mask = 0xffffffff << shift;
             towrite_val = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            towrite_val = (towrite_val << shift) | (rt_value & ~mask);
+            towrite_val = (towrite_val.as_u32() << shift) | (rt_value.as_u32() & ~mask);
         }
         break;
     default:
@@ -304,8 +304,8 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
     std::uint8_t num_rs = dt.inst.rs();
     std::uint8_t num_rt = dt.inst.rt();
     std::uint8_t num_rd = dt.inst.rd();
-    std::uint32_t val_rs = regs->read_gp(num_rs);
-    std::uint32_t val_rt = regs->read_gp(num_rt);
+    RegisterValue val_rs = regs->read_gp(num_rs);
+    RegisterValue val_rt = regs->read_gp(num_rt);
     std::uint32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
     bool regd = flags & IMF_REGD;
@@ -330,8 +330,8 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
     emit decode_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_decoded(dt.inst, dt.inst_addr, excause, dt.is_valid);
     emit decode_instruction_value(dt.inst.data());
-    emit decode_reg1_value(val_rs);
-    emit decode_reg2_value(val_rt);
+    emit decode_reg1_value(val_rs.as_u32());
+    emit decode_reg2_value(val_rt.as_u32());
     emit decode_immediate_value(immediate_val);
     emit decode_regw_value((bool)(flags & IMF_REGWRITE));
     emit decode_memtoreg_value((bool)(flags & IMF_MEMREAD));
@@ -392,12 +392,12 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
 struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
     bool discard;
     enum ExceptionCause excause = dt.excause;
-    std::uint32_t alu_val = 0;
+    RegisterValue alu_val = 0;
 
     // Handle conditional move (we have to change regwrite signal if conditional is not met)
     bool regwrite = dt.regwrite;
 
-    std::uint32_t alu_sec = dt.val_rt;
+    RegisterValue alu_sec = dt.val_rt;
     if (dt.alusrc)
         alu_sec = dt.immediate_val; // Sign or zero extend immediate value
 
@@ -445,9 +445,9 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
                 throw QTMIPS_EXCEPTION(UnsupportedInstruction, "Cop0 not supported", "setup Cop0State");
             alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
             if (dt.inst.funct() & 0x20)
-                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt | 1);
+                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() | 1);
             else
-                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt & ~1);
+                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() & ~1U);
             break;
         case ALU_OP_ERET:
             regs->pc_abs_jmp(Address(cop0state->read_cop0reg(Cop0State::EPC)));
@@ -459,11 +459,11 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
         }
     }
 
-    emit execute_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit execute_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_executed(dt.inst, dt.inst_addr, excause, dt.is_valid);
-    emit execute_alu_value(alu_val);
-    emit execute_reg1_value(dt.val_rs);
-    emit execute_reg2_value(dt.val_rt);
+    emit execute_alu_value(alu_val.as_u32());
+    emit execute_reg1_value(dt.val_rs.as_u32());
+    emit execute_reg2_value(dt.val_rt.as_u32());
     emit execute_reg1_ff_value(dt.ff_rs);
     emit execute_reg2_ff_value(dt.ff_rt);
     emit execute_immediate_value(dt.immediate_val);
@@ -502,8 +502,8 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
 }
 
 struct Core::dtMemory Core::memory(const struct dtExecute &dt) {
-    std::uint32_t towrite_val = dt.alu_val;
-    Address mem_addr = Address(dt.alu_val);
+    RegisterValue towrite_val = dt.alu_val;
+    Address mem_addr = Address(dt.alu_val.as_u32());
     enum ExceptionCause excause = dt.excause;
     bool memread = dt.memread;
     bool memwrite = dt.memwrite;
@@ -527,11 +527,11 @@ struct Core::dtMemory Core::memory(const struct dtExecute &dt) {
         regwrite = false;
     }
 
-    emit memory_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit memory_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_memory(dt.inst, dt.inst_addr, dt.excause, dt.is_valid);
-    emit memory_alu_value(dt.alu_val);
-    emit memory_rt_value(dt.val_rt);
-    emit memory_mem_value(memread ? towrite_val : 0);
+    emit memory_alu_value(dt.alu_val.as_u32());
+    emit memory_rt_value(dt.val_rt.as_u32());
+    emit memory_mem_value(memread ? towrite_val.as_u32() : 0);
     emit memory_regw_value(regwrite);
     emit memory_memtoreg_value(dt.memread);
     emit memory_memread_value(dt.memread);
@@ -555,9 +555,9 @@ struct Core::dtMemory Core::memory(const struct dtExecute &dt) {
 }
 
 void Core::writeback(const struct dtMemory &dt) {
-    emit writeback_inst_addr_value(dt.is_valid? dt.inst_addr: STAGEADDR_NONE);
+    emit writeback_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_writeback(dt.inst, dt.inst_addr, dt.excause, dt.is_valid);
-    emit writeback_value(dt.towrite_val);
+    emit writeback_value(dt.towrite_val.as_u32());
     emit writeback_memtoreg_value(dt.memtoreg);
     emit writeback_regw_value(dt.regwrite);
     emit writeback_regw_num_value(dt.rwrite);
@@ -575,7 +575,7 @@ bool Core::handle_pc(const struct dtDecode &dt) {
             emit fetch_jump_value(true);
             emit fetch_jump_reg_value(false);
         } else {
-            regs->pc_abs_jmp(Address(dt.val_rs));
+            regs->pc_abs_jmp(Address(dt.val_rs.as_u32()));
             emit fetch_jump_value(false);
             emit fetch_jump_reg_value(true);
         }
@@ -585,11 +585,11 @@ bool Core::handle_pc(const struct dtDecode &dt) {
 
     if (dt.branch) {
         if (dt.bjr_req_rt) {
-            branch = dt.val_rs == dt.val_rt;
+            branch = dt.val_rs.as_u32() == dt.val_rt.as_u32();
         } else if (!dt.bgt_blez) {
-            branch = (std::int32_t)dt.val_rs < 0;
+            branch = dt.val_rs.as_i32() < 0;
         } else {
-            branch = (std::int32_t)dt.val_rs <= 0;
+            branch = dt.val_rs.as_i32() <= 0;
         }
 
         if (dt.bj_not)
@@ -690,8 +690,7 @@ CoreSingle::CoreSingle(Registers *regs, FrontendMemory *mem_program, FrontendMem
 }
 
 CoreSingle::~CoreSingle() {
-    if (dt_f != nullptr)
-        delete dt_f;
+    delete dt_f;
 }
 
 void CoreSingle::do_step(bool skip_break) {

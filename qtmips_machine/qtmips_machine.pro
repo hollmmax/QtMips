@@ -49,8 +49,10 @@ HEADERS += \
     cop0state.h \
     memory/address.h \
     memory/cache.h \
+    memory/cache_policy.h \
+    memory/cache_types.h \
+    memory/memory_utils.h \
     memory/mmu.h \
-    memory/access_size.h \
     memory/frontend_memory.h \
     memory/backend/memory.h \
     memory/backend/peripspiled.h \

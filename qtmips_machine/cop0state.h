@@ -39,8 +39,9 @@
 #include <QObject>
 #include <QString>
 #include <cstdint>
-#include <machinedefs.h>
+#include "machinedefs.h"
 #include "memory/address.h"
+#include "register_value.h"
 
 namespace machine {
 
@@ -77,8 +78,8 @@ public:
 
     std::uint32_t read_cop0reg(enum Cop0Registers reg) const;
     std::uint32_t read_cop0reg(std::uint8_t rd, std::uint8_t sel) const; // Read coprocessor 0 register
-    void write_cop0reg(enum Cop0Registers reg, std::uint32_t value);
-    void write_cop0reg(std::uint8_t reg, std::uint8_t sel, std::uint32_t value); // Write coprocessor 0 register
+    void write_cop0reg(enum Cop0Registers reg, RegisterValue value);
+    void write_cop0reg(std::uint8_t reg, std::uint8_t sel, RegisterValue value); // Write coprocessor 0 register
     static QString cop0reg_name(enum Cop0Registers reg);
 
     bool operator ==(const Cop0State &c) const;

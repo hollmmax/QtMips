@@ -38,25 +38,23 @@
 
 #include "../machineconfig.h"
 #include "frontend_memory.h"
+#include "cache_types.h"
+#include "cache_policy.h"
 
 #include <cstdint>
 #include <ctime>
 
-
 namespace machine {
-struct cache_data {
-    bool valid, dirty;
-    std::uint32_t tag;
-    std::uint32_t *data;
-};
 
-struct CacheLocation {
-    uint32_t row;
-    uint32_t col;
-    uint32_t tag;
-};
+constexpr size_t BLOCK_SIZE = sizeof(uint32_t);
 
-
+/**
+ * Terminology:
+ *  - Cache contains a table in `dt` for each degree of associativity.
+ *  - Each table has `rows` a.k.a. `sets`.
+ *  - Each sets consist of blocks of type `uint32_t`. Size of block
+ *    is only implementation detail, important is size of a set.
+ */
 class Cache : public FrontendMemory {
 
     Q_OBJECT
@@ -72,11 +70,17 @@ public:
 
     ~Cache() override;
 
-    bool write(Address address, std::uint32_t value) override;
+    bool write(
+        Address destination,
+        const void *source,
+        size_t size
+    ) override;
 
-    std::uint32_t read( // TODO
-        Address address,
-        bool debug_access = false
+    void read(
+        Address source,
+        void *destination,
+        size_t size,
+        bool debug_access
     ) const override;
 
     std::uint32_t get_change_counter() const override;
@@ -127,20 +131,17 @@ signals:
 
 private:
     CacheConfig cache_config;
-    FrontendMemory *mem;
+    FrontendMemory *mem = nullptr;
     unsigned access_pen_r, access_pen_w, access_pen_b;
-    Address uncached_start = Address(0); // Todo this is wierd
-    Address uncached_last = Address(0);
+    Address uncached_start = 0x0_addr;
+    Address uncached_last = 0x0_addr;
 
     mutable struct cache_data **dt;
 
-    union {
-        unsigned int **lru; // Access time
-        unsigned **lfu;     // Access count
-    } replc;                // Data used for replacement policy
+    CachePolicy* replacement_policy;
 
     mutable unsigned hit_read, miss_read, hit_write,
-        miss_write; // Hit and miss counters
+        miss_write = 0; // Hit and miss counters
     mutable unsigned mem_reads, mem_writes, burst_reads,
         burst_writes; // Dirrect access to memory
     mutable std::uint32_t change_counter;
@@ -149,9 +150,10 @@ private:
 
     bool access(
         Address address,
-        std::uint32_t *data,
+        void *buffer,
         bool write,
-        std::uint32_t value = 0) const;
+        size_t size
+    ) const;
 
     void kick(unsigned associativity_index, unsigned row) const;
 
@@ -159,25 +161,13 @@ private:
 
     void update_statistics() const;
 
-    inline void compute_row_col_tag(
-        std::uint32_t &row,
-        std::uint32_t &col,
-        std::uint32_t &tag,
-        Address address) const;
-
     constexpr inline CacheLocation
-    compute_location(const Address address) const {
-        uint32_t byte_index = address.get_byte_index();
-        std::uint32_t ssize =
-            cache_config.blocks() * cache_config.sets(); // Todo: size of what
-        uint32_t index = byte_index % ssize;             // TODO: index of what
-        return {
-            .row = index / cache_config.blocks(),
-            .col = index % cache_config.blocks(),
-            .tag = byte_index / ssize,
-        };
-    }
+    compute_location(const Address address) const;
+
+    size_t search_cache_line(const CacheLocation &loc) const;
+
 };
+
 } // namespace machine
 
 #endif // CACHE_H

@@ -70,7 +70,7 @@ HexLineEdit::HexLineEdit(QWidget *parent, int digits, int base, QString prefix):
 
     setInputMask(mask);
 
-    connect(this, SIGNAL(editingFinished()), this, SLOT(on_edit_finished()));
+    connect(this, &QLineEdit::editingFinished, this, &HexLineEdit::on_edit_finished);
 
     set_value(0);
 }

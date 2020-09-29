@@ -67,8 +67,18 @@ public slots:
     void green_knob_push(bool state);
     void blue_knob_push(bool state);
 public:
-    bool write(Offset offset, AccessSize size, AccessItem item) override;
-    AccessItem read(Offset offset, AccessSize size, bool debug_read) const override;
+    bool write(
+        const void *item,
+        Offset destination,
+        size_t count
+    ) override;
+
+    void read(
+        Offset source,
+        void *destination,
+        size_t count,
+        bool debug_read
+    ) const override;
 
 //    std::uint32_t read(std::uint32_t address, bool debug_access = false) const override;
 //    virtual std::uint32_t get_change_counter() const override;

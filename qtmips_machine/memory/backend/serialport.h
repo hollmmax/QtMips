@@ -63,8 +63,18 @@ public slots:
     void rx_queue_check() const;
 
 public:
-    bool write(Offset offset, AccessSize size, AccessItem value) override;
-    AccessItem read(Offset offset, AccessSize size, bool debug_read) const override;
+    bool write(
+        const void *source,
+        Offset destination,
+        size_t count
+    ) override;
+
+    void read(
+        Offset source,
+        void *destination,
+        size_t count,
+        bool debug_read
+    ) const override;
 
 private:
     void rx_queue_check_internal() const;

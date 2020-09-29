@@ -7,9 +7,9 @@ GoToSymbolDialog::GoToSymbolDialog(QWidget *parent, QStringList &symlist) :
 {
     ui->setupUi(this);
 
-    connect(ui->pushShowProg, SIGNAL(clicked()), this, SLOT(show_prog()));
-    connect(ui->pushShowMem, SIGNAL(clicked()), this, SLOT(show_mem()));
-    connect(ui->pushClose, SIGNAL(clicked()), this, SLOT(close()));
+    connect(ui->pushShowProg, &QAbstractButton::clicked, this, &GoToSymbolDialog::show_prog);
+    connect(ui->pushShowMem, &QAbstractButton::clicked, this, &GoToSymbolDialog::show_mem);
+    connect(ui->pushClose, &QAbstractButton::clicked, this, &QWidget::close);
 
     ui->listSymbols->addItems(symlist);
 }
@@ -22,11 +22,11 @@ GoToSymbolDialog::~GoToSymbolDialog()
 void GoToSymbolDialog::show_prog() {
     std::uint32_t address = 0;
     emit obtain_value_for_name(address, ui->listSymbols->currentItem()->text());
-    emit program_focus_addr(address);
+    emit program_focus_addr(machine::Address(address));
 }
 
 void GoToSymbolDialog::show_mem() {
     std::uint32_t address = 0;
     emit obtain_value_for_name(address, ui->listSymbols->currentItem()->text());
-    emit memory_focus_addr(address);
+    emit memory_focus_addr(machine::Address(address));
 }

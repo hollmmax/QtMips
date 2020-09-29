@@ -94,7 +94,7 @@ void Cop0Dock::setup(machine::QtMipsMachine *machine) {
             this, &Cop0Dock::cop0reg_changed);
     connect(cop0state, &machine::Cop0State::cop0reg_read,
             this, &Cop0Dock::cop0reg_read);
-    connect(machine, SIGNAL(tick()), this, SLOT(clear_highlights()));
+    connect(machine, &machine::QtMipsMachine::tick, this, &Cop0Dock::clear_highlights);
 }
 
 void Cop0Dock::cop0reg_changed(enum machine::Cop0State::Cop0Registers reg, std::uint32_t val) {

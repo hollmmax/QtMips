@@ -45,10 +45,10 @@
 
 ProgramTableView::ProgramTableView(QWidget *parent, QSettings *settings) : Super(parent) {
     setItemDelegate(new HintTableDelegate);
-    connect(verticalScrollBar() , SIGNAL(valueChanged(int)),
-            this, SLOT(adjust_scroll_pos_check()));
-    connect(this , SIGNAL(adjust_scroll_pos_queue()),
-            this, SLOT(adjust_scroll_pos_process()), Qt::QueuedConnection);
+    connect(verticalScrollBar() , &QAbstractSlider::valueChanged,
+            this, &ProgramTableView::adjust_scroll_pos_check);
+    connect(this , &ProgramTableView::adjust_scroll_pos_queue,
+            this, &ProgramTableView::adjust_scroll_pos_process, Qt::QueuedConnection);
     this->settings = settings;
     initial_address = machine::Address(settings->value("ProgramViewAddr0", 0).toULongLong());
     adjust_scroll_pos_in_progress = false;
@@ -149,11 +149,11 @@ void ProgramTableView::adjust_scroll_pos_process() {
         setCurrentIndex(m->index(prev_index.row() + row - prev_row,
                         prev_index.column()));
         emit m->update_all();
-    } while(0);
+    } while(false);
     m->get_row_address(address, rowAt(0));
     if (need_addr0_save)
         addr0_save_change(address);
-    emit address_changed(address);
+    emit address_changed(address.get_raw());
 }
 
 void ProgramTableView::resizeEvent(QResizeEvent *event) {

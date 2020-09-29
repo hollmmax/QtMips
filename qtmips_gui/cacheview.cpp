@@ -50,11 +50,11 @@
 using namespace std;
 
 CacheAddressBlock::CacheAddressBlock(const machine::Cache *cache, unsigned width) {
-    rows = cache->get_config().sets();
-    columns = cache->get_config().blocks();
-    s_row = cache->get_config().sets() > 1 ? sqrt(cache->get_config().sets()) : 0;
+    rows = cache->get_config().set_count();
+    columns = cache->get_config().block_count();
+    s_row = cache->get_config().set_count() > 1 ? sqrt(cache->get_config().set_count()) : 0;
     this->width = width;
-    s_col = cache->get_config().blocks() > 1 ? sqrt(cache->get_config().blocks()) : 0;
+    s_col = cache->get_config().block_count() > 1 ? sqrt(cache->get_config().block_count()) : 0;
     s_tag = 30 - s_row - s_col; // 32 bits - 2 unused  and then every bit used for different index
     this->width = width;
 
@@ -62,8 +62,7 @@ CacheAddressBlock::CacheAddressBlock(const machine::Cache *cache, unsigned width
     row = 0;
     col = 0;
 
-    connect(cache, SIGNAL(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)),
-            this, SLOT(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)));
+    connect(cache, &machine::Cache::cache_update, this, &CacheAddressBlock::cache_update);
 }
 
 QRectF CacheAddressBlock::boundingRect() const {
@@ -156,8 +155,8 @@ void CacheAddressBlock::cache_update(unsigned associat, unsigned set, unsigned c
 CacheViewBlock::CacheViewBlock(const machine::Cache *cache, unsigned block , bool last) : QGraphicsObject(nullptr) {
     islast = last;
     this->block = block;
-    rows = cache->get_config().sets();
-    columns = cache->get_config().blocks();
+    rows = cache->get_config().set_count();
+    columns = cache->get_config().block_count();
     curr_row = 0;
     last_set = 0;
     last_col = 0;
@@ -225,8 +224,7 @@ CacheViewBlock::CacheViewBlock(const machine::Cache *cache, unsigned block , boo
     box = l_data->boundingRect();
     l_data->setPos(wd + (columns*DATA_WIDTH - box.width())/2 , -1 - box.height());
 
-    connect(cache, SIGNAL(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)),
-            this, SLOT(cache_update(uint,uint,uint,bool,bool,std::uint32_t,const std::uint32_t*,bool)));
+    connect(cache, &machine::Cache::cache_update, this, &CacheViewBlock::cache_update);
 }
 
 CacheViewBlock::~CacheViewBlock() {

@@ -118,7 +118,7 @@ void configure_cache(CacheConfig &cacheconf, QStringList cachearg, QString which
     cacheconf.set_sets(pieces.at(0).toLong());
     cacheconf.set_blocks(pieces.at(1).toLong());
     cacheconf.set_associativity(pieces.at(2).toLong());
-    if (cacheconf.sets() == 0 || cacheconf.blocks() == 0 || cacheconf.associativity() == 0) {
+    if (cacheconf.set_count() == 0 || cacheconf.block_count() == 0 || cacheconf.associativity() == 0) {
         std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache cannot have zero component." << std::endl;
         exit(1);
     }
@@ -325,7 +325,7 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
                 cout << "cannot parse load range data." << endl;
                 exit(1);
             }
-            machine.memory_rw()->write(addr, WORD, val); // TODO: Is this really the right offset
+            machine.memory_rw()->write(&val, addr, sizeof(val)); // TODO: Is this really the right offset
             addr += 4;
         }
         in.close();
@@ -341,8 +341,7 @@ bool assemble(QtMipsMachine &machine, MsgReport &msgrep, QString filename) {
     machine.cache_sync();
     SimpleAsm sasm;
 
-    sasm.connect(&sasm, SIGNAL(report_message(messagetype::Type,QString,int,int,QString,QString)),
-            &msgrep, SLOT(report_message(messagetype::Type,QString,int,int,QString,QString)));
+    sasm.connect(&sasm, &SimpleAsm::report_message, &msgrep, &MsgReport::report_message);
 
     sasm.setup(mem, &symtab, 0x80020000_addr);
 

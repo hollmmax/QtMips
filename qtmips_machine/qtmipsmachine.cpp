@@ -85,10 +85,10 @@ QtMipsMachine::QtMipsMachine(const MachineConfig &cc, bool load_symtab, bool loa
 
     unsigned int min_cache_row_size = 16;
     if (cc.cache_data().enabled())
-        min_cache_row_size = cc.cache_data().blocks() * 4;
+        min_cache_row_size = cc.cache_data().block_count() * 4;
     if (cc.cache_program().enabled() &&
-        cc.cache_program().blocks() < min_cache_row_size)
-        min_cache_row_size = cc.cache_program().blocks() * 4;
+        cc.cache_program().block_count() < min_cache_row_size)
+        min_cache_row_size = cc.cache_program().block_count() * 4;
 
     cop0st = new Cop0State();
 
@@ -98,12 +98,12 @@ QtMipsMachine::QtMipsMachine(const MachineConfig &cc, bool load_symtab, bool loa
     else
         cr = new CoreSingle(regs, cch_program, cch_data, cc.delay_slot(),
                             min_cache_row_size, cop0st);
-    connect(this, SIGNAL(set_interrupt_signal(uint,bool)),
-            cop0st, SLOT(set_interrupt_signal(uint,bool)));
+    connect(this, &QtMipsMachine::set_interrupt_signal,
+            cop0st, &Cop0State::set_interrupt_signal);
 
     run_t = new QTimer(this);
     set_speed(0); // In default run as fast as possible
-    connect(run_t, SIGNAL(timeout()), this, SLOT(step_timer()));
+    connect(run_t, &QTimer::timeout, this, &QtMipsMachine::step_timer);
 
     for (int i = 0; i < EXCAUSE_COUNT; i++) {
          if (i != EXCAUSE_INT && i != EXCAUSE_BREAK && i != EXCAUSE_HWBREAK) {

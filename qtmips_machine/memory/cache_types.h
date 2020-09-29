@@ -35,33 +35,26 @@
  *
  ******************************************************************************/
 
-#ifndef QTMIPS_MACHINE_ACCESS_SIZE_H
-#define QTMIPS_MACHINE_ACCESS_SIZE_H
+#ifndef QTMIPS_CACHE_TYPES_H
+#define QTMIPS_CACHE_TYPES_H
 
-enum AccessSize {
-    BYTE,
-    HWORD,
-    WORD,
-    DWORD,
+#include <cstdint>
+
+namespace machine {
+
+struct CacheLocation {
+    uint32_t row;
+    uint32_t col;
+    uint32_t tag;
+    uint32_t subblock; //> Index within a single cache block
 };
 
-//union AccessItem {
-//    uint8_t byte;
-//    uint16_t hword;
-//    uint32_t word;
-//    uint64_t dword;
-//
-//    AccessItem(uint8_t i) : byte(i) {}
-//    AccessItem(uint16_t i) : hword(i) {}
-//    AccessItem(uint32_t i) : word(i) {}
-//    AccessItem(uint64_t i) : dword(i) {}
-//};
-
-typedef uint32_t AccessItem; // TODO: Temporary
-
-template<AccessSize SIZE>
-struct Access {
-    AccessItem item;
+struct cache_data {
+    bool valid, dirty;
+    uint32_t tag;
+    uint32_t *data;
 };
 
-#endif//QTMIPS_MACHINE_ACCESS_SIZE_H
+}
+
+#endif //QTMIPS_CACHE_TYPES_H

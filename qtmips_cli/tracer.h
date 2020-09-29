@@ -54,7 +54,7 @@ public:
     void writeback();
     // Trace registers
     void reg_pc();
-    void reg_gp(std::uint8_t i);
+    void reg_gp(machine::RegisterId i);
     void reg_lo();
     void reg_hi();
 
@@ -65,9 +65,9 @@ private slots:
     void instruction_memory(const machine::Instruction &inst, machine::Address inst_addr, machine::ExceptionCause excause, bool valid);
     void instruction_writeback(const machine::Instruction &inst, machine::Address inst_addr, machine::ExceptionCause excause, bool valid);
 
-    void regs_pc_update(std::uint32_t val);
-    void regs_gp_update(std::uint8_t i, std::uint32_t val);
-    void regs_hi_lo_update(bool hi, std::uint32_t val) const;
+    void regs_pc_update(machine::Address val);
+    void regs_gp_update(machine::RegisterId i, machine::RegisterValue val);
+    void regs_hi_lo_update(bool hi, machine::RegisterValue val) const;
 
 private:
     machine::QtMipsMachine *machine;

@@ -79,8 +79,8 @@ public:
     void set_write_policy(enum WritePolicy);
 
     bool enabled() const;
-    unsigned sets() const;
-    unsigned blocks() const;
+    unsigned set_count() const;
+    unsigned block_count() const;
     unsigned associativity() const;
     enum ReplacementPolicy replacement_policy() const;
     enum WritePolicy write_policy() const;

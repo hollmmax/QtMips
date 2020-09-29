@@ -37,34 +37,46 @@
 
 using namespace machine;
 
-SimplePeripheral::SimplePeripheral() {
+SimplePeripheral::SimplePeripheral() = default;
 
-}
+SimplePeripheral::~SimplePeripheral() = default;
 
-SimplePeripheral::~SimplePeripheral() {
+bool SimplePeripheral::write(
+    const void *source,
+    Offset offset,
+    size_t count
+) {
+    UNIMPLEMENTED
+    // TODO switch to new api
 
-}
-
-bool SimplePeripheral::write(Offset offset, AccessSize size, AccessItem value) {
 #if 0
     printf("SimplePeripheral::wword address 0x%08lx data 0x%08lx\n",
            (unsigned long)address, (unsigned long)value);
 #endif
-    emit write_notification(offset, value);
+//    emit write_notification(offset, source);
 
     return true;
 }
 
-AccessItem SimplePeripheral::read(Offset offset, AccessSize size, bool debug_read) const {
+void SimplePeripheral::read(
+    Offset source,
+    void *destination,
+    size_t count,
+    bool debug_read
+) const {
     (void)debug_read;
+
+    UNIMPLEMENTED
+    // TODO switch to new api
+
     std::uint32_t value = 0x12345678;
 #if 0
     printf("SimplePeripheral::rword address 0x%08lx\n",
            (unsigned long)address);
 #endif
 
-    emit read_notification(offset, &value);
+    emit read_notification(source, &value);
 
-    return value;
+//    return value;
 }
 
