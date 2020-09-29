@@ -153,7 +153,7 @@ void ProgramTableView::adjust_scroll_pos_process() {
     m->get_row_address(address, rowAt(0));
     if (need_addr0_save)
         addr0_save_change(address);
-    emit address_changed(address);
+    emit address_changed(address.get_raw());
 }
 
 void ProgramTableView::resizeEvent(QResizeEvent *event) {
