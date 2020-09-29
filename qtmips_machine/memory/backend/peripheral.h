@@ -56,9 +56,18 @@ signals:
     void read_notification(std::uint32_t address, std::uint32_t *value) const;
 
 public:
-    bool write(Offset offset, AccessSize size, AccessItem value) override;
+    bool write(
+        const void *source,
+        Offset destination,
+        size_t count
+    ) override;
 
-    AccessItem read(Offset offset, AccessSize size, bool debug_read) const override;
+    void read(
+        Offset source,
+        void *destination,
+        size_t count,
+        bool debug_read
+    ) const override;
 };
 
 }

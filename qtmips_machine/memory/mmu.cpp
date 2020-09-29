@@ -34,6 +34,7 @@
  ******************************************************************************/
 
 #include "mmu.h"
+#include "memory_utils.h"
 
 
 using namespace machine;
@@ -54,30 +55,70 @@ MMU::~MMU() {
 }
 
 bool MMU::write(
-    Address address,
-    uint32_t value
+    Address destination,
+    const void *source,
+    size_t size
 ) {
-    bool      changed;
-    RangeDesc *p_range = find_range(address);
+    RangeDesc *p_range = find_range(destination);
     if (p_range == nullptr) {
         return false;
     }
-    changed = p_range->backend_memory->write(address - p_range->start_addr, WORD, value);
-    if (changed) {
-        change_counter++;
+    int64_t overlap = p_range->last_addr - destination + size * 8;
+    Offset dest_offset = destination - p_range->start_addr;
+
+    bool changed;
+    if (overlap <= 0) {
+        changed = p_range->backend_memory->write(source, dest_offset, size);
+        if (changed) {
+            change_counter++;
+        }
+    } else {
+        size_t size1 = size - overlap; // Size that fits into this range.
+        changed = p_range->backend_memory->write(source, dest_offset, size1);
+        if (changed) {
+            change_counter++;
+        }
+        changed |= this->write(
+            destination + size1, (uint8_t *) source + size1, overlap
+        );
     }
+
     return changed;
 }
 
-uint32_t MMU::read(
-    Address address,
+void MMU::read(
+    Address source,
+    void *destination,
+    size_t size,
     bool debug_access
 ) const {
-    const RangeDesc *p_range = find_range(address);
+    const RangeDesc *p_range = find_range(source);
     if (p_range == nullptr) {
-        return 0x00000000;
+        memory_set(destination, 0, size);
+        return;
     }
-    return p_range->backend_memory->read(address - p_range->start_addr, WORD, debug_access);
+
+    int64_t overlap = p_range->last_addr - source + size * 8;
+
+    if (overlap <= 0) {
+        /* Read fits into single range */
+        p_range->backend_memory->read(
+            source - p_range->start_addr,
+            destination, size, debug_access
+        );
+    } else {
+        /* Read needs to be split */
+        p_range->backend_memory->read(
+            source - p_range->start_addr,
+            destination, size - overlap, debug_access
+        );
+
+        this->read(
+            source + size - overlap,
+            (uint8_t *) destination + size - overlap,
+            overlap, debug_access
+        );
+    }
 }
 
 std::uint32_t MMU::get_change_counter() const {
@@ -96,7 +137,7 @@ enum LocationStatus MMU::location_status(Address address) const {
 
 MMU::RangeDesc *MMU::find_range(Address address) const {
     MMU::RangeDesc *p_range;
-    auto                     i = ranges_by_addr.lowerBound(address);
+    auto i = ranges_by_addr.lowerBound(address);
     if (i == ranges_by_addr.end()) {
         return nullptr;
     }
@@ -114,7 +155,7 @@ bool MMU::insert_range(
     bool move_ownership
 ) {
     RangeDesc *p_range = new RangeDesc(mem_access, start_addr, last_addr, move_ownership);
-    auto      i        = ranges_by_addr.lowerBound(start_addr);
+    auto i = ranges_by_addr.lowerBound(start_addr);
     if (i != ranges_by_addr.end()) {
         if (i.value()->start_addr <= last_addr && i.value()->last_addr >= start_addr) {
             return false;
@@ -151,8 +192,7 @@ void MMU::clean_range(
         i++;
         if (p_range->start_addr <= last_addr) {
             remove_range(p_range->backend_memory);
-        }
-        else {
+        } else {
             break;
         }
     }
@@ -183,8 +223,5 @@ MMU::RangeDesc::RangeDesc(
     Address last_addr,
     bool owned
 )
-    : backend_memory(mem_access)
-      , start_addr(start_addr)
-      , last_addr(last_addr)
-      , owned(owned) {}
+    : backend_memory(mem_access), start_addr(start_addr), last_addr(last_addr), owned(owned) {}
 

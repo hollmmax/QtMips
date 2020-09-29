@@ -60,9 +60,7 @@ SerialPort::SerialPort() {
     rx_irq_active = false;
 }
 
-SerialPort::~SerialPort() {
-
-}
+SerialPort::~SerialPort() = default;
 
 void SerialPort::pool_rx_byte() const {
     unsigned int byte = 0;
@@ -82,53 +80,55 @@ void SerialPort::pool_rx_byte() const {
 
 
 bool SerialPort::write(
+    const void *source,
     Offset offset,
-    AccessSize size,
-    AccessItem value
+    size_t count
 ) {
 #if 0
     printf("SerialPort::wword address 0x%08lx data 0x%08lx\n",
            (unsigned long)address, (unsigned long)value);
 #endif
-    if (size != WORD) throw std::logic_error("Unimplemented");
+    if (count != WORD) throw std::logic_error("Unimplemented");
 
-    emit write_notification(offset, value);
+    emit write_notification(offset, source);
 
     switch (offset & ~3U) {
     case SERP_RX_ST_REG_o:
         rx_st_reg &= ~SERP_RX_ST_REG_IE_m;
-        rx_st_reg |= value & SERP_RX_ST_REG_IE_m;
+        rx_st_reg |= source & SERP_RX_ST_REG_IE_m;
         rx_queue_check_internal();
         update_rx_irq();
         break;
     case SERP_TX_ST_REG_o:
         tx_st_reg &= ~SERP_TX_ST_REG_IE_m;
-        tx_st_reg |= value & SERP_TX_ST_REG_IE_m;
+        tx_st_reg |= source & SERP_TX_ST_REG_IE_m;
         update_tx_irq();
         break;
     case SERP_TX_DATA_REG_o:
-        emit tx_byte(value & 0xff);
+        emit tx_byte(source & 0xff);
         update_tx_irq();
         break;
     }
     return true;
 }
 
-AccessItem SerialPort::read(
-    Offset offset,
-    AccessSize size,
+void SerialPort::read(
+    Offset source,
+    void *destination,
+    size_t count,
     bool debug_read
 ) const {
     (void)debug_read;
 
-    if (size != WORD) throw std::logic_error("Unimplemented");
+    UNIMPLEMENTED
+    // TODO switch to new api
 
     std::uint32_t value = 0x00000000;
 #if 0
     printf("SerialPort::rword address 0x%08lx\n",
            (unsigned long)address);
 #endif
-    switch (offset & ~3) {
+    switch (source & ~3) {
     case SERP_RX_ST_REG_o:
         pool_rx_byte();
         value = rx_st_reg;
@@ -153,7 +153,7 @@ AccessItem SerialPort::read(
         break;
     }
 
-    emit read_notification(offset, &value);
+    emit read_notification(source, &value);
 
     return value;
 }

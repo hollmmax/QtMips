@@ -75,7 +75,14 @@ std::uint32_t LcdDisplay::pixel_address(uint x, uint y)
     return address;
 }
 
-bool LcdDisplay::write(Offset offset, AccessSize size, AccessItem value) {
+bool LcdDisplay::write(
+    const void *source,
+    Offset offset,
+    size_t count
+) {
+    UNIMPLEMENTED
+    // TODO new api
+
     offset &= ~3;
     uint x, y, r, g, b;
     std::uint32_t c;
@@ -88,13 +95,13 @@ bool LcdDisplay::write(Offset offset, AccessSize size, AccessItem value) {
     printf("LcdDisplay::wword address 0x%08lx data 0x%08lx\n",
            (unsigned long)address, (unsigned long)value);
 #endif
-    if (value == read(offset, WORD, true))
+    if (source == read(offset, WORD, 0, true))
         return false;
 
-    fb_data[offset + 0] = (value >> 24) & 0xff;
-    fb_data[offset + 1] = (value >> 16) & 0xff;
-    fb_data[offset + 2] = (value >> 8) & 0xff;
-    fb_data[offset + 3] = (value >> 0) & 0xff;
+    fb_data[offset + 0] = (source >> 24) & 0xff;
+    fb_data[offset + 1] = (source >> 16) & 0xff;
+    fb_data[offset + 2] = (source >> 8) & 0xff;
+    fb_data[offset + 3] = (source >> 0) & 0xff;
 
     change_counter++;
 
@@ -120,30 +127,35 @@ bool LcdDisplay::write(Offset offset, AccessSize size, AccessItem value) {
         }
     }
 
-    emit write_notification(offset, value);
+//    emit write_notification(offset, source);
 
     return true;
 }
 
-AccessItem LcdDisplay::read(Offset offset, AccessSize size, bool debug_read) const {
-    offset &= ~3u;
+void LcdDisplay::read(
+    Offset source,
+    void *destination,
+    size_t count,
+    bool debug_read
+) const {
+    source &= ~3u;
     (void)debug_read;
     std::uint32_t value;
 
-    if (offset + 3 >= fb_size)
+    if (source + 3 >= fb_size)
         return 0;
 
-    value = (std::uint32_t)fb_data[offset + 0] << 24u;
-    value |= (std::uint32_t)fb_data[offset + 1] << 16u;
-    value |= (std::uint32_t)fb_data[offset + 2] << 8u;
-    value |= (std::uint32_t)fb_data[offset + 3] << 0u;
+    value = (std::uint32_t)fb_data[source + 0] << 24u;
+    value |= (std::uint32_t)fb_data[source + 1] << 16u;
+    value |= (std::uint32_t)fb_data[source + 2] << 8u;
+    value |= (std::uint32_t)fb_data[source + 3] << 0u;
 
 #if 0
     printf("LcdDisplay::rword address 0x%08lx data 0x%08lx\n",
            (unsigned long)address, (unsigned long)value);
 #endif
 
-    emit read_notification(offset, &value);
+    emit read_notification(source, &value);
 
     return value;
 }

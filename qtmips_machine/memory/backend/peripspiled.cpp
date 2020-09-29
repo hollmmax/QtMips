@@ -61,7 +61,14 @@ PeripSpiLed::~PeripSpiLed() {
 
 }
 
-bool PeripSpiLed::write(Offset offset, AccessSize size, AccessItem item) {
+bool PeripSpiLed::write(
+    const void *source,
+    Offset offset,
+    size_t count
+) {
+    UNIMPLEMENTED
+    // TODO switch to new api
+
     bool changed = false;
 #if 0
     printf("PeripSpiLed::wword address 0x%08lx data 0x%08lx\n",
@@ -69,43 +76,47 @@ bool PeripSpiLed::write(Offset offset, AccessSize size, AccessItem item) {
 #endif
     switch (offset & ~3) {
     case  SPILED_REG_LED_LINE_o:
-        if (spiled_reg_led_line == size)
+        if (spiled_reg_led_line == count)
             break;
-        spiled_reg_led_line = size;
-        emit led_line_changed(size);
+        spiled_reg_led_line = count;
+        emit led_line_changed(count);
         break;
     case  SPILED_REG_LED_RGB1_o:
-        if (spiled_reg_led_rgb1 == size)
+        if (spiled_reg_led_rgb1 == count)
             break;
-        spiled_reg_led_rgb1 = size;
-        emit led_rgb1_changed(size);
+        spiled_reg_led_rgb1 = count;
+        emit led_rgb1_changed(count);
         break;
     case  SPILED_REG_LED_RGB2_o:
-        if (spiled_reg_led_rgb2 == size)
+        if (spiled_reg_led_rgb2 == count)
             break;
-        spiled_reg_led_rgb2 = size;
-        emit led_rgb2_changed(size);
+        spiled_reg_led_rgb2 = count;
+        emit led_rgb2_changed(count);
         break;
     default:
         break;
     }
 
-    emit write_notification(offset, size);
+    emit write_notification(offset, count);
 
-    if (changed)
+//    if (changed)
 //        change_counter++;
     return changed;
 }
 
-AccessItem PeripSpiLed::read(
-    Offset offset,
-    AccessSize size,
+void PeripSpiLed::read(
+    Offset source,
+    void *destination,
+    size_t count,
     bool debug_read
 ) const {
     (void)debug_read;
+    UNIMPLEMENTED
+    // TODO switch to new api
+
     std::uint32_t value = 0x00000000;
 
-    switch (offset & ~3) {
+    switch (source & ~3) {
     case  SPILED_REG_LED_LINE_o:
         value = spiled_reg_led_line;
         break;
@@ -128,7 +139,7 @@ AccessItem PeripSpiLed::read(
         break;
     }
 
-    emit read_notification(offset, &value);
+    emit read_notification(source, &value);
 
 #if 0
     printf("PeripSpiLed::rword address 0x%08lx value 0x%08lx\n",

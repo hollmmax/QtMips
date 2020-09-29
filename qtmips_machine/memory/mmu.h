@@ -61,11 +61,20 @@ public:
     MMU();
     ~MMU() override;
 
-    bool write(Address address, std::uint32_t value) override;
+    bool write(
+        Address destination,
+        const void *source,
+        size_t size
+    ) override;
 
-    std::uint32_t read(Address address, bool debug_access) const override;
+    void read(
+        Address source,
+        void *destination,
+        size_t size,
+        bool debug_access
+    ) const override;
 
-    virtual std::uint32_t get_change_counter() const override;
+    uint32_t get_change_counter() const override;
 
     bool insert_range(BackendMemory *mem_access, Address start_addr, Address last_addr, bool move_ownership);
 
@@ -97,7 +106,7 @@ private:
     QMap<Address, RangeDesc *> ranges_by_addr;
     QMap<BackendMemory *, RangeDesc *> ranges_by_access;
     RangeDesc *find_range(Address address) const;
-    mutable std::uint32_t change_counter;
+    mutable uint32_t change_counter;
 };
 }
 

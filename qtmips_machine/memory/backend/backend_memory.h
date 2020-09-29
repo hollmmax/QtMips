@@ -39,13 +39,19 @@
 #define QTMIPS_MACHINE_BACKEND_MEMORY_H
 
 #include <QObject>
-#include "../access_size.h"
-
 
 namespace machine {
 
+/**
+ * Relative index within an instance of backend memory
+ */
 typedef uint64_t Offset;
 
+/**
+ * Raw byte in memory
+ * - Intended for raw byte array
+ */
+typedef uint8_t byte;
 
 /**
  * Interface for physical memory or periphery
@@ -58,15 +64,32 @@ class BackendMemory : public QObject {
 Q_OBJECT
 
 public:
+    /**
+     * Write byte sequence to memory
+     *
+     * @param source        pointer to array of bytes to be copied
+     * @param destination   relative index of destination to write to
+     * @param size         number of bytes to be written
+     * @return              true when memory before and after write differs
+     */
     virtual bool write(
-        Offset offset,
-        AccessSize size,
-        AccessItem value
+        const void *source,
+        Offset destination,
+        size_t size
     ) = 0;
 
-    virtual AccessItem read(
-        Offset offset,
-        AccessSize size,
+    /**
+     * Read sequence of bytes from memory
+     *
+     * @param source        relative index of data to be read
+     * @param destination   pointer to destination buffer
+     * @param size         number of bytes to be read
+     * @param debug_read    TODO
+     */
+    virtual void read(
+        Offset source,
+        void *destination,
+        size_t size,
         bool debug_read = false
     ) const = 0;
 
@@ -78,7 +101,7 @@ signals:
      * @param mem_access    this
      * @param start_addr    affected area start
      * @param last_addr     affected area end
-     * @param external
+     * @param external      TODO
      */
     void external_backend_change_notify(
         const BackendMemory *mem_access,

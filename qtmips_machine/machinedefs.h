@@ -36,7 +36,7 @@
 #ifndef MACHINEDEFS_H
 #define MACHINEDEFS_H
 
-#include <stdint.h>
+#include <cstdint>
 #include "memory/address.h"
 
 namespace machine {
