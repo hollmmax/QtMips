@@ -53,7 +53,7 @@ public:
 
     void resizeEvent(QResizeEvent *event) override;
 signals:
-    void address_changed(machine::Address address);
+    void address_changed(uint32_t address);
     void adjust_scroll_pos_queue();
 public slots:
     void go_to_address(machine::Address address);
