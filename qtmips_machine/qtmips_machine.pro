@@ -25,7 +25,8 @@ SOURCES += \
     utils.cpp \
     symboltable.cpp \
     cop0state.cpp \
-    memory/cache.cpp \
+    memory/cache/cache.cpp \
+    memory/cache/cache_policy.cpp \
     memory/mmu.cpp \
     memory/frontend_memory.cpp \
     memory/backend/memory.cpp \
@@ -48,9 +49,9 @@ HEADERS += \
     symboltable.h \
     cop0state.h \
     memory/address.h \
-    memory/cache.h \
-    memory/cache_policy.h \
-    memory/cache_types.h \
+    memory/cache/cache.h \
+    memory/cache/cache_policy.h \
+    memory/cache/cache_types.h \
     memory/memory_utils.h \
     memory/mmu.h \
     memory/frontend_memory.h \

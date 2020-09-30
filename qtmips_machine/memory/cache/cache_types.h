@@ -43,16 +43,21 @@
 namespace machine {
 
 struct CacheLocation {
-    uint32_t row;
-    uint32_t col;
-    uint32_t tag;
-    uint32_t subblock; //> Index within a single cache block
+    size_t set;
+    size_t col;
+    size_t tag;
+    size_t bytes;
 };
 
-struct cache_data {
+struct CacheBlock {
     bool valid, dirty;
-    uint32_t tag;
-    uint32_t *data;
+    size_t tag;
+    std::vector<uint32_t> data;
+};
+
+enum AccessType {
+    READ,
+    WRITE
 };
 
 }

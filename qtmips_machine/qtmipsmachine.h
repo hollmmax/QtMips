@@ -43,7 +43,7 @@
 #include "machineconfig.h"
 #include "registers.h"
 #include "core.h"
-#include "memory/cache.h"
+#include "memory/cache/cache.h"
 #include "memory/mmu.h"
 #include "memory/backend/peripheral.h"
 #include "memory/backend/serialport.h"

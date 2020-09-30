@@ -71,7 +71,7 @@ CacheConfig::CacheConfig() {
 CacheConfig::CacheConfig(const CacheConfig *cc) {
     en = cc->enabled();
     n_sets = cc->set_count();
-    n_blocks = cc->block_count();
+    n_blocks = cc->block_size();
     d_associativity = cc->associativity();
     replac_pol = cc->replacement_policy();
     write_pol = cc->write_policy();
@@ -91,7 +91,7 @@ CacheConfig::CacheConfig(const QSettings *sts, const QString &prefix) {
 void CacheConfig::store(QSettings *sts, const QString &prefix) {
     sts->setValue(N("Enabled"), enabled());
     sts->setValue(N("Sets"), set_count());
-    sts->setValue(N("Blocks"), block_count());
+    sts->setValue(N("Blocks"), block_size());
     sts->setValue(N("Associativity"), associativity());
     sts->setValue(N("Replacement"), (unsigned)replacement_policy());
     sts->setValue(N("Write"), (unsigned)write_policy());
@@ -148,7 +148,7 @@ unsigned CacheConfig::set_count() const {
     return n_sets;
 }
 
-unsigned CacheConfig::block_count() const {
+unsigned CacheConfig::block_size() const {
     return n_blocks;
 }
 
@@ -168,7 +168,7 @@ bool CacheConfig::operator==(const CacheConfig &c) const {
 #define CMP(GETTER) (GETTER)() == (c.GETTER)()
     return CMP(enabled) && \
             CMP(set_count) && \
-            CMP(block_count) && \
+            CMP(block_size) && \
             CMP(associativity) && \
             CMP(replacement_policy) && \
             CMP(write_policy);

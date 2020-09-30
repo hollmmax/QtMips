@@ -46,15 +46,15 @@
 //////////////////////
 
 #include <iostream>
-#include "../qtmips_machine/memory/cache.h"
+#include "../qtmips_machine/memory/cache/cache.h"
 using namespace std;
 
 CacheAddressBlock::CacheAddressBlock(const machine::Cache *cache, unsigned width) {
     rows = cache->get_config().set_count();
-    columns = cache->get_config().block_count();
+    columns = cache->get_config().block_size();
     s_row = cache->get_config().set_count() > 1 ? sqrt(cache->get_config().set_count()) : 0;
     this->width = width;
-    s_col = cache->get_config().block_count() > 1 ? sqrt(cache->get_config().block_count()) : 0;
+    s_col = cache->get_config().block_size() > 1 ? sqrt(cache->get_config().block_size()) : 0;
     s_tag = 30 - s_row - s_col; // 32 bits - 2 unused  and then every bit used for different index
     this->width = width;
 
@@ -156,7 +156,7 @@ CacheViewBlock::CacheViewBlock(const machine::Cache *cache, unsigned block , boo
     islast = last;
     this->block = block;
     rows = cache->get_config().set_count();
-    columns = cache->get_config().block_count();
+    columns = cache->get_config().block_size();
     curr_row = 0;
     last_set = 0;
     last_col = 0;

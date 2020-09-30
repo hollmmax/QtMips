@@ -79,7 +79,7 @@ bool MMU::write(
             change_counter++;
         }
         changed |= this->write(
-            destination + size1, (uint8_t *) source + size1, overlap
+            destination + size1, (byte *) source + size1, overlap
         );
     }
 
@@ -115,7 +115,7 @@ void MMU::read(
 
         this->read(
             source + size - overlap,
-            (uint8_t *) destination + size - overlap,
+            (byte *) destination + size - overlap,
             overlap, debug_access
         );
     }

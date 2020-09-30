@@ -85,10 +85,10 @@ QtMipsMachine::QtMipsMachine(const MachineConfig &cc, bool load_symtab, bool loa
 
     unsigned int min_cache_row_size = 16;
     if (cc.cache_data().enabled())
-        min_cache_row_size = cc.cache_data().block_count() * 4;
+        min_cache_row_size = cc.cache_data().block_size() * 4;
     if (cc.cache_program().enabled() &&
-        cc.cache_program().block_count() < min_cache_row_size)
-        min_cache_row_size = cc.cache_program().block_count() * 4;
+        cc.cache_program().block_size() < min_cache_row_size)
+        min_cache_row_size = cc.cache_program().block_size() * 4;
 
     cop0st = new Cop0State();
 

@@ -80,7 +80,7 @@ public:
 
     bool enabled() const;
     unsigned set_count() const;
-    unsigned block_count() const;
+    unsigned block_size() const;
     unsigned associativity() const;
     enum ReplacementPolicy replacement_policy() const;
     enum WritePolicy write_policy() const;

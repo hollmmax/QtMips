@@ -47,6 +47,8 @@
 
 std::uint32_t sign_extend(std::uint16_t);
 
+typedef uint8_t byte;
+
 #define UNREACHABLE assert(false);
 #define UNIMPLEMENTED throw std::logic_error("unimplemented");
 #define UNUSED(arg) (void)arg;
