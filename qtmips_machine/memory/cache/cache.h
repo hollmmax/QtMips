@@ -38,60 +38,57 @@
 
 #include "../../machineconfig.h"
 #include "../frontend_memory.h"
-#include "cache_types.h"
 #include "cache_policy.h"
+#include "cache_types.h"
 
 #include <cstdint>
+#include <memory>
 
 namespace machine {
 
 constexpr size_t BLOCK_ITEM_SIZE = sizeof(uint32_t);
 
 class Cache : public FrontendMemory {
-Q_OBJECT
+    Q_OBJECT
 
 public:
     Cache(
-        FrontendMemory *m,
-        const CacheConfig *c,
+        FrontendMemory* memory,
+        const CacheConfig* config,
         uint32_t memory_access_penalty_r = 1,
         uint32_t memory_access_penalty_w = 1,
-        uint32_t memory_access_penalty_b = 0
-    );
+        uint32_t memory_access_penalty_b = 0);
 
     ~Cache() override;
 
-    bool write(
+    WriteResult write(
         Address destination,
-        const void *source,
-        size_t size
-    ) override;
+        const void* source,
+        size_t size) override;
 
-    void read(
+    ReadResult read(
         Address source,
-        void *destination,
+        void* destination,
         size_t size,
-        bool debug_access
-    ) const override;
+        ReadOptions options) const override;
 
-    std::uint32_t get_change_counter() const override;
+    uint32_t get_change_counter() const override;
 
-    void flush();         // flush cache
+    void flush(); // flush cache
     void sync() override; // Same as flush
 
-    uint32_t get_hit_count() const;   // Number of recorded hits
-    uint32_t get_miss_count() const;  // Number of recorded misses
-    uint32_t get_read_count() const;  // Number backing/main memory reads
+    uint32_t get_hit_count() const; // Number of recorded hits
+    uint32_t get_miss_count() const; // Number of recorded misses
+    uint32_t get_read_count() const; // Number backing/main memory reads
     uint32_t get_write_count() const; // Number backing/main memory writes
-    uint32_t get_stall_count()
-    const; // Number of wasted get_cycle_count in memory waiting statistic
+    uint32_t get_stall_count() const; // Number of wasted get_cycle_count in memory waiting statistic
     double get_speed_improvement()
-    const;                   // Speed improvement in percents in comare with no used cache
+        const; // Speed improvement in percents in comare with no used cache
     double get_hit_rate() const; // Usage efficiency in percents
 
     void reset(); // Reset whole state of cache
 
-    const CacheConfig &get_config() const;
+    const CacheConfig& get_config() const;
 
     enum LocationStatus location_status(Address address) const override;
 
@@ -104,8 +101,7 @@ signals:
     void statistics_update(
         uint32_t stalled_cycles,
         double speed_improv,
-        double hit_rate
-    ) const;
+        double hit_rate) const;
 
     void cache_update(
         size_t associat,
@@ -114,9 +110,8 @@ signals:
         bool valid,
         bool dirty,
         size_t tag,
-        const uint32_t *data,
-        bool write
-    ) const;
+        const uint32_t* data,
+        bool write) const;
 
     void memory_writes_update(uint32_t) const;
 
@@ -126,50 +121,45 @@ private:
     const CacheConfig cache_config;
     const Address uncached_start;
     const Address uncached_last;
-    CachePolicy *const replacement_policy;
-    FrontendMemory *const mem = nullptr;
+    const std::unique_ptr<CachePolicy> replacement_policy;
+    FrontendMemory* const mem = nullptr;
     const uint32_t access_pen_r, access_pen_w, access_pen_b;
 
     mutable std::vector<std::vector<CacheBlock>> dt;
 
-    mutable uint32_t
-        hit_read = 0,
-        miss_read = 0,
-        hit_write = 0,
-        miss_write = 0,
-        mem_reads = 0,
-        mem_writes = 0,
-        burst_reads = 0,
-        burst_writes = 0,
-        change_counter = 0;
+    mutable uint32_t hit_read = 0,
+                     miss_read = 0,
+                     hit_write = 0,
+                     miss_write = 0,
+                     mem_reads = 0,
+                     mem_writes = 0,
+                     burst_reads = 0,
+                     burst_writes = 0,
+                     change_counter = 0;
 
     void debug_rword(
         Address source,
-        void *destination,
-        size_t size
-    ) const;
+        void* destination,
+        size_t size) const;
 
     bool access(
         Address address,
-        void *buffer,
+        void* buffer,
         size_t size,
-        AccessType access_type
-    ) const;
+        AccessType access_type) const;
 
     void kick(
-        size_t associativity_index,
-        size_t set_index
-    ) const;
+        size_t assoc_index,
+        size_t set_index) const;
 
     Address calc_base_address(
         size_t tag,
-        size_t set_index
-    ) const;
+        size_t set_index) const;
 
-    void update_statistics() const;
+    void update_all_statistics() const;
 
     constexpr inline CacheLocation
-    compute_location(const Address address) const;
+    compute_location(Address address) const;
 
     /**
      * Searches for given tag in a set
@@ -177,8 +167,7 @@ private:
      * @param loc       requested location in cache
      * @return          associatity index of found block, max index + 1 if not found
      */
-    size_t find_block_index(const CacheLocation &loc) const;
-
+    size_t find_block_index(const CacheLocation& loc) const;
 };
 
 } // namespace machine

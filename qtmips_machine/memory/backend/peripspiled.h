@@ -12,6 +12,8 @@
  *
  * Copyright (c) 2017-2019 Karel Koci<cynerd@email.cz>
  * Copyright (c) 2019      Pavel Pisa <pisa@cmp.felk.cvut.cz>
+ * Copyright (c) 2020      Jakub Dupak <dupak.jakub@gmail.com>
+ * Copyright (c) 2020      Max Hollmann <hollmmax@fel.cvut.cz>
  *
  * Faculty of Electrical Engineering (http://www.fel.cvut.cz)
  * Czech Technical University        (http://www.cvut.cz/)
@@ -36,24 +38,25 @@
 #ifndef PERIPSPILED_H
 #define PERIPSPILED_H
 
-#include <QObject>
-#include <QMap>
-#include <cstdint>
-#include "../../qtmipsexception.h"
 #include "../../machinedefs.h"
+#include "../../qtmipsexception.h"
+#include "../memory_utils.h"
 #include "backend_memory.h"
+#include <QMap>
+#include <QObject>
+#include <cstdint>
 
 namespace machine {
 
-class PeripSpiLed : public BackendMemory {
+class PeripSpiLed final : public BackendMemory {
     Q_OBJECT
 public:
     PeripSpiLed();
     ~PeripSpiLed() override;
 
 signals:
-    void write_notification(std::uint32_t address, std::uint32_t value);
-    void read_notification(std::uint32_t address, std::uint32_t *value) const;
+    void write_notification(Offset address, size_t size) const;
+    void read_notification(Offset address, size_t size) const;
 
     void led_line_changed(uint val) const;
     void led_rgb1_changed(uint val) const;
@@ -66,33 +69,28 @@ public slots:
     void red_knob_push(bool state);
     void green_knob_push(bool state);
     void blue_knob_push(bool state);
+
 public:
-    bool write(
-        const void *item,
+    WriteResult write(
+        const void* source,
         Offset destination,
-        size_t count
-    ) override;
+        size_t size) override;
 
-    void read(
+    ReadResult read(
         Offset source,
-        void *destination,
-        size_t count,
-        bool debug_read
-    ) const override;
+        void* destination,
+        size_t size,
+        ReadOptions options) const override;
 
-//    std::uint32_t read(std::uint32_t address, bool debug_access = false) const override;
-//    virtual std::uint32_t get_change_counter() const override;
 private:
-    void knob_update_notify(std::uint32_t val, std::uint32_t mask, int shift);
+    void knob_update_notify(uint32_t val, uint32_t mask, size_t shift);
 
-//    mutable std::uint32_t change_counter;
-    std::uint32_t spiled_reg_led_line;
-    std::uint32_t spiled_reg_led_rgb1;
-    std::uint32_t spiled_reg_led_rgb2;
-    std::uint32_t spiled_reg_led_kbdwr_direct;
-
-    std::uint32_t spiled_reg_kbdrd_knobs_direct;
-    std::uint32_t spiled_reg_knobs_8bit;
+    uint32_t spiled_reg_led_line = 0;
+    uint32_t spiled_reg_led_rgb1 = 0;
+    uint32_t spiled_reg_led_rgb2 = 0;
+    uint32_t spiled_reg_led_kbdwr_direct = 0;
+    uint32_t spiled_reg_kbdrd_knobs_direct = 0;
+    uint32_t spiled_reg_knobs_8bit = 0;
 };
 
 }

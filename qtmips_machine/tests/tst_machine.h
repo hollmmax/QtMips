@@ -102,6 +102,7 @@ private Q_SLOTS:
     // Cache
     void cache_data();
     void cache();
+    void cache_policy_rand();
 };
 
 #endif // TST_MACHINE_H

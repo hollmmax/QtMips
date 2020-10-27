@@ -38,6 +38,7 @@
 #ifndef QTMIPS_MACHINE_BACKEND_MEMORY_H
 #define QTMIPS_MACHINE_BACKEND_MEMORY_H
 
+#include "../memory_utils.h"
 #include <QObject>
 
 namespace machine {
@@ -61,7 +62,7 @@ typedef uint8_t byte;
  *  - Stored endianness is undefined
  */
 class BackendMemory : public QObject {
-Q_OBJECT
+    Q_OBJECT
 
 public:
     /**
@@ -72,27 +73,25 @@ public:
      * @param size         number of bytes to be written
      * @return              true when memory before and after write differs
      */
-    virtual bool write(
-        const void *source,
+    virtual WriteResult write(
+        const void* source,
         Offset destination,
-        size_t size
-    ) = 0;
+        size_t size)
+        = 0;
 
     /**
      * Read sequence of bytes from memory
      *
      * @param source        relative index of data to be read
      * @param destination   pointer to destination buffer
-     * @param size         number of bytes to be read
-     * @param debug_read    TODO
+     * @param size          number of bytes to be read
+     * @param options       additional option like debug mode, see type definition
      */
-    virtual void read(
+    virtual ReadResult read(
         Offset source,
-        void *destination,
+        void* destination,
         size_t size,
-        bool debug_read = false
-    ) const = 0;
-
+        ReadOptions options) const = 0;
 
 signals:
     /**
@@ -104,12 +103,11 @@ signals:
      * @param external      TODO
      */
     void external_backend_change_notify(
-        const BackendMemory *mem_access,
+        const BackendMemory* mem_access,
         std::uint32_t start_addr,
         std::uint32_t last_addr,
-        bool external
-    ) const;
+        bool external) const;
 };
-};
+}
 
 #endif //QTMIPS_MACHINE_BACKEND_MEMORY_H

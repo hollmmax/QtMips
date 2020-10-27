@@ -107,8 +107,8 @@ ProgramLoader::~ProgramLoader() {
 void ProgramLoader::to_memory(Memory *mem) { // TODO Why are you writing to raw memory
     // Load program to memory (just dump it byte by byte)
     for (int i = 0; i < this->map.size(); i++) {
-        std::uint32_t base_address = this->phdrs[this->map[i]].p_vaddr;
-        char *f = elf_rawfile(this->elf, NULL);
+        uint32_t base_address = this->phdrs[this->map[i]].p_vaddr;
+        char* f = elf_rawfile(this->elf, NULL);
         size_t phdrs_i = this->map[i];
         for (unsigned y = 0; y < this->phdrs[phdrs_i].p_filesz; y++) {
             const auto buffer = (uint8_t)f[this->phdrs[phdrs_i].p_offset + y];
@@ -118,7 +118,7 @@ void ProgramLoader::to_memory(Memory *mem) { // TODO Why are you writing to raw 
 }
 
 Address ProgramLoader::end() {
-    std::uint32_t last = 0;
+    uint32_t last = 0;
     // Go trough all sections and found out last one
     for (int i = 0; i < this->map.size(); i++) {
         Elf32_Phdr *phdr = &(this->phdrs[this->map[i]]);

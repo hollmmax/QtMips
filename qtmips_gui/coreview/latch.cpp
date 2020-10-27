@@ -44,7 +44,9 @@ using namespace coreview;
 #define PENW 1
 //////////////////////
 
-Latch::Latch(machine::QtMipsMachine *machine, qreal height) : QGraphicsObject(nullptr) {
+Latch::Latch(machine::QtMipsMachine* machine, qreal height)
+    : QGraphicsObject(nullptr)
+{
     this->height = height;
 
     title = new QGraphicsSimpleTextItem(this);
@@ -61,7 +63,8 @@ Latch::Latch(machine::QtMipsMachine *machine, qreal height) : QGraphicsObject(nu
     connect(machine, &machine::QtMipsMachine::tick, this, &Latch::tick);
 }
 
-Latch::~Latch() {
+Latch::~Latch()
+{
     while (!connectors.isEmpty()) {
         ConnectorPair cp = connectors.takeFirst();
         delete cp.in;
@@ -70,13 +73,15 @@ Latch::~Latch() {
     delete wedge_animation;
 }
 
-QRectF Latch::boundingRect() const {
+QRectF Latch::boundingRect() const
+{
     QRectF b(-PENW / 2, -PENW / 2, WIDTH + PENW, height + PENW);
     b |= title->boundingRect();
     return b;
 }
 
-void Latch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option __attribute__((unused)), QWidget *widget __attribute__((unused))) {
+void Latch::paint(QPainter* painter, const QStyleOptionGraphicsItem* option __attribute__((unused)), QWidget* widget __attribute__((unused)))
+{
     QPen pen = painter->pen();
     pen.setColor(BLOCK_OUTLINE_COLOR);
     painter->setPen(pen);
@@ -86,28 +91,32 @@ void Latch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option __at
     const QPointF tickPolygon[] = {
         QPointF(0, 0),
         QPointF(WIDTH, 0),
-        QPointF(WIDTH/2, WIDTH/2)
+        QPointF(WIDTH / 2, WIDTH / 2)
     };
     painter->setBrush(QBrush(wedge_color()));
     painter->drawPolygon(tickPolygon, sizeof(tickPolygon) / sizeof(QPointF));
 }
 
-QColor Latch::wedge_color() {
+QColor Latch::wedge_color()
+{
     return wedge_clr;
 }
 
-void Latch::set_wedge_color(QColor &c) {
+void Latch::set_wedge_color(QColor& c)
+{
     wedge_clr = c;
     update();
 }
 
-void Latch::setTitle(const QString &str) {
+void Latch::setTitle(const QString& str)
+{
     title->setText(str);
     QRectF box = title->boundingRect();
-    title->setPos(WIDTH/2 - box.width()/2, - box.height() - 1);
+    title->setPos(WIDTH / 2 - box.width() / 2, -box.height() - 1);
 }
 
-void Latch::setPos(qreal x, qreal y) {
+void Latch::setPos(qreal x, qreal y)
+{
     QGraphicsObject::setPos(x, y);
     for (int i = 0; i < connectors.size(); i++) {
         connectors[i].in->setPos(x, y + connectors_off[i]);
@@ -115,8 +124,9 @@ void Latch::setPos(qreal x, qreal y) {
     }
 }
 
-struct Latch::ConnectorPair Latch::new_connector(qreal cy) {
-    SANITY_ASSERT(cy < height, "Latch: Trying to create connector outside of latch height");
+struct Latch::ConnectorPair Latch::new_connector(qreal cy)
+{
+    SANITY_ASSERT(cy < height, "Latch: Trying to create connector outside of latch get_height");
     ConnectorPair cp;
     cp.in = new Connector(Connector::AX_X);
     cp.out = new Connector(Connector::AX_X);
@@ -126,7 +136,8 @@ struct Latch::ConnectorPair Latch::new_connector(qreal cy) {
     return cp;
 }
 
-void Latch::tick() {
+void Latch::tick()
+{
     wedge_clr = QColor(0, 0, 0);
     wedge_animation->start();
     update();

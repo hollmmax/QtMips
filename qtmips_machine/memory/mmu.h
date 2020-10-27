@@ -36,17 +36,15 @@
 #ifndef PHYSADDRSPACE_H
 #define PHYSADDRSPACE_H
 
-#include <QObject>
-#include <QMap>
-#include <cstdint>
-#include "../qtmipsexception.h"
 #include "../machinedefs.h"
-#include "frontend_memory.h"
+#include "../qtmipsexception.h"
 #include "backend/backend_memory.h"
-
+#include "frontend_memory.h"
+#include <QMap>
+#include <QObject>
+#include <cstdint>
 
 namespace machine {
-
 
 /**
  * Memory management unit emulation
@@ -56,56 +54,54 @@ namespace machine {
  *  of the backing backend memory or periphery.
  */
 class MMU : public FrontendMemory {
-Q_OBJECT
+    Q_OBJECT
 public:
     MMU();
     ~MMU() override;
 
-    bool write(
+    WriteResult write(
         Address destination,
-        const void *source,
-        size_t size
-    ) override;
+        const void* source,
+        size_t size) override;
 
-    void read(
+    ReadResult read(
         Address source,
-        void *destination,
+        void* destination,
         size_t size,
-        bool debug_access
-    ) const override;
+        ReadOptions options) const override;
 
     uint32_t get_change_counter() const override;
 
-    bool insert_range(BackendMemory *mem_access, Address start_addr, Address last_addr, bool move_ownership);
+    bool insert_range(BackendMemory* mem_access, Address start_addr, Address last_addr, bool move_ownership);
 
-    bool remove_range(BackendMemory *mem_access);
+    bool remove_range(BackendMemory* mem_access);
 
     void clean_range(Address start_addr, Address last_addr);
 
     enum LocationStatus location_status(Address offset) const override;
 
 private slots:
-    void range_backend_external_change(const BackendMemory *mem_access, Offset start_offset, Offset last_offset, bool external);
+    void range_backend_external_change(const BackendMemory* mem_access, Offset start_offset, Offset last_offset, bool external);
+
 private:
     class RangeDesc {
     public:
         RangeDesc(
-            BackendMemory *mem_access,
+            BackendMemory* mem_access,
             Address start_addr,
             Address last_addr,
-            bool owned
-        );
+            bool owned);
 
-        Address      start_addr;
-        Address      last_addr;
-        BackendMemory *backend_memory;
-        bool         owned;
-        uint32_t     access_counter;
+        Address start_addr;
+        Address last_addr;
+        BackendMemory* backend_memory;
+        bool owned;
+        uint32_t access_counter {};
         LocationStatus location_status; // TODO
     };
-    QMap<Address, RangeDesc *> ranges_by_addr;
-    QMap<BackendMemory *, RangeDesc *> ranges_by_access;
-    RangeDesc *find_range(Address address) const;
+    QMap<Address, RangeDesc*> ranges_by_addr;
+    QMultiMap<BackendMemory*, RangeDesc*> ranges_by_access;
+    RangeDesc* find_range(Address address) const;
     mutable uint32_t change_counter;
 };
 }

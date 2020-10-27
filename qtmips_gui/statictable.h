@@ -106,7 +106,7 @@ protected:
 
 class StaticTable : public QWidget {
 public:
-    StaticTable(QWidget *parent = nullptr);
+    StaticTable(QWidget* parent = nullptr);
 
     int count();
     void addRow(QList<QWidget*>);
@@ -115,7 +115,7 @@ public:
     void clearRows();
 
     int columns();
-    int row_size(); // return real row size (height) including spacing
+    int row_size(); // return real row size (get_height) including spacing
 
 protected:
     void paintEvent(QPaintEvent*);

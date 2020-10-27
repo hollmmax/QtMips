@@ -1003,16 +1003,16 @@ bool OsSyscallExceptionHandler::handle_exception(Core *core, Registers *regs,
 
     switch (sdesc->args) {
     case 8:
-        a8 = mem_data->read_word(sp + 28);
+        a8 = mem_data->read_u32(sp + 28);
         FALLTROUGH
     case 7:
-        a7 = mem_data->read_word(sp + 24);
+        a7 = mem_data->read_u32(sp + 24);
         FALLTROUGH
     case 6:
-        a6 = mem_data->read_word(sp + 20);
+        a6 = mem_data->read_u32(sp + 20);
         FALLTROUGH
     case 5:
-        a5 = mem_data->read_word(sp + 16);
+        a5 = mem_data->read_u32(sp + 16);
         FALLTROUGH
     default:
         break;
@@ -1048,7 +1048,7 @@ std::int32_t OsSyscallExceptionHandler::write_mem(machine::FrontendMemory *mem, 
         count = data.size();
 
     for (std::uint32_t i = 0; i < count; i++) {
-        mem->write_byte(addr, data[i]);
+        mem->write_u8(addr, data[i]);
         addr += 1;
     }
     return count;
@@ -1058,7 +1058,7 @@ std::int32_t OsSyscallExceptionHandler::read_mem(machine::FrontendMemory *mem, A
                                                  QVector<std::uint8_t> &data, std::uint32_t count) {
     data.resize(count);
     for (std::uint32_t i = 0; i < count; i++) {
-        data[i] = mem->read_byte(addr);
+        data[i] = mem->read_u8(addr);
         addr += 1;
     }
     return count;
@@ -1171,12 +1171,12 @@ void OsSyscallExceptionHandler::close_fd(int targetfd) {
         fd_mapping[targetfd] = FD_UNUSED;
 }
 
-QString OsSyscallExceptionHandler::filepath_to_host(QString path) {
+QString OsSyscallExceptionHandler::filepath_to_host(QString path)
+{
     int pos = 0;
-    int prev = 0;
-    while(1) {
-        if (((path.size() - pos == 2) && (path.mid(pos, -1) == "..")) ||
-            ((path.size() - pos > 2) && (path.mid(pos, 3) == "../"))) {
+    int prev;
+    while (true) {
+        if (((path.size() - pos == 2) && (path.mid(pos, -1) == "..")) || ((path.size() - pos > 2) && (path.mid(pos, 3) == "../"))) {
             if (pos == 0) {
                 prev = 0;
             } else {
@@ -1279,8 +1279,8 @@ int OsSyscallExceptionHandler::do_sys_writev(std::uint32_t &result, Core *core,
     }
 
     while (iovcnt-- > 0) {
-        Address iov_base = Address(mem->read_word(iov));
-        std::uint32_t iov_len = mem->read_word(iov + 4);
+        Address iov_base = Address(mem->read_u32(iov));
+        std::uint32_t iov_len = mem->read_u32(iov + 4);
         iov += 8;
 
         read_mem(mem, iov_base, data, iov_len);
@@ -1357,8 +1357,8 @@ int OsSyscallExceptionHandler::do_sys_readv(std::uint32_t &result, Core *core,
     }
 
     while (iovcnt-- > 0) {
-        Address iov_base = Address(mem->read_word(iov));
-        std::uint32_t iov_len = mem->read_word(iov + 4);
+        Address iov_base = Address(mem->read_u32(iov));
+        std::uint32_t iov_len = mem->read_u32(iov + 4);
         iov += 8;
 
         count = read_io(fd, data, iov_len, true);
@@ -1432,7 +1432,7 @@ int OsSyscallExceptionHandler::do_sys_open(std::uint32_t &result, Core *core,
 
     QString fname;
     while (true) {
-        ch = mem->read_byte(pathname_ptr);
+        ch = mem->read_u8(pathname_ptr);
         pathname_ptr += 1;
         if (ch == 0)
             break;
@@ -1581,7 +1581,7 @@ int OsSyscallExceptionHandler::do_spim_print_string(std::uint32_t &result, Core 
 
     while (true) {
         std::uint8_t ch;
-        ch = mem->read_byte(str_ptr);
+        ch = mem->read_u8(str_ptr);
         str_ptr += 1;
         if (ch == 0)
             break;

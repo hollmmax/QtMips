@@ -37,155 +37,164 @@
 
 using namespace machine;
 
-#define SPILED_REG_LED_LINE_o           0x004
-#define SPILED_REG_LED_RGB1_o           0x010
-#define SPILED_REG_LED_RGB2_o           0x014
-#define SPILED_REG_LED_KBDWR_DIRECT_o   0x018
+constexpr size_t SPILED_REG_LED_LINE_o = 0x004;
+constexpr size_t SPILED_REG_LED_RGB1_o = 0x010;
+constexpr size_t SPILED_REG_LED_RGB2_o = 0x014;
+constexpr size_t SPILED_REG_LED_KBDWR_DIRECT_o = 0x018;
 
-#define SPILED_REG_KBDRD_KNOBS_DIRECT_o 0x020
-#define SPILED_REG_KNOBS_8BIT_o         0x024
+constexpr size_t SPILED_REG_KBDRD_KNOBS_DIRECT_o = 0x020;
+constexpr size_t SPILED_REG_KNOBS_8BIT_o = 0x024;
 
-PeripSpiLed::PeripSpiLed() {
-//    change_counter = 0;
+PeripSpiLed::PeripSpiLed() = default;
 
-    spiled_reg_led_line = 0;
-    spiled_reg_led_rgb1 = 0;
-    spiled_reg_led_rgb2 = 0;
-    spiled_reg_led_kbdwr_direct = 0;
+PeripSpiLed::~PeripSpiLed() = default;
 
-    spiled_reg_kbdrd_knobs_direct = 0;
-    spiled_reg_knobs_8bit = 0;
-}
+WriteResult PeripSpiLed::write(const void* source, Offset destination, size_t size)
+{
+    size_t remaining_size = size;
+    Offset current_dest = destination;
+    const byte* current_source = static_cast<const byte*>(source);
 
-PeripSpiLed::~PeripSpiLed() {
+    WriteResult result {};
 
-}
+    do {
+        const size_t inword_offset = current_dest & 3u;
+        const size_t parial_size = std::min(remaining_size, sizeof(uint32_t) - inword_offset);
+        WriteResult partial_result { .n_bytes = parial_size, .changed = true };
 
-bool PeripSpiLed::write(
-    const void *source,
-    Offset offset,
-    size_t count
-) {
-    UNIMPLEMENTED
-    // TODO switch to new api
-
-    bool changed = false;
-#if 0
-    printf("PeripSpiLed::wword address 0x%08lx data 0x%08lx\n",
-           (unsigned long)address, (unsigned long)value);
-#endif
-    switch (offset & ~3) {
-    case  SPILED_REG_LED_LINE_o:
-        if (spiled_reg_led_line == count)
+        switch (destination & ~3u) {
+        case SPILED_REG_LED_LINE_o: {
+            if (!memory_compare_and_copy(&spiled_reg_led_line, current_source, parial_size, inword_offset)) {
+                emit led_line_changed(spiled_reg_led_line);
+            }
             break;
-        spiled_reg_led_line = count;
-        emit led_line_changed(count);
-        break;
-    case  SPILED_REG_LED_RGB1_o:
-        if (spiled_reg_led_rgb1 == count)
+        }
+        case SPILED_REG_LED_RGB1_o:
+            if (!memory_compare_and_copy(&spiled_reg_led_rgb1, current_source, parial_size, inword_offset)) {
+                emit led_rgb1_changed(spiled_reg_led_rgb1);
+            }
             break;
-        spiled_reg_led_rgb1 = count;
-        emit led_rgb1_changed(count);
-        break;
-    case  SPILED_REG_LED_RGB2_o:
-        if (spiled_reg_led_rgb2 == count)
+        case SPILED_REG_LED_RGB2_o:
+            if (!memory_compare_and_copy(&spiled_reg_led_rgb2, current_source, parial_size, inword_offset)) {
+                emit led_rgb2_changed(spiled_reg_led_rgb2);
+            }
             break;
-        spiled_reg_led_rgb2 = count;
-        emit led_rgb2_changed(count);
-        break;
-    default:
-        break;
+        default:
+            // Todo show this to user as this is failure of supplied program
+            printf("[WARNING] PeripSpiLed: write to non-writable location.\n");
+            partial_result.n_bytes = 0;
+            partial_result.changed = false;
+            break;
+        }
+
+        result += partial_result;
+        destination += current_dest;
+        current_source += parial_size;
+        remaining_size -= parial_size;
+    } while (remaining_size > 0);
+
+    if (result.changed) {
+        emit write_notification(destination, size);
     }
 
-    emit write_notification(offset, count);
-
-//    if (changed)
-//        change_counter++;
-    return changed;
+    return result;
 }
 
-void PeripSpiLed::read(
-    Offset source,
-    void *destination,
-    size_t count,
-    bool debug_read
-) const {
-    (void)debug_read;
-    UNIMPLEMENTED
-    // TODO switch to new api
+ReadResult PeripSpiLed::read(Offset source, void* destination, size_t size, ReadOptions options) const
+{
+    UNUSED(options)
 
-    std::uint32_t value = 0x00000000;
+    size_t remaining_size = size;
+    Offset current_source = source;
+    byte* current_dest = static_cast<byte*>(destination);
 
-    switch (source & ~3) {
-    case  SPILED_REG_LED_LINE_o:
-        value = spiled_reg_led_line;
-        break;
-    case  SPILED_REG_LED_RGB1_o:
-        value = spiled_reg_led_rgb1;
-        break;
-    case  SPILED_REG_LED_RGB2_o:
-        value = spiled_reg_led_rgb2;
-        break;
-    case  SPILED_REG_LED_KBDWR_DIRECT_o:
-        value = spiled_reg_led_kbdwr_direct;
-        break;
-    case  SPILED_REG_KBDRD_KNOBS_DIRECT_o:
-        value = spiled_reg_kbdrd_knobs_direct;
-        break;
-    case  SPILED_REG_KNOBS_8BIT_o:
-        value = spiled_reg_knobs_8bit;
-        break;
-    default:
-        break;
-    }
+    ReadResult result {};
 
-    emit read_notification(source, &value);
+    do {
+        const size_t inword_offset = source & 3u;
+        const size_t partial_size = std::min(remaining_size, sizeof(uint32_t) - inword_offset);
+        ReadResult partial_result {};
 
-#if 0
-    printf("PeripSpiLed::rword address 0x%08lx value 0x%08lx\n",
-           (unsigned long)address, (unsigned long)value);
-#endif
+        uint32_t const* partial_source = [&]() {
+            switch (current_source & ~3u) {
+            case SPILED_REG_LED_LINE_o:
+                return &spiled_reg_led_line;
+            case SPILED_REG_LED_RGB1_o:
+                return &spiled_reg_led_rgb1;
+            case SPILED_REG_LED_RGB2_o:
+                return &spiled_reg_led_rgb2;
+            case SPILED_REG_LED_KBDWR_DIRECT_o:
+                return &spiled_reg_led_kbdwr_direct;
+            case SPILED_REG_KBDRD_KNOBS_DIRECT_o:
+                return &spiled_reg_kbdrd_knobs_direct;
+            case SPILED_REG_KNOBS_8BIT_o:
+                return &spiled_reg_knobs_8bit;
+            default:
+                return (const uint32_t*)nullptr;
+            }
+        }();
 
-    return value;
+        if (partial_source != nullptr) {
+            memory_copy(current_dest, (byte*)partial_source + inword_offset, partial_size);
+        } else {
+            // Todo show this to user as this is failure of supplied program
+            printf("[WARNING] PeripSpiLed: read to non-readable location.\n");
+        }
+
+        result += partial_result;
+        current_source += partial_size;
+        source += partial_size;
+        remaining_size -= partial_size;
+
+    } while (remaining_size > 0);
+
+    emit read_notification(source, size);
+
+    return result;
 }
 
-//std::uint32_t PeripSpiLed::get_change_counter() const {
-//    return change_counter;
-//}
-
-void PeripSpiLed::knob_update_notify(std::uint32_t val, std::uint32_t mask, int shift) {
+void PeripSpiLed::knob_update_notify(uint32_t val, uint32_t mask, size_t shift)
+{
     mask <<= shift;
     val <<= shift;
-    if (!((spiled_reg_knobs_8bit ^ val) & mask))
+
+    if (!((spiled_reg_knobs_8bit ^ val) & mask)) {
         return;
+    }
+
     spiled_reg_knobs_8bit &= ~mask;
     spiled_reg_knobs_8bit |= val;
-//    change_counter++;
+
     emit external_backend_change_notify(this, SPILED_REG_KNOBS_8BIT_o,
-                                SPILED_REG_KNOBS_8BIT_o + 3, true);
+        SPILED_REG_KNOBS_8BIT_o + 3, true);
 }
 
-void PeripSpiLed::red_knob_update(int val) {
+void PeripSpiLed::red_knob_update(int val)
+{
     knob_update_notify(val, 0xff, 16);
 }
 
-void PeripSpiLed::green_knob_update(int val) {
+void PeripSpiLed::green_knob_update(int val)
+{
     knob_update_notify(val, 0xff, 8);
 }
 
-void PeripSpiLed::blue_knob_update(int val) {
+void PeripSpiLed::blue_knob_update(int val)
+{
     knob_update_notify(val, 0xff, 0);
 }
 
-void PeripSpiLed::red_knob_push(bool state) {
-    knob_update_notify(state? 1: 0, 1, 26);
+void PeripSpiLed::red_knob_push(bool state)
+{
+    knob_update_notify(state ? 1 : 0, 1, 26);
 }
 
-void PeripSpiLed::green_knob_push(bool state) {
-    knob_update_notify(state? 1: 0, 1, 25);
+void PeripSpiLed::green_knob_push(bool state)
+{
+    knob_update_notify(state ? 1 : 0, 1, 25);
 }
 
-void PeripSpiLed::blue_knob_push(bool state) {
-    knob_update_notify(state? 1: 0, 1, 24);
+void PeripSpiLed::blue_knob_push(bool state)
+{
+    knob_update_notify(state ? 1 : 0, 1, 24);
 }
-

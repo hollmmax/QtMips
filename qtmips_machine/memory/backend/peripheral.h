@@ -36,38 +36,37 @@
 #ifndef SIMPLEPERIPHERAL_H
 #define SIMPLEPERIPHERAL_H
 
-#include <QObject>
-#include <QMap>
-#include <cstdint>
-#include "../../qtmipsexception.h"
 #include "../../machinedefs.h"
+#include "../../qtmipsexception.h"
+#include "../memory_utils.h"
 #include "backend_memory.h"
+#include <QMap>
+#include <QObject>
+#include <cstdint>
 
 namespace machine {
 
-class SimplePeripheral : public BackendMemory {
+class SimplePeripheral final : public BackendMemory {
     Q_OBJECT
 public:
     SimplePeripheral();
     ~SimplePeripheral() override;
 
 signals:
-    void write_notification(std::uint32_t address, std::uint32_t value);
-    void read_notification(std::uint32_t address, std::uint32_t *value) const;
+    void write_notification(Offset address, size_t size) const;
+    void read_notification(Offset address, size_t size) const;
 
 public:
-    bool write(
-        const void *source,
+    WriteResult write(
+        const void* source,
         Offset destination,
-        size_t count
-    ) override;
+        size_t size) override;
 
-    void read(
+    ReadResult read(
         Offset source,
-        void *destination,
-        size_t count,
-        bool debug_read
-    ) const override;
+        void* destination,
+        size_t size,
+        ReadOptions options) const override;
 };
 
 }

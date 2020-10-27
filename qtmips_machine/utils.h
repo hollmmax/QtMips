@@ -37,21 +37,27 @@
 #define UTILS_H
 
 #include <cstdint>
+#include <cstdlib>
+#include <stdexcept>
 #include <type_traits>
 
-#if  __GNUC__ >= 7
-#define FALLTROUGH  __attribute__((fallthrough));
+#if __GNUC__ >= 7
+#define FALLTROUGH __attribute__((fallthrough));
 #else
 #define FALLTROUGH
 #endif
 
-std::uint32_t sign_extend(std::uint16_t);
-
 typedef uint8_t byte;
 
+inline constexpr uint32_t sign_extend(uint16_t v)
+{
+    return ((v & 0x8000) ? 0xFFFF0000 : 0) | v;
+}
+
+#define UNIMPLEMENTED throw std::logic_error("Unimplemented");
+#define PANIC throw std::logic_error("The program panicked.");
 #define UNREACHABLE assert(false);
-#define UNIMPLEMENTED throw std::logic_error("unimplemented");
-#define UNUSED(arg) (void)arg;
+#define UNUSED(...) (void)__VA_ARGS__;
 
 /**
  * Test whether given address is aligned to type
@@ -61,9 +67,19 @@ typedef uint8_t byte;
  * @param address       address to check
  * @return              true if is aligned
  */
-template<typename Address, typename T>
-inline bool is_aligned_generic(Address address) {
+template <typename Address, typename T>
+inline bool is_aligned_generic(Address address)
+{
     return static_cast<uintptr_t>(address) % std::alignment_of<T>::value;
+}
+
+/**
+ * Divide and round up
+ */
+template <typename T>
+inline constexpr T divide_and_ceil(T divident, T divisor)
+{
+    return ((divident + divisor - 1) / divisor);
 }
 
 #endif // UTILS_H

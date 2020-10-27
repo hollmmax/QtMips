@@ -38,10 +38,11 @@
 #ifndef QTMIPS_CACHE_POLICY_H
 #define QTMIPS_CACHE_POLICY_H
 
+#include "../../machineconfig.h"
+#include "cache_types.h"
 #include <cstdint>
 #include <cstdlib>
-#include "cache_types.h"
-#include "../../machineconfig.h"
+#include <memory>
 
 namespace machine {
 
@@ -55,12 +56,12 @@ public:
     virtual void update_stats(
         size_t assoc_index,
         size_t set_index,
-        bool is_valid
-    ) = 0;
+        bool is_valid)
+        = 0;
 
     virtual ~CachePolicy() = 0;
 
-    static CachePolicy *get_policy_instance(const CacheConfig *config);
+    static std::unique_ptr<CachePolicy> get_policy_instance(const CacheConfig* config);
 };
 
 /**
@@ -74,16 +75,14 @@ class CachePolicyLRU final : public CachePolicy {
 public:
     CachePolicyLRU(
         size_t associativity,
-        size_t set_count
-    );
+        size_t set_count);
 
     size_t select_index_to_evict(size_t set_index) const final;
 
     void update_stats(
         size_t assoc_index,
         size_t set_index,
-        bool is_valid
-    ) final;
+        bool is_valid) final;
 
 private:
     /**
@@ -102,25 +101,25 @@ class CachePolicyLFU final : public CachePolicy {
 public:
     CachePolicyLFU(
         size_t associativity,
-        size_t set_count
-    );
+        size_t set_count);
 
     size_t select_index_to_evict(size_t set_index) const final;
 
     void update_stats(
         size_t assoc_index,
         size_t set_index,
-        bool is_valid
-    ) final;
+        bool is_valid) final;
 
 private:
     std::vector<std::vector<uint32_t>> stats;
 };
 
-
 class CachePolicyRAND final : public CachePolicy {
 public:
-    explicit CachePolicyRAND(size_t associativity) : associativity(associativity) {}
+    explicit CachePolicyRAND(size_t associativity)
+        : associativity(associativity)
+    {
+    }
 
 private:
     size_t select_index_to_evict(size_t set_index) const final;
@@ -128,8 +127,7 @@ private:
     void update_stats(
         size_t assoc_index,
         size_t set_index,
-        bool is_valid
-    ) final;
+        bool is_valid) final;
 
 private:
     size_t associativity;

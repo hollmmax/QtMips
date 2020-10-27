@@ -36,12 +36,13 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include "../machinedefs.h"
+#include "../qtmipsexception.h"
+#include "../register_value.h"
+#include "address.h"
+#include "memory_utils.h"
 #include <QObject>
 #include <cstdint>
-#include "../qtmipsexception.h"
-#include "../machinedefs.h"
-#include "address.h"
-#include "../register_value.h"
 
 namespace machine {
 
@@ -49,19 +50,15 @@ namespace machine {
 class FrontendMemory : public QObject {
     Q_OBJECT
 public:
-    // Note: hword and word methods are throwing away lowest bits so unaligned access is ignored without error.
-    // I can easily throw error now.
-    // TODO: deprecate and replace with generic?
-    bool write_byte(Address address, uint8_t value);
-    bool write_hword(Address address, uint16_t value);
-    bool write_word(Address address, uint32_t value);
-    bool write_dword(Address address, uint64_t value);
+    bool write_u8(Address address, uint8_t value);
+    bool write_u16(Address address, uint16_t value);
+    bool write_u32(Address address, uint32_t value);
+    bool write_u64(Address address, uint64_t value);
 
-
-    uint8_t read_byte(Address address, bool debug_access = false) const;
-    uint16_t read_hword(Address address, bool debug_access = false) const;
-    uint32_t read_word(Address address, bool debug_access = false) const;
-    uint64_t read_dword(Address address, bool debug_access = false) const;
+    uint8_t read_u8(Address address, bool debug_access = false) const;
+    uint16_t read_u16(Address address, bool debug_access = false) const;
+    uint32_t read_u32(Address address, bool debug_access = false) const;
+    uint64_t read_u64(Address address, bool debug_access = false) const;
 
     void write_ctl(enum AccessControl ctl, Address offset, RegisterValue value);
     RegisterValue read_ctl(enum AccessControl ctl, Address address) const;
@@ -78,36 +75,32 @@ public:
      * @param size         number of bytes to be written
      * @return              true when memory before and after write differs
      */
-    virtual bool write(
+    virtual WriteResult write(
         Address destination,
-        const void *source,
-        size_t size
-    ) = 0;
-
+        const void* source,
+        size_t size)
+        = 0;
 
     /**
      * Read sequence of bytes from memory
      *
      * @param source        emulated adderss of data to be read
      * @param destination   pointer to destination buffer
-     * @param size         number of bytes to be read
-     * @param debug_read    TODO
+     * @param size          number of bytes to be read
+     * @param options       additional option like debug mode, see type definition
      */
-    virtual void read(
+    virtual ReadResult read(
         Address source,
-        void *destination,
+        void* destination,
         size_t size,
-        bool debug_access = false
-    ) const = 0;
-
+        ReadOptions options) const = 0;
 
 signals:
     void external_change_notify(
-        const FrontendMemory *mem_access,
+        const FrontendMemory* mem_access,
         Address start_addr,
         Address last_addr,
-        bool external
-    ) const;
+        bool external) const;
 
 private:
     /**
@@ -123,7 +116,7 @@ private:
      * @param debug_read    TODO
      * @return              requested data with type T
      */
-    template<typename T>
+    template <typename T>
     T read_generic(Address address, bool debug_read) const;
 
     /**
@@ -140,7 +133,7 @@ private:
      * @param value         value of type T to be writtem
      * @return              true when memory before and after write differs
      */
-    template<typename T>
+    template <typename T>
     bool write_generic(Address address, T value);
 };
 

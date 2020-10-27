@@ -33,12 +33,14 @@
  *
  ******************************************************************************/
 
-#include "tst_machine.h"
 #include "cache.h"
+#include "cache_policy.h"
+#include "tst_machine.h"
 
 using namespace machine;
 
-void MachineTests::cache_data() {
+void MachineTests::cache_data()
+{
     QTest::addColumn<CacheConfig>("cache_c");
     QTest::addColumn<unsigned>("hit");
     QTest::addColumn<unsigned>("miss");
@@ -93,4 +95,15 @@ void MachineTests::cache() {
     // Verify counts
     QCOMPARE(cch.hit(), hit);
     QCOMPARE(cch.miss(), miss);
+}
+
+/**
+ * Random policy can select any index within associativity range
+ */
+void MachineTests::cache_policy_rand()
+{
+    for (size_t assoc = 1; assoc < 32; assoc <<= 1) {
+        auto policy = CachePolicyRAND(assoc);
+        QVERIFY(policy.select_index_to_evict(0) < assoc);
+    }
 }

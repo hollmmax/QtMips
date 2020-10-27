@@ -1,6 +1,7 @@
 .*
 !.gitignore
 !.gitmodules
+!.clang-format
 
 # Qt stuff
 *.pro.user*

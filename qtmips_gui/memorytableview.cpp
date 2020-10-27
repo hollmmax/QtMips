@@ -33,38 +33,42 @@
  *
  ******************************************************************************/
 
-#include <QHeaderView>
-#include <QFontMetrics>
-#include <QScrollBar>
-#include <QKeyEvent>
-#include <QClipboard>
-#include <QApplication>
 #include "memorytableview.h"
-#include "memorymodel.h"
 #include "hinttabledelegate.h"
+#include "memorymodel.h"
+#include <QApplication>
+#include <QClipboard>
+#include <QFontMetrics>
+#include <QHeaderView>
+#include <QKeyEvent>
+#include <QScrollBar>
 
-MemoryTableView::MemoryTableView(QWidget *parent, QSettings *settings) : Super(parent) {
+MemoryTableView::MemoryTableView(QWidget* parent, QSettings* settings)
+    : Super(parent)
+{
     setItemDelegate(new HintTableDelegate);
-    connect(verticalScrollBar() , &QAbstractSlider::valueChanged,
-            this, &MemoryTableView::adjust_scroll_pos_check);
-    connect(this , &MemoryTableView::adjust_scroll_pos_queue,
-            this, &MemoryTableView::adjust_scroll_pos_process, Qt::QueuedConnection);
+    connect(verticalScrollBar(), &QAbstractSlider::valueChanged,
+        this, &MemoryTableView::adjust_scroll_pos_check);
+    connect(this, &MemoryTableView::adjust_scroll_pos_queue,
+        this, &MemoryTableView::adjust_scroll_pos_process, Qt::QueuedConnection);
     this->settings = settings;
     initial_address = machine::Address(settings->value("DataViewAddr0", 0).toULongLong());
     adjust_scroll_pos_in_progress = false;
     setTextElideMode(Qt::ElideNone);
 }
 
-void MemoryTableView::addr0_save_change(machine::Address val) {
-   settings->setValue("DataViewAddr0", qint64(val.get_raw()));
+void MemoryTableView::addr0_save_change(machine::Address val)
+{
+    settings->setValue("DataViewAddr0", qint64(val.get_raw()));
 }
 
-void MemoryTableView::adjustColumnCount() {
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+void MemoryTableView::adjustColumnCount()
+{
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     if (m == nullptr)
         return;
 
-    HintTableDelegate *delegate = dynamic_cast<HintTableDelegate*>(itemDelegate());
+    HintTableDelegate* delegate = dynamic_cast<HintTableDelegate*>(itemDelegate());
     if (delegate == nullptr)
         return;
 
@@ -72,9 +76,11 @@ void MemoryTableView::adjustColumnCount() {
         QModelIndex idx;
         QFontMetrics fm(*m->getFont());
         idx = m->index(0, 0);
-        // int width0_dh = itemDelegate(idx)->sizeHint(viewOptions(), idx).width() + 2;
+        // int width0_dh = itemDelegate(idx)->sizeHint(viewOptions(), idx).get_width() + 2;
         int width0_dh = delegate->sizeHintForText(viewOptions(), idx,
-                                                  "0x00000000").width() + 2;
+                                    "0x00000000")
+                            .width()
+            + 2;
         horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
         horizontalHeader()->resizeSection(0, width0_dh);
 
@@ -111,15 +117,17 @@ void MemoryTableView::adjustColumnCount() {
     }
 }
 
-void MemoryTableView::recompute_columns() {
+void MemoryTableView::recompute_columns()
+{
     adjustColumnCount();
 }
 
-void MemoryTableView::set_cell_size(int index) {
+void MemoryTableView::set_cell_size(int index)
+{
     machine::Address address;
     int row;
     bool keep_row0 = false;
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     if (m != nullptr) {
         keep_row0 = m->get_row_address(address, rowAt(0));
         m->set_cell_size(index);
@@ -128,21 +136,23 @@ void MemoryTableView::set_cell_size(int index) {
     if (keep_row0) {
         m->adjustRowAndOffset(row, address);
         scrollTo(m->index(row, 0),
-                 QAbstractItemView::PositionAtTop);
+            QAbstractItemView::PositionAtTop);
     }
 }
 
-void MemoryTableView::adjust_scroll_pos_check() {
+void MemoryTableView::adjust_scroll_pos_check()
+{
     if (!adjust_scroll_pos_in_progress) {
         adjust_scroll_pos_in_progress = true;
         emit adjust_scroll_pos_queue();
     }
 }
 
-void MemoryTableView::adjust_scroll_pos_process() {
+void MemoryTableView::adjust_scroll_pos_process()
+{
     adjust_scroll_pos_in_progress = false;
     machine::Address address;
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     if (m == nullptr)
         return;
 
@@ -170,16 +180,17 @@ void MemoryTableView::adjust_scroll_pos_process() {
         }
         scrollTo(m->index(row, 0), QAbstractItemView::PositionAtTop);
         setCurrentIndex(m->index(prev_index.row() + row - prev_row,
-                        prev_index.column()));
+            prev_index.column()));
         emit m->update_all();
-    } while(0);
+    } while (0);
     m->get_row_address(address, rowAt(0));
     addr0_save_change(address);
     emit address_changed(address);
 }
 
-void MemoryTableView::resizeEvent(QResizeEvent *event) {
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+void MemoryTableView::resizeEvent(QResizeEvent* event)
+{
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     machine::Address address;
     bool keep_row0 = false;
 
@@ -198,22 +209,24 @@ void MemoryTableView::resizeEvent(QResizeEvent *event) {
     }
 }
 
-void MemoryTableView::go_to_address(machine::Address address) {
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+void MemoryTableView::go_to_address(machine::Address address)
+{
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     int row;
     if (m == nullptr)
         return;
     m->adjustRowAndOffset(row, address);
     scrollTo(m->index(row, 0),
-         QAbstractItemView::PositionAtTop);
+        QAbstractItemView::PositionAtTop);
     setCurrentIndex(m->index(row, 1));
     addr0_save_change(address);
     emit m->update_all();
 }
 
-void MemoryTableView::focus_address(machine::Address address) {
+void MemoryTableView::focus_address(machine::Address address)
+{
     int row;
-    MemoryModel *m = dynamic_cast<MemoryModel*>(model());
+    MemoryModel* m = dynamic_cast<MemoryModel*>(model());
     if (m == nullptr)
         return;
     if (!m->get_row_for_address(row, address))
@@ -223,19 +236,19 @@ void MemoryTableView::focus_address(machine::Address address) {
     setCurrentIndex(m->index(row, 1));
 }
 
-void MemoryTableView::keyPressEvent(QKeyEvent *event) {
-    if(event->matches(QKeySequence::Copy)) {
-            QString text;
-            QItemSelectionRange range = selectionModel()->selection().first();
-            for (auto i = range.top(); i <= range.bottom(); ++i)
-            {
-                QStringList rowContents;
-                for (auto j = range.left(); j <= range.right(); ++j)
-                    rowContents << model()->index(i,j).data().toString();
-                text += rowContents.join("\t");
-                text += "\n";
-            }
-            QApplication::clipboard()->setText(text);
+void MemoryTableView::keyPressEvent(QKeyEvent* event)
+{
+    if (event->matches(QKeySequence::Copy)) {
+        QString text;
+        QItemSelectionRange range = selectionModel()->selection().first();
+        for (auto i = range.top(); i <= range.bottom(); ++i) {
+            QStringList rowContents;
+            for (auto j = range.left(); j <= range.right(); ++j)
+                rowContents << model()->index(i, j).data().toString();
+            text += rowContents.join("\t");
+            text += "\n";
+        }
+        QApplication::clipboard()->setText(text);
     } else
         Super::keyPressEvent(event);
 }

@@ -117,7 +117,7 @@ QVariant ProgramModel::data(const QModelIndex &index, int role) const {
         if (mem == nullptr)
             return QString(" ");
 
-        machine::Instruction inst(mem->read_word(address));
+        machine::Instruction inst(mem->read_u32(address));
 
         switch (index.column()) {
         case 0:
@@ -276,7 +276,7 @@ bool ProgramModel::setData(const QModelIndex & index, const QVariant & value, in
             data = value.toString().toULong(&ok, 16);
             if (!ok)
                 return false;
-            mem->write_word(address, data);
+            mem->write_u32(address, data);
             break;
         case 3:
             if (machine::Instruction::code_from_string(&data, 4, value.toString(),
@@ -285,7 +285,7 @@ bool ProgramModel::setData(const QModelIndex & index, const QVariant & value, in
 
                 return false;
             }
-            mem->write_word(address, data);
+            mem->write_u32(address, data);
             break;
         default:
             return false;

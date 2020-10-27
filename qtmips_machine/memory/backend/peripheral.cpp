@@ -41,42 +41,24 @@ SimplePeripheral::SimplePeripheral() = default;
 
 SimplePeripheral::~SimplePeripheral() = default;
 
-bool SimplePeripheral::write(
-    const void *source,
-    Offset offset,
-    size_t count
-) {
-    UNIMPLEMENTED
-    // TODO switch to new api
+WriteResult SimplePeripheral::write(const void* source, Offset offset,
+    size_t size)
+{
+    // Write to dummy periphery is nop
 
-#if 0
-    printf("SimplePeripheral::wword address 0x%08lx data 0x%08lx\n",
-           (unsigned long)address, (unsigned long)value);
-#endif
-//    emit write_notification(offset, source);
+    emit write_notification(offset, size);
 
-    return true;
+    return { size, false };
 }
 
-void SimplePeripheral::read(
-    Offset source,
-    void *destination,
-    size_t count,
-    bool debug_read
-) const {
-    (void)debug_read;
+ReadResult SimplePeripheral::read(Offset source, void* destination,
+    size_t size, ReadOptions options) const
+{
+    UNUSED(options)
 
-    UNIMPLEMENTED
-    // TODO switch to new api
+    memory_set(destination, 0x12345678, size); // Random value
 
-    std::uint32_t value = 0x12345678;
-#if 0
-    printf("SimplePeripheral::rword address 0x%08lx\n",
-           (unsigned long)address);
-#endif
+    emit read_notification(source, size);
 
-    emit read_notification(source, &value);
-
-//    return value;
+    return { size };
 }
-
