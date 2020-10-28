@@ -39,6 +39,7 @@
 #include <QObject>
 #include <QString>
 #include <QVector>
+#include <QFileDevice>
 #include "../qtmips_machine/qtmipsexception.h"
 #include "../qtmips_machine/machineconfig.h"
 #include "../qtmips_machine/registers.h"
@@ -90,11 +91,11 @@ signals:
     void char_written(int fd, unsigned int val);
     void rx_byte_pool(int fd, unsigned int &data, bool &available);
 private:
-    enum FdMapping {
+    /* enum FdMapping {
         FD_UNUSED = -1,
         FD_INVALID = -1,
         FD_TERMINAL = -2,
-    };
+    }; */
     std::int32_t write_mem(machine::FrontendMemory *mem, machine::Address addr,
                            const QVector<std::uint8_t> &data, std::uint32_t count);
     std::int32_t read_mem(machine::FrontendMemory *mem, machine::Address addr,
@@ -102,13 +103,13 @@ private:
     std::int32_t write_io(int fd, const QVector<std::uint8_t> &data, std::uint32_t count);
     std::int32_t read_io(int fd, QVector<std::uint8_t> &data, std::uint32_t count,
                          bool add_nl_at_eof = false);
-    int allocate_fd(int val = FD_UNUSED);
+    int allocate_fd(QFileDevice* file);
     int file_open(QString fname, int flags, int mode);
-    int targetfd_to_fd(int targetfd);
+    QFileDevice* targetfd_to_fd(int targetfd);
     void close_fd(int targetfd);
     QString filepath_to_host(QString path);
 
-    QVector<int> fd_mapping;
+    QVector<QFileDevice*> fd_mapping;
     std::uint32_t brk_limit;
     std::uint32_t anonymous_base;
     std::uint32_t anonymous_last;
