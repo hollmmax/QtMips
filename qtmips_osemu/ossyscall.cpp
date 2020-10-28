@@ -1669,6 +1669,7 @@ int OsSyscallExceptionHandler::do_sys_open(
     printf("sys_open filename\n");
 
     QString fname;
+    // TODO use the new read API
     while (true) {
         ch = mem->read_u8(pathname_ptr);
         pathname_ptr += 1;
@@ -1677,6 +1678,7 @@ int OsSyscallExceptionHandler::do_sys_open(
         fname.append(QChar(ch));
     }
 
+    // TODO switch to Qfile
     result = file_open(fname, flags, mode);
 
     return status_from_result(result);

@@ -45,6 +45,7 @@
 #include "qtmips_machine/qtmipsexception.h"
 #include "qtmips_machine/registers.h"
 
+#include <QFileDevice>
 #include <QObject>
 #include <QString>
 #include <QVector>
@@ -99,11 +100,11 @@ signals:
     void rx_byte_pool(int fd, unsigned int &data, bool &available);
 
 private:
-    enum FdMapping {
+    /* enum FdMapping {
         FD_UNUSED = -1,
         FD_INVALID = -1,
         FD_TERMINAL = -2,
-    };
+    }; */
     int32_t write_mem(
         machine::FrontendMemory *mem,
         machine::Address addr,
@@ -120,13 +121,13 @@ private:
         QVector<uint8_t> &data,
         uint32_t count,
         bool add_nl_at_eof = false);
-    int allocate_fd(int val = FD_UNUSED);
+    int allocate_fd(QFileDevice *file);
     int file_open(QString fname, int flags, int mode);
-    int targetfd_to_fd(int targetfd);
+    QFileDevice *targetfd_to_fd(int targetfd);
     void close_fd(int targetfd);
     QString filepath_to_host(QString path);
 
-    QVector<int> fd_mapping;
+    QVector<QFileDevice *> fd_mapping;
     uint32_t brk_limit;
     uint32_t anonymous_base;
     uint32_t anonymous_last;
