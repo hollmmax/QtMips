@@ -38,11 +38,15 @@
 #ifndef QTMIPS_MEMORY_UTILS_H
 #define QTMIPS_MEMORY_UTILS_H
 
+#include "../utils.h"
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 
 namespace machine {
+
+enum Endianness { LITTLE, BIG };
 
 /**
  * Additional options for read operation between memory layers
@@ -51,7 +55,8 @@ namespace machine {
  *   extensible.
  */
 struct ReadOptions {
-    bool debug = false;
+    bool debug;
+    //    Endianness cpu_endianness;
 };
 
 /**
@@ -61,7 +66,7 @@ struct ReadOptions {
  *   extensible.
  */
 struct WriteOptions {
-    // Reserved for future use
+    //    Endianness cpu_endianness;
 };
 
 struct ReadResult {
@@ -73,7 +78,7 @@ struct ReadResult {
      */
     size_t n_bytes;
 
-    inline ReadResult operator+(const ReadResult& other)
+    inline ReadResult operator+(const ReadResult& other) const
     {
         return {
             this->n_bytes + other.n_bytes,
@@ -101,7 +106,7 @@ struct WriteResult {
      */
     bool changed;
 
-    inline WriteResult operator+(const WriteResult& other)
+    inline WriteResult operator+(const WriteResult& other) const
     {
         return {
             this->n_bytes + other.n_bytes,
@@ -113,6 +118,35 @@ struct WriteResult {
     {
         this->n_bytes += other.n_bytes;
         this->changed |= other.changed;
+    }
+};
+
+/**
+ * Notification to UI about a memory change.
+ *
+ * Tagged union tagged by `size` attribute. Values that can fit into uint64_t
+ * will be sent by value, otherwise a pointer to storing area will be sent. If
+ * storing area is volatile, sender has to split notification into multiple
+ * calls.
+ * // TODO endianness with a pointer access.
+ * // TODO is this necessary?
+ */
+struct AccessNotification {
+    size_t Offset;
+    size_t size;
+    union {
+        const void* pointer;
+        uint64_t u64;
+        uint32_t u32;
+        uint16_t u16;
+        uint8_t u8;
+    } value;
+
+    AccessNotification(size_t offset, uint64_t value)
+        : Offset(offset)
+        , size(sizeof(uint64_t))
+    {
+        this->value.u64 = value;
     }
 };
 
@@ -129,20 +163,15 @@ struct WriteResult {
 inline void memory_copy(void* dst, const void* src, size_t size)
 {
     switch (size) {
-    case 8:
-        *(uint64_t*)dst = *(uint64_t*)src;
-        break;
-    case 4:
+    case 8: *(uint64_t*)dst = *(uint64_t*)src; break;
+    case 4: *(uint32_t*)dst = *(uint32_t*)src; break;
+    case 3:
         *(uint32_t*)dst = *(uint32_t*)src;
+        *((uint8_t*)dst + 4) = *((uint8_t*)src + 4);
         break;
-    case 2:
-        *(uint16_t*)dst = *(uint16_t*)src;
-        break;
-    case 1:
-        *(uint8_t*)dst = *(uint8_t*)src;
-        break;
-    default:
-        memcpy(dst, src, size);
+    case 2: *(uint16_t*)dst = *(uint16_t*)src; break;
+    case 1: *(uint8_t*)dst = *(uint8_t*)src; break;
+    default: memcpy(dst, src, size);
     }
 }
 
@@ -153,26 +182,18 @@ inline void memory_copy(void* dst, const void* src, size_t size)
  *  Other sizes fallback to libc memset.
  *
  * @param dst       destination data pointer
- * @param val       value to set, low bits for smaller types, repeat for larger types
+ * @param val       value to set, low bits for smaller types, repeat for larger
+ * types
  * @param size      number of bytes to set
  */
 inline void memory_set(void* dst, int val, size_t size)
 {
     switch (size) {
-    case 8:
-        *(uint64_t*)dst = (uint64_t)val;
-        break;
-    case 4:
-        *(uint32_t*)dst = (uint32_t)val;
-        break;
-    case 2:
-        *(uint16_t*)dst = (uint16_t)val;
-        break;
-    case 1:
-        *(uint8_t*)dst = (uint8_t)val;
-        break;
-    default:
-        memset(dst, val, size);
+    case 8: *(uint64_t*)dst = (uint64_t)val; break;
+    case 4: *(uint32_t*)dst = (uint32_t)val; break;
+    case 2: *(uint16_t*)dst = (uint16_t)val; break;
+    case 1: *(uint8_t*)dst = (uint8_t)val; break;
+    default: memset(dst, val, size);
     }
 }
 
@@ -190,41 +211,132 @@ inline void memory_set(void* dst, int val, size_t size)
 inline bool memory_compare(const void* first, const void* second, size_t size)
 {
     switch (size) {
-    case 8:
-        return *(uint64_t*)first == *(uint64_t*)second;
-    case 4:
-        return *(uint32_t*)first = *(uint32_t*)second;
-    case 2:
-        return *(uint16_t*)first = *(uint16_t*)second;
-    case 1:
-        return *(uint8_t*)first = *(uint8_t*)second;
-    default:
-        return memcmp(first, second, size) == 0;
+    case 8: return *(uint64_t*)first == *(uint64_t*)second;
+    case 4: return *(uint32_t*)first == *(uint32_t*)second;
+    case 2: return *(uint16_t*)first == *(uint16_t*)second;
+    case 1: return *(uint8_t*)first == *(uint8_t*)second;
+    default: return memcmp(first, second, size) == 0;
     }
+}
+
+// TODO Conside optimizing by compiler intrinsics, especially Windows
+inline uint32_t byte_swap_32(uint32_t a)
+{
+    uint32_t b;
+    byte* bp = reinterpret_cast<byte*>(&b);
+    byte* ap = reinterpret_cast<byte*>(&a);
+    bp[0] = ap[3];
+    bp[1] = ap[3];
+    bp[2] = ap[1];
+    bp[3] = ap[0];
+    return b;
 }
 
 /**
- * Combination of `memory_compare` and `memory_copy`
-
- * @param dst       destination data pointer
- * @param src       source data pointer
- * @param size      number of bytes to copy
- * @param offset    small offset to destination pointer to simplify write to part of variable
- * @return          true if data is identical
+ * Byte swap wrapper that swaps only on when supplied endiannesses do not match.
+ *  Otherwise a identity function.
  */
-inline bool memory_compare_and_copy(void* _dst, const void* src, size_t size, size_t dst_offset = 0)
+inline uint32_t convert_endianness_32(uint32_t a, Endianness from, Endianness to)
 {
-    // This simplifies writing to the middle of variable a lot and hides all the casting of void*
-    byte* dst = (byte*)_dst + dst_offset;
+    return (from == to) ? a : byte_swap_32(a);
+}
 
-    if (memory_compare(dst, src, size)) {
-        return true;
-    }
+/**
+ * When converting n-byte memory access into alligned series of discreete
+ *  accesses each by the STORAGE_TYPE, this function returns size of useful
+ *  data in next access.
+ *
+ * Example:
+ * Periphery suports write by uint32_t. Access of size 4 targets in the middle
+ *  of a uint32_t register. Then this funnction will return 2, which means that
+ *  last 2 bytes of the retrieved data will be used (written to register).
+ *
+ * @tparam STORAGE_TYPE     a type peripery supports for access
+ * @param ptr               pointer-like value used for access
+ * @return                  size to be used from alligned access
+ */
+template <typename STORAGE_TYPE>
+inline size_t partial_access_size(uintptr_t ptr)
+{
+    size_t size = ptr % sizeof(STORAGE_TYPE);
+    return (size == 0) ? sizeof(STORAGE_TYPE) : size;
+}
 
-    memory_copy(dst, src, size);
-    return false;
+/**
+ * Perform n-byte read into periphery that only supports u32 access.
+ *
+ * @tparam FUNC             function :: size_t -> uint32_t
+ * @param src               data offset in periphery
+ * @param dst               pointer to write to
+ * @param size              n bytes
+ * @param data_getter       function object which return u32 data for given
+ */
+template <typename FUNC>
+inline ReadResult
+read_by_u32(size_t src, void* dst, size_t size, FUNC data_getter)
+{
+    size_t current_src = src;
+    byte* current_dst = static_cast<byte*>(dst);
+    size_t remaining_size = size;
+
+    do {
+        size_t partial_size = partial_access_size<uint32_t>(current_src);
+
+        uint32_t data = data_getter(current_src & ~3u);
+
+        size_t data_offset = sizeof(uint32_t) - partial_size;
+        memory_copy(current_dst, (byte*)&data + data_offset, partial_size);
+
+        remaining_size -= partial_size;
+        current_src += partial_size;
+        current_dst += partial_size;
+    } while (remaining_size > 0);
+
+    return { .n_bytes = size };
+}
+
+/**
+ * Perform n-byte write into periphery that only supports u32 access.
+ *
+ * @tparam FUNC1            function :: size_t -> uint32_t
+ * @tparam FUNC2            function :: size_t, uint32_t -> bool
+ * @param src               data source
+ * @param dst               offset in periphery
+ * @param size              n bytes
+ * @param data_getter       function object which return u32 data for given
+ *                           offset
+ * @param data_setter       function object which writes an u32 to givem offset
+ * @return                  true if write caused a change
+ */
+template <typename FUNC1, typename FUNC2>
+inline WriteResult write_by_u32(
+    const void* src,
+    size_t dst,
+    size_t size,
+    FUNC1 data_getter,
+    FUNC2 data_setter)
+{
+    const byte* current_src = static_cast<const byte*>(src);
+    size_t current_dst = dst;
+    size_t remaining_size = size;
+    bool changed = false;
+
+    do {
+        size_t partial_size = partial_access_size<uint32_t>(current_dst);
+        uint32_t data = data_getter(current_dst & ~3u);
+        size_t data_offset = sizeof(uint32_t) - partial_size;
+        memory_copy((byte*)&data + data_offset, current_src, partial_size);
+
+        changed |= data_setter(current_dst & ~3u, data);
+
+        remaining_size -= partial_size;
+        current_src += partial_size;
+        current_dst += partial_size;
+    } while (remaining_size > 0);
+
+    return { .n_bytes = size, .changed = changed };
 }
 
 }
 
-#endif //QTMIPS_MEMORY_UTILS_H
+#endif // QTMIPS_MEMORY_UTILS_H
