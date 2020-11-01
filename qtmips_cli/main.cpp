@@ -325,7 +325,9 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
                 cout << "cannot parse load range data." << endl;
                 exit(1);
             }
-            machine.memory_rw()->write(&val, addr, sizeof(val)); // TODO: Is this really the right offset
+            machine.memory_rw()->write(
+                &val, addr, sizeof(val),
+                WriteOptions()); // TODO: Is this really the right offset
             addr += 4;
         }
         in.close();

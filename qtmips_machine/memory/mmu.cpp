@@ -63,20 +63,22 @@ WriteResult MMU::write(
 {
     RangeDesc* p_range = find_range(destination);
     if (p_range == nullptr) {
-        return { false };
+        return { .n_bytes = 0, .changed = false };
     }
     int64_t overlap = p_range->last_addr - destination + size * 8;
     Offset dest_offset = destination - p_range->start_addr;
 
     WriteResult result {};
     if (overlap <= 0) {
-        result = p_range->backend_memory->write(source, dest_offset, size);
+        result = p_range->backend_memory->write(
+            source, dest_offset, size, WriteOptions());
         if (result.changed) {
             change_counter++;
         }
     } else {
         size_t size1 = size - overlap; // Size that fits into this range.
-        result = p_range->backend_memory->write(source, dest_offset, size1);
+        result = p_range->backend_memory->write(
+            source, dest_offset, size1, WriteOptions());
         if (result.changed) {
             change_counter++;
         }
@@ -117,6 +119,7 @@ ReadResult MMU::read(
             (byte*)destination + size - overlap,
             overlap, options);
     }
+    return {};
 }
 
 std::uint32_t MMU::get_change_counter() const

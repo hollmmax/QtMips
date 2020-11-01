@@ -223,10 +223,11 @@ enum ExceptionCause Core::memory_special(enum AccessControl memctl,
     RegisterValue towrite_val,
     RegisterValue rt_value, Address mem_addr)
 {
-    std::uint32_t mask;
-    std::uint32_t shift;
-    std::uint32_t temp;
-    (void)mode;
+    UNUSED(mode);
+
+    uint32_t mask;
+    uint32_t shift;
+    uint32_t temp;
 
     switch (memctl) {
     case AC_CACHE_OP:
@@ -236,40 +237,42 @@ enum ExceptionCause Core::memory_special(enum AccessControl memctl,
     case AC_STORE_CONDITIONAL:
         if (!memwrite)
             break;
-        mem_data->write_ctl(AC_WORD, mem_addr, rt_value);
+        mem_data->write_u32(mem_addr, rt_value.as_u32());
         towrite_val = 1;
         break;
     case AC_LOAD_LINKED:
         if (!memread)
             break;
-        towrite_val = mem_data->read_ctl(AC_WORD, mem_addr);
+        towrite_val = mem_data->read_u32(mem_addr);
         break;
     case AC_WORD_RIGHT:
         if (memwrite) {
-            shift = (3 - (mem_addr.get_raw() & 3)) << 3;
+            shift = (3u - (mem_addr.get_raw() & 3u)) << 3;
             mask = 0xffffffff << shift;
-            temp = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
+            temp = mem_data->read_u32(mem_addr & ~3u);
             temp = (temp & ~mask) | (rt_value.as_u32() << shift);
-            mem_data->write_ctl(AC_WORD, mem_addr & ~3, temp);
+            mem_data->write_u32(mem_addr & ~3u, temp);
         } else {
-            shift = (3 - (mem_addr.get_raw() & 3)) << 3;
+            shift = (3 - (mem_addr.get_raw() & 3u)) << 3;
             mask = 0xffffffff >> shift;
-            towrite_val = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            towrite_val = (towrite_val.as_u32() >> shift) | (rt_value.as_u32() & ~mask);
+            towrite_val = mem_data->read_u32(mem_addr & ~3u);
+            towrite_val
+                = (towrite_val.as_u32() >> shift) | (rt_value.as_u32() & ~mask);
         }
         break;
     case AC_WORD_LEFT:
         if (memwrite) {
-            shift = (mem_addr.get_raw() & 3) << 3;
+            shift = (mem_addr.get_raw() & 3u) << 3;
             mask = 0xffffffff >> shift;
-            temp = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
+            temp = mem_data->read_u32(mem_addr & ~3);
             temp = (temp & ~mask) | (rt_value.as_u32() >> shift);
-            mem_data->write_ctl(AC_WORD, mem_addr & ~3, temp);
+            mem_data->write_u32(mem_addr & ~3, temp);
         } else {
-            shift = (mem_addr.get_raw() & 3) << 3;
+            shift = (mem_addr.get_raw() & 3u) << 3;
             mask = 0xffffffff << shift;
-            towrite_val = mem_data->read_ctl(AC_WORD, mem_addr & ~3);
-            towrite_val = (towrite_val.as_u32() << shift) | (rt_value.as_u32() & ~mask);
+            towrite_val = mem_data->read_u32(mem_addr & ~3);
+            towrite_val
+                = (towrite_val.as_u32() << shift) | (rt_value.as_u32() & ~mask);
         }
         break;
     default:

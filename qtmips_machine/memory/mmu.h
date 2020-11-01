@@ -92,9 +92,9 @@ private:
             Address last_addr,
             bool owned);
 
+        BackendMemory* backend_memory;
         Address start_addr;
         Address last_addr;
-        BackendMemory* backend_memory;
         bool owned;
         uint32_t access_counter {};
         LocationStatus location_status; // TODO

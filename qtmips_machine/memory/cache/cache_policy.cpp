@@ -37,6 +37,7 @@
 
 #include "cache_policy.h"
 #include "../../qtmipsexception.h"
+#include "../../utils.h"
 
 namespace machine {
 
@@ -137,11 +138,16 @@ void CachePolicyRAND::update_stats(
     size_t set_index,
     bool is_valid)
 {
+    UNUSED(assoc_index);
+    UNUSED(set_index);
+    UNUSED(is_valid);
+
     // NOP
 }
 
 size_t CachePolicyRAND::select_index_to_evict(size_t set_index) const
 {
+    UNUSED(set_index);
     return std::rand() % associativity;
 }
 

@@ -119,11 +119,11 @@ signals:
 
 private:
     const CacheConfig cache_config;
+    FrontendMemory* const mem = nullptr;
     const Address uncached_start;
     const Address uncached_last;
-    const std::unique_ptr<CachePolicy> replacement_policy;
-    FrontendMemory* const mem = nullptr;
     const uint32_t access_pen_r, access_pen_w, access_pen_b;
+    const std::unique_ptr<CachePolicy> replacement_policy;
 
     mutable std::vector<std::vector<CacheBlock>> dt;
 
@@ -158,8 +158,7 @@ private:
 
     void update_all_statistics() const;
 
-    constexpr inline CacheLocation
-    compute_location(Address address) const;
+    CacheLocation compute_location(Address address) const;
 
     /**
      * Searches for given tag in a set

@@ -34,22 +34,27 @@
  ******************************************************************************/
 
 #include "reporter.h"
-#include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <typeinfo>
-#include <qtmipsexception.h>
+#include <iostream>
+#include <string>
 
 using namespace machine;
 using namespace std;
 
-Reporter::Reporter(QCoreApplication *app, QtMipsMachine *machine) : QObject() {
+Reporter::Reporter(QCoreApplication* app, QtMipsMachine* machine)
+    : QObject()
+{
     this->app = app;
     this->machine = machine;
 
-    connect(machine, &QtMipsMachine::program_exit, this, &Reporter::machine_exit);
-    connect(machine, &QtMipsMachine::program_trap, this, &Reporter::machine_trap);
-    connect(machine->core(), &Core::stop_on_exception_reached, this, &Reporter::machine_exception_reached);
+    connect(
+        machine, &QtMipsMachine::program_exit, this, &Reporter::machine_exit);
+    connect(
+        machine, &QtMipsMachine::program_trap, this, &Reporter::machine_trap);
+    connect(
+        machine->core(), &Core::stop_on_exception_reached, this,
+        &Reporter::machine_exception_reached);
 
     e_regs = false;
     e_cache_stats = false;
@@ -57,36 +62,37 @@ Reporter::Reporter(QCoreApplication *app, QtMipsMachine *machine) : QObject() {
     e_fail = (enum FailReason)0;
 }
 
-void Reporter::regs() {
-    e_regs = true;
-}
+void Reporter::regs() { e_regs = true; }
 
-void Reporter::cache_stats() {
-    e_cache_stats = true;
-}
+void Reporter::cache_stats() { e_cache_stats = true; }
 
-void Reporter::cycles() {
-    e_cycles = true;
-}
+void Reporter::cycles() { e_cycles = true; }
 
-void Reporter::expect_fail(enum FailReason reason) {
+void Reporter::expect_fail(enum FailReason reason)
+{
     e_fail = (enum FailReason)(e_fail | reason);
 }
 
-void Reporter::add_dump_range(std::uint32_t start, std::uint32_t len, QString fname) {
-    dump_ranges.append({start, len, fname});
+void Reporter::add_dump_range(
+    std::uint32_t start,
+    std::uint32_t len,
+    QString fname)
+{
+    dump_ranges.append({ start, len, fname });
 }
 
-void Reporter::machine_exit() {
+void Reporter::machine_exit()
+{
     report();
     if (e_fail != 0) {
         cout << "Machine was expected to fail but it didn't." << endl;
-        app->exit(1);
+        QCoreApplication::exit(1);
     } else
         app->exit();
 }
 
-void Reporter::machine_exception_reached() {
+void Reporter::machine_exception_reached()
+{
     ExceptionCause excause;
     excause = machine->get_exception_cause();
     switch (excause) {
@@ -124,10 +130,11 @@ void Reporter::machine_exception_reached() {
         break;
     }
     report();
-    app->exit();
+    QCoreApplication::exit();
 }
 
-void Reporter::machine_trap(QtMipsException &e) {
+void Reporter::machine_trap(QtMipsException& e)
+{
     report();
 
     bool expected = false;
@@ -142,10 +149,11 @@ void Reporter::machine_trap(QtMipsException &e) {
         expected = e_fail & FR_J;
 
     cout << "Machine trapped: " << e.msg(false).toStdString() << endl;
-    app->exit(expected ? 0 : 1);
+    QCoreApplication::exit(expected ? 0 : 1);
 }
 
-static void out_hex(ostream &out, std::uint64_t val, int digits) {
+static void out_hex(ostream& out, std::uint64_t val, int digits)
+{
     std::ios_base::fmtflags saveflg(out.flags());
     char prevfill = out.fill('0');
     out.setf(ios::hex, ios::basefield);
@@ -154,7 +162,8 @@ static void out_hex(ostream &out, std::uint64_t val, int digits) {
     out.flags(saveflg);
 }
 
-void Reporter::report() {
+void Reporter::report()
+{
     cout << dec;
     if (e_regs) {
         cout << "Machine state report:" << endl;
@@ -214,7 +223,7 @@ void Reporter::report() {
             out << "0x";
             // TODO not nice
             uint32_t buffer;
-            machine->memory()->read(addr, &buffer, sizeof(buffer), false);
+            machine->memory()->read(addr, &buffer, sizeof(buffer), { false });
             out_hex(out, buffer, 8);
             out << endl;
         }

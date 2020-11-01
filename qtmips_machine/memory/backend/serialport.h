@@ -36,13 +36,13 @@
 #ifndef SERIALPORT_H
 #define SERIALPORT_H
 
+#include "../../qtmipsexception.h"
+#include "backend_memory.h"
 #include "peripheral.h"
 
 #include <QMap>
 #include <QObject>
 #include <cstdint>
-#include "../../qtmipsexception.h"
-#include "backend_memory.h"
 
 namespace machine {
 

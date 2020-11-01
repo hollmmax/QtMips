@@ -34,9 +34,8 @@
  ******************************************************************************/
 
 #include "tracer.h"
-#include "../qtmips_machine/instruction.h"
-#include "../qtmips_machine/qtmipsexception.h"
 #include <iostream>
+#include <string>
 
 using namespace std;
 using namespace machine;

@@ -59,7 +59,7 @@ public:
         bool is_valid)
         = 0;
 
-    virtual ~CachePolicy() = 0;
+    virtual ~CachePolicy() = default;
 
     static std::unique_ptr<CachePolicy> get_policy_instance(const CacheConfig* config);
 };

@@ -1,5 +1,3 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
 // SPDX-License-Identifier: GPL-2.0+
 /*******************************************************************************
  * QtMips - MIPS 32-bit Architecture Subset Simulator
@@ -136,5 +134,3 @@ private:
 
 }
 #endif //QTMIPS_REGISTER_VALUE_H
-
-#pragma clang diagnostic pop

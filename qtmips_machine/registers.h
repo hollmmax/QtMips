@@ -36,11 +36,12 @@
 #ifndef REGISTERS_H
 #define REGISTERS_H
 
-#include <QObject>
-#include <cstdint>
 #include "memory/address.h"
-#include "register_value.h"
 #include "qtmipsexception.h"
+#include "register_value.h"
+#include <QObject>
+#include <array>
+#include <cstdint>
 
 namespace machine {
 
