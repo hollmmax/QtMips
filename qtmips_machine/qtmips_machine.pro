@@ -1,13 +1,13 @@
 QT -= gui
 
 TARGET = qtmips_machine
-CONFIG += c++11
+CONFIG += c++14
 
 TEMPLATE = lib
 CONFIG += staticlib
 
 LIBS += -lelf
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++14
 QMAKE_CXXFLAGS_DEBUG += -ggdb
 
 DEFINES += QTMIPS_MACHINE_LIBRARY

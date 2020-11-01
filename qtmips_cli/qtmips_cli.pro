@@ -3,7 +3,7 @@ QT += core gui widgets
 TARGET = qtmips_cli
 CONFIG += console
 CONFIG -= app_bundle
-CONFIG += c++11
+CONFIG += c++14
 
 TEMPLATE = app
 
@@ -25,7 +25,7 @@ unix: LIBS += \
 
 INCLUDEPATH += $$PWD/../qtmips_machine $$PWD/../qtmips_asm
 DEPENDPATH += $$PWD/../qtmips_machine $$PWD/../qtmips_asm
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++14
 QMAKE_CXXFLAGS_DEBUG += -ggdb
 
 DEFINES += QT_DEPRECATED_WARNINGS

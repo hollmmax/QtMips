@@ -3,7 +3,7 @@ qtHaveModule(printsupport): QT += printsupport
 qtHaveModule(printsupport): DEFINES += QTMIPS_WITH_PRINTING=1
 
 TARGET = qtmips_gui
-CONFIG += c++11
+CONFIG += c++14
 
 TEMPLATE = app
 
@@ -27,7 +27,7 @@ unix: LIBS += \
 
 INCLUDEPATH += $$PWD/../qtmips_machine $$PWD/../qtmips_osemu $$PWD/../qtmips_asm
 DEPENDPATH += $$PWD/../qtmips_machine $$PWD/../qtmips_osemu $$PWD/../qtmips_asm
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++14
 QMAKE_CXXFLAGS_DEBUG += -ggdb
 
 DEFINES += QT_DEPRECATED_WARNINGS

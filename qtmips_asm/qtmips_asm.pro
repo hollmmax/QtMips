@@ -1,7 +1,7 @@
 QT -= gui
 
 TARGET = qtmips_asm
-CONFIG += c++11
+CONFIG += c++14
 
 TEMPLATE = lib
 CONFIG += staticlib
@@ -10,7 +10,7 @@ INCLUDEPATH += $$PWD/../qtmips_machine $$PWD/../qtmips_osemu
 DEPENDPATH += $$PWD/../qtmips_machine
 
 LIBS += -lelf
-QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS += -std=c++14
 QMAKE_CXXFLAGS_DEBUG += -ggdb
 
 DEFINES += QTMIPS_MACHINE_LIBRARY
