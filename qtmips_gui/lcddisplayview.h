@@ -21,7 +21,7 @@ public:
     uint fb_height();
 
 public slots:
-    void pixel_update(uint x, uint y, uint r, uint g, uint b);
+    void pixel_update(size_t x, size_t y, uint r, uint g, uint b);
 
 protected:
     virtual void paintEvent(QPaintEvent *event)  override;

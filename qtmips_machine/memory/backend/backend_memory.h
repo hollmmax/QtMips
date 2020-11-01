@@ -70,7 +70,8 @@ public:
     virtual WriteResult write(
         const void* source,
         Offset destination,
-        size_t size)
+        size_t size,
+        WriteOptions options)
         = 0;
 
     /**

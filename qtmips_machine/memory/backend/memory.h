@@ -53,7 +53,8 @@ public:
     WriteResult write(
         const void* source,
         Offset destination,
-        size_t size) override;
+        size_t size,
+        WriteOptions options) override;
 
     ReadResult read(
         Offset source,
@@ -85,18 +86,16 @@ public:
     void reset(); // Reset whole content of memory (removes old tree and creates new one)
     void reset(const Memory&);
 
-    MemorySection* get_section(std::uint32_t address, bool create) const; // returns section containing given address
+    MemorySection* get_section(std::uint32_t address, bool create)
+        const; // returns section containing given address
 
-    WriteResult write(
-        const void* source,
-        Offset offset,
-        size_t count) override;
+    WriteResult
+    write(const void* source, Offset offset, size_t count, WriteOptions options)
+        override;
 
-    ReadResult read(
-        Offset source,
-        void* destination,
-        size_t count,
-        ReadOptions options) const override;
+    ReadResult
+    read(Offset source, void* destination, size_t size, ReadOptions options)
+        const override;
 
     bool operator==(const Memory&) const;
     bool operator!=(const Memory&) const;

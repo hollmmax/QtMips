@@ -12,6 +12,8 @@
  *
  * Copyright (c) 2017-2019 Karel Koci<cynerd@email.cz>
  * Copyright (c) 2019      Pavel Pisa <pisa@cmp.felk.cvut.cz>
+ * Copyright (c) 2020      Jakub Dupak <dupak.jakub@gmail.com>
+ * Copyright (c) 2020      Max Hollmann <hollmmax@fel.cvut.cz>
  *
  * Faculty of Electrical Engineering (http://www.fel.cvut.cz)
  * Czech Technical University        (http://www.cvut.cz/)
@@ -39,7 +41,6 @@
 #include "../../qtmipsexception.h"
 #include "backend_memory.h"
 #include "peripheral.h"
-
 #include <QMap>
 #include <QObject>
 #include <cstdint>
@@ -54,38 +55,39 @@ public:
 
 signals:
     void tx_byte(unsigned int data);
-    void rx_byte_pool(int fd, unsigned int &data, bool &available) const;
-    void write_notification(std::uint32_t address, std::uint32_t value);
-    void read_notification(std::uint32_t address, std::uint32_t *value) const;
+    void rx_byte_pool(int fd, unsigned int& data, bool& available) const;
+    void write_notification(Offset address, uint32_t value);
+    void read_notification(Offset address, uint32_t value) const;
     void signal_interrupt(uint irq_level, bool active) const;
 
 public slots:
     void rx_queue_check() const;
 
 public:
-    bool write(
-        const void *source,
+    WriteResult write(
+        const void* source,
         Offset destination,
-        size_t count
-    ) override;
+        size_t size,
+        WriteOptions options) override;
 
-    void read(
+    ReadResult read(
         Offset source,
-        void *destination,
-        size_t count,
-        bool debug_read
-    ) const override;
+        void* destination,
+        size_t size,
+        ReadOptions options) const override;
 
 private:
+    uint32_t read_reg(Offset source, bool debug = false) const;
+    bool write_reg(Offset destination, uint32_t value);
     void rx_queue_check_internal() const;
     void pool_rx_byte() const;
     void update_rx_irq() const;
     void update_tx_irq() const;
-    mutable std::uint32_t rx_st_reg;
-    mutable std::uint32_t rx_data_reg;
-    std::uint32_t tx_st_reg;
-    std::uint8_t tx_irq_level;
-    std::uint8_t rx_irq_level;
+    mutable uint32_t rx_st_reg;
+    mutable uint32_t rx_data_reg;
+    uint32_t tx_st_reg;
+    uint8_t tx_irq_level;
+    uint8_t rx_irq_level;
     mutable bool tx_irq_active;
     mutable bool rx_irq_active;
 };

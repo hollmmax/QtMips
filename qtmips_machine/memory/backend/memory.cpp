@@ -53,14 +53,14 @@ MemorySection::MemorySection(const MemorySection& other)
 WriteResult MemorySection::write(
     const void* source,
     Offset offset,
-    size_t size)
+    size_t size,
+    WriteOptions options)
 {
     offset = offset >> 2U;
 
     if (offset >= this->length()) {
         throw QTMIPS_EXCEPTION(
-            OutOfMemoryAccess,
-            "Trying to write outside of the memory section",
+            OutOfMemoryAccess, "Trying to write outside of the memory section",
             QString("Accessing using offset: ") + QString::number(offset));
     }
 
@@ -82,8 +82,7 @@ ReadResult MemorySection::read(
 
     if (source >= this->length()) {
         throw QTMIPS_EXCEPTION(
-            OutOfMemoryAccess,
-            "Trying to read outside of the memory section",
+            OutOfMemoryAccess, "Trying to read outside of the memory section",
             QString("Accessing using offset: ") + QString::number(source));
     }
 
@@ -202,11 +201,13 @@ MemorySection* Memory::get_section(
 WriteResult Memory::write(
     const void* source,
     Offset offset,
-    size_t count)
+    size_t count,
+    WriteOptions options)
 {
     WriteResult result;
     MemorySection* section = this->get_section(offset, true);
-    result = section->write(source, SECTION_OFFSET_MASK(offset), count);
+    result = section->write(
+        source, SECTION_OFFSET_MASK(offset), count, WriteOptions());
     write_counter++;
     if (result.changed) {
         change_counter++;
@@ -214,18 +215,18 @@ WriteResult Memory::write(
     return result;
 }
 
-ReadResult Memory::read(
-    Offset source,
-    void* destination,
-    size_t count,
-    ReadOptions options) const
+ReadResult
+Memory::read(Offset source, void* destination, size_t size, ReadOptions options)
+    const
 {
     MemorySection* section = this->get_section(source, false);
     if (section == nullptr) {
-        memset(destination, 0, count);
+        memset(destination, 0, size);
     } else {
-        return section->read(SECTION_OFFSET_MASK(source), destination, count, options);
+        return section->read(
+            SECTION_OFFSET_MASK(source), destination, size, options);
     }
+    return { .n_bytes = size };
 }
 
 bool Memory::operator==(const Memory& m) const

@@ -55,8 +55,8 @@ public:
     ~PeripSpiLed() override;
 
 signals:
-    void write_notification(Offset address, size_t size) const;
-    void read_notification(Offset address, size_t size) const;
+    void write_notification(Offset address, uint32_t value) const;
+    void read_notification(Offset address, uint32_t value) const;
 
     void led_line_changed(uint val) const;
     void led_rgb1_changed(uint val) const;
@@ -74,7 +74,8 @@ public:
     WriteResult write(
         const void* source,
         Offset destination,
-        size_t size) override;
+        size_t size,
+        WriteOptions options) override;
 
     ReadResult read(
         Offset source,
@@ -83,6 +84,8 @@ public:
         ReadOptions options) const override;
 
 private:
+    uint32_t read_reg(Offset source) const;
+    bool write_reg(Offset destination, uint32_t value);
     void knob_update_notify(uint32_t val, uint32_t mask, size_t shift);
 
     uint32_t spiled_reg_led_line = 0;

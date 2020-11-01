@@ -12,6 +12,8 @@
  *
  * Copyright (c) 2017-2019 Karel Koci<cynerd@email.cz>
  * Copyright (c) 2019      Pavel Pisa <pisa@cmp.felk.cvut.cz>
+ * Copyright (c) 2020      Jakub Dupak <dupak.jakub@gmail.com>
+ * Copyright (c) 2020      Max Hollmann <hollmmax@fel.cvut.cz>
  *
  * Faculty of Electrical Engineering (http://www.fel.cvut.cz)
  * Czech Technical University        (http://www.cvut.cz/)
@@ -49,108 +51,83 @@ PeripSpiLed::PeripSpiLed() = default;
 
 PeripSpiLed::~PeripSpiLed() = default;
 
-WriteResult PeripSpiLed::write(const void* source, Offset destination, size_t size)
+WriteResult PeripSpiLed::write(
+    const void* source,
+    Offset destination,
+    size_t size,
+    WriteOptions options)
 {
-    size_t remaining_size = size;
-    Offset current_dest = destination;
-    const byte* current_source = static_cast<const byte*>(source);
-
-    WriteResult result {};
-
-    do {
-        const size_t inword_offset = current_dest & 3u;
-        const size_t parial_size = std::min(remaining_size, sizeof(uint32_t) - inword_offset);
-        WriteResult partial_result { .n_bytes = parial_size, .changed = true };
-
-        switch (destination & ~3u) {
-        case SPILED_REG_LED_LINE_o: {
-            if (!memory_compare_and_copy(&spiled_reg_led_line, current_source, parial_size, inword_offset)) {
-                emit led_line_changed(spiled_reg_led_line);
-            }
-            break;
-        }
-        case SPILED_REG_LED_RGB1_o:
-            if (!memory_compare_and_copy(&spiled_reg_led_rgb1, current_source, parial_size, inword_offset)) {
-                emit led_rgb1_changed(spiled_reg_led_rgb1);
-            }
-            break;
-        case SPILED_REG_LED_RGB2_o:
-            if (!memory_compare_and_copy(&spiled_reg_led_rgb2, current_source, parial_size, inword_offset)) {
-                emit led_rgb2_changed(spiled_reg_led_rgb2);
-            }
-            break;
-        default:
-            // Todo show this to user as this is failure of supplied program
-            printf("[WARNING] PeripSpiLed: write to non-writable location.\n");
-            partial_result.n_bytes = 0;
-            partial_result.changed = false;
-            break;
-        }
-
-        result += partial_result;
-        destination += current_dest;
-        current_source += parial_size;
-        remaining_size -= parial_size;
-    } while (remaining_size > 0);
-
-    if (result.changed) {
-        emit write_notification(destination, size);
-    }
-
-    return result;
+    return write_by_u32(
+        source, destination, size, [&](Offset src) { return read_reg(src); },
+        [&](Offset src, uint32_t value) { return write_reg(src, value); });
 }
 
-ReadResult PeripSpiLed::read(Offset source, void* destination, size_t size, ReadOptions options) const
+ReadResult PeripSpiLed::read(
+    Offset source,
+    void* destination,
+    size_t size,
+    ReadOptions options) const
 {
-    UNUSED(options)
+    return read_by_u32(
+        source, destination, size, [&](Offset src) { return read_reg(src); });
+}
 
-    size_t remaining_size = size;
-    Offset current_source = source;
-    byte* current_dest = static_cast<byte*>(destination);
-
-    ReadResult result {};
-
-    do {
-        const size_t inword_offset = source & 3u;
-        const size_t partial_size = std::min(remaining_size, sizeof(uint32_t) - inword_offset);
-        ReadResult partial_result {};
-
-        uint32_t const* partial_source = [&]() {
-            switch (current_source & ~3u) {
-            case SPILED_REG_LED_LINE_o:
-                return &spiled_reg_led_line;
-            case SPILED_REG_LED_RGB1_o:
-                return &spiled_reg_led_rgb1;
-            case SPILED_REG_LED_RGB2_o:
-                return &spiled_reg_led_rgb2;
-            case SPILED_REG_LED_KBDWR_DIRECT_o:
-                return &spiled_reg_led_kbdwr_direct;
-            case SPILED_REG_KBDRD_KNOBS_DIRECT_o:
-                return &spiled_reg_kbdrd_knobs_direct;
-            case SPILED_REG_KNOBS_8BIT_o:
-                return &spiled_reg_knobs_8bit;
-            default:
-                return (const uint32_t*)nullptr;
-            }
-        }();
-
-        if (partial_source != nullptr) {
-            memory_copy(current_dest, (byte*)partial_source + inword_offset, partial_size);
-        } else {
+uint32_t PeripSpiLed::read_reg(Offset source) const
+{
+    Q_ASSERT((source & 3U) == 0); // uint32_t alligned
+    uint32_t value = [&]() {
+        switch (source) {
+        case SPILED_REG_LED_LINE_o: return spiled_reg_led_line;
+        case SPILED_REG_LED_RGB1_o: return spiled_reg_led_rgb1;
+        case SPILED_REG_LED_RGB2_o: return spiled_reg_led_rgb2;
+        case SPILED_REG_LED_KBDWR_DIRECT_o: return spiled_reg_led_kbdwr_direct;
+        case SPILED_REG_KBDRD_KNOBS_DIRECT_o:
+            return spiled_reg_kbdrd_knobs_direct;
+        case SPILED_REG_KNOBS_8BIT_o: return spiled_reg_knobs_8bit;
+        default:
             // Todo show this to user as this is failure of supplied program
             printf("[WARNING] PeripSpiLed: read to non-readable location.\n");
+            return 0u;
         }
+    }();
 
-        result += partial_result;
-        current_source += partial_size;
-        source += partial_size;
-        remaining_size -= partial_size;
+    emit read_notification(source, value);
 
-    } while (remaining_size > 0);
+    return value;
+}
 
-    emit read_notification(source, size);
+bool PeripSpiLed::write_reg(Offset destination, uint32_t value)
+{
+    Q_ASSERT((destination & 3U) == 0); // uint32_t alligned
 
-    return result;
+    switch (destination) {
+    case SPILED_REG_LED_LINE_o: {
+        if (spiled_reg_led_line != value) {
+            spiled_reg_led_line = value;
+            emit led_line_changed(spiled_reg_led_line);
+            return true;
+        }
+        return false;
+    }
+    case SPILED_REG_LED_RGB1_o:
+        if (spiled_reg_led_rgb1 != value) {
+            spiled_reg_led_rgb1 = value;
+            emit led_rgb1_changed(spiled_reg_led_rgb1);
+            return true;
+        }
+        return false;
+    case SPILED_REG_LED_RGB2_o:
+        if (spiled_reg_led_rgb2 != value) {
+            spiled_reg_led_rgb2 = value;
+            emit led_rgb2_changed(spiled_reg_led_rgb2);
+            return true;
+        }
+        return false;
+    default:
+        // Todo show this to user as this is failure of supplied program
+        printf("[WARNING] PeripSpiLed: write to non-writable location.\n");
+        return false;
+    }
 }
 
 void PeripSpiLed::knob_update_notify(uint32_t val, uint32_t mask, size_t shift)
@@ -165,8 +142,8 @@ void PeripSpiLed::knob_update_notify(uint32_t val, uint32_t mask, size_t shift)
     spiled_reg_knobs_8bit &= ~mask;
     spiled_reg_knobs_8bit |= val;
 
-    emit external_backend_change_notify(this, SPILED_REG_KNOBS_8BIT_o,
-        SPILED_REG_KNOBS_8BIT_o + 3, true);
+    emit external_backend_change_notify(
+        this, SPILED_REG_KNOBS_8BIT_o, SPILED_REG_KNOBS_8BIT_o + 3, true);
 }
 
 void PeripSpiLed::red_knob_update(int val)
