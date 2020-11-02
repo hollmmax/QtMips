@@ -44,9 +44,9 @@
 
 namespace machine {
 
-class MemorySection : public BackendMemory {
+class MemorySection final : public BackendMemory {
 public:
-    explicit MemorySection(std::uint32_t length);
+    explicit MemorySection(size_t length_bytes);
     MemorySection(const MemorySection& other);
     ~MemorySection() override = default;
 
@@ -63,39 +63,61 @@ public:
         ReadOptions options) const override;
 
     size_t length() const;
-    const uint32_t* data() const;
+    const byte* data() const;
 
     bool operator==(const MemorySection&) const;
     bool operator!=(const MemorySection&) const;
 
 private:
-    std::vector<uint32_t> dt;
+    std::vector<byte> dt;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+/// Some optimalization options
+// How big memory sections will be in bits (2^6=64)
+constexpr size_t MEMORY_SECTION_BITS = 6;
+// How big one row of lookup tree will be in bits (2^4=16)
+constexpr size_t MEMORY_TREE_BITS = 4;
+//////////////////////////////////////////////////////////////////////////////
+// Size of one section
+constexpr size_t MEMORY_SECTION_SIZE = 4 * (1u << MEMORY_SECTION_BITS);
+// Size of one memory row
+constexpr size_t MEMORY_TREE_ROW_SIZE = (1u << MEMORY_TREE_BITS);
+// Depth of tree
+constexpr size_t MEMORY_TREE_DEPTH
+    = ((30 - MEMORY_SECTION_BITS) / MEMORY_TREE_BITS);
+
 union MemoryTree {
-    union MemoryTree* mt;
+    union MemoryTree* subtree;
     MemorySection* sec;
 };
 
-class Memory : public BackendMemory {
+class Memory final : public BackendMemory {
     Q_OBJECT
 public:
     Memory();
     Memory(const Memory&);
     ~Memory() override;
-    void reset(); // Reset whole content of memory (removes old tree and creates new one)
+    void reset(); // Reset whole content of memory (removes old tree and creates
+                  // new one)
     void reset(const Memory&);
 
-    MemorySection* get_section(std::uint32_t address, bool create)
-        const; // returns section containing given address
+    MemorySection*
+    get_section(std::uint32_t address, bool create) const; // returns section
+                                                           // containing given
+                                                           // address
 
-    WriteResult
-    write(const void* source, Offset offset, size_t count, WriteOptions options)
-        override;
+    WriteResult write(
+        const void* source,
+        Offset offset,
+        size_t size,
+        WriteOptions options) override;
 
-    ReadResult
-    read(Offset source, void* destination, size_t size, ReadOptions options)
-        const override;
+    ReadResult read(
+        Offset source,
+        void* destination,
+        size_t size,
+        ReadOptions options) const override;
 
     bool operator==(const Memory&) const;
     bool operator!=(const Memory&) const;
@@ -104,15 +126,20 @@ public:
 
 private:
     union MemoryTree* mt_root;
-    std::uint32_t change_counter;
-    std::uint32_t write_counter;
+    uint32_t change_counter = 0;
+    uint32_t write_counter = 0;
 
     static union MemoryTree* allocate_section_tree();
     static void free_section_tree(union MemoryTree*, size_t depth);
-    static bool compare_section_tree(const union MemoryTree*, const union MemoryTree*, size_t depth);
-    //    static bool is_zero_section_tree(const union MemoryTree*, size_t depth);
-    static union MemoryTree* copy_section_tree(const union MemoryTree*, size_t depth);
+    static bool compare_section_tree(
+        const union MemoryTree*,
+        const union MemoryTree*,
+        size_t depth);
+    //    static bool is_zero_section_tree(const union MemoryTree*, size_t
+    //    depth);
+    static union MemoryTree*
+    copy_section_tree(const union MemoryTree*, size_t depth);
 };
 }
 
-#endif //QTMIPS_MACHINE_MEMORY_H
+#endif // QTMIPS_MACHINE_MEMORY_H
