@@ -80,8 +80,8 @@ inline bool is_aligned_generic(Address address)
 /**
  * Divide and round up
  */
-template <typename T>
-inline constexpr T divide_and_ceil(T divident, T divisor)
+template <typename T1, typename T2>
+inline constexpr T1 divide_and_ceil(T1 divident, T2 divisor)
 {
     return ((divident + divisor - 1) / divisor);
 }
