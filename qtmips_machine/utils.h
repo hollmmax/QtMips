@@ -47,7 +47,11 @@
 #define FALLTROUGH
 #endif
 
-typedef uint8_t byte;
+/**
+ * Raw byte in memory
+ * - Intended for raw byte array
+ */
+typedef unsigned char byte;
 
 inline constexpr uint32_t sign_extend(uint16_t v)
 {
@@ -57,7 +61,7 @@ inline constexpr uint32_t sign_extend(uint16_t v)
 #define UNIMPLEMENTED throw std::logic_error("Unimplemented");
 #define PANIC throw std::logic_error("The program panicked.");
 #define UNREACHABLE assert(false);
-#define UNUSED(...) (void)__VA_ARGS__;
+#define UNUSED(arg) (void)arg;
 
 /**
  * Test whether given address is aligned to type

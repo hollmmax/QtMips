@@ -49,12 +49,6 @@ namespace machine {
 typedef uint64_t Offset;
 
 /**
- * Raw byte in memory
- * - Intended for raw byte array
- */
-typedef uint8_t byte;
-
-/**
  * Interface for physical memory or periphery
  *
  * Properties:
@@ -85,7 +79,8 @@ public:
      * @param source        relative index of data to be read
      * @param destination   pointer to destination buffer
      * @param size          number of bytes to be read
-     * @param options       additional option like debug mode, see type definition
+     * @param options       additional option like debug mode, see type
+     * definition
      */
     virtual ReadResult read(
         Offset source,
@@ -95,7 +90,7 @@ public:
 
 signals:
     /**
-     * Notify MMU about a change in managed physical memory of periphery
+     * Notify upper layer about a change in managed physical memory of periphery
      *
      * @param mem_access    this
      * @param start_addr    affected area start
@@ -104,10 +99,10 @@ signals:
      */
     void external_backend_change_notify(
         const BackendMemory* mem_access,
-        std::uint32_t start_addr,
-        std::uint32_t last_addr,
+        uint32_t start_addr,
+        uint32_t last_addr,
         bool external) const;
 };
 }
 
-#endif //QTMIPS_MACHINE_BACKEND_MEMORY_H
+#endif // QTMIPS_MACHINE_BACKEND_MEMORY_H
