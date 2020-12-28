@@ -53,6 +53,8 @@ CachePolicy::get_policy_instance(const CacheConfig* config) {
         return std::make_unique<CachePolicyLFU>(
             config->associativity(), config->set_count());
     }
+
+    Q_UNREACHABLE();
 }
 
 CachePolicyLRU::CachePolicyLRU(size_t associativity, size_t set_count)
