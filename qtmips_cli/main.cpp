@@ -218,7 +218,8 @@ void configure_reporter(QCommandLineParser &p, Reporter &r, const SymbolTable *s
         r.regs();
     if (p.isSet("dump-cache-stats"))
         r.cache_stats();
-    if (p.isSet("dump-get_cycle_count"))
+    }
+    if (p.isSet("dump-cycles")) {
         r.cycles();
 
     QStringList fail = p.values("fail-match");
