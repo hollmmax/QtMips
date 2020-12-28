@@ -43,19 +43,19 @@ namespace machine {
 
 enum AccessControl {
     AC_NONE,
-    AC_BYTE,
-    AC_HALFWORD,
-    AC_WORD,
-    AC_BYTE_UNSIGNED,
-    AC_HALFWORD_UNSIGNED,
+    AC_I8,
+    AC_I16,
+    AC_U32,
+    AC_U8,
+    AC_U16,
     AC_LOAD_LINKED,
     AC_STORE_CONDITIONAL,
     AC_WORD_RIGHT,
     AC_WORD_LEFT,
     AC_CACHE_OP,
 
-    AC_FIRST_REGULAR = AC_BYTE,
-    AC_LAST_REGULAR = AC_HALFWORD_UNSIGNED,
+    AC_FIRST_REGULAR = AC_I8,
+    AC_LAST_REGULAR = AC_U16,
 };
 
 enum ExceptionCause {

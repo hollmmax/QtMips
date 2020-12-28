@@ -103,18 +103,18 @@ void FrontendMemory::write_ctl(
     case AC_NONE: {
         break;
     }
-    case AC_BYTE:
-    case AC_BYTE_UNSIGNED: {
-        write_generic<uint8_t>(offset, (uint8_t)value.as_u32());
+    case AC_I8:
+    case AC_U8: {
+        write_u8(offset, (uint8_t)value.as_u32());
         break;
     }
-    case AC_HALFWORD:
-    case AC_HALFWORD_UNSIGNED: {
-        write_generic<uint16_t>(offset, (uint16_t)value.as_u32());
+    case AC_I16:
+    case AC_U16: {
+        write_u16(offset, (uint16_t)value.as_u32());
         break;
     }
-    case AC_WORD: {
-        write_generic<uint32_t>(offset, (uint32_t)value.as_u32());
+    case AC_U32: {
+        write_u32(offset, (uint32_t)value.as_u32());
         break;
     }
     default: {
@@ -127,23 +127,16 @@ void FrontendMemory::write_ctl(
     }
 }
 
-RegisterValue FrontendMemory::read_ctl(
-    enum AccessControl ctl,
-    Address address) const
-{
+RegisterValue
+FrontendMemory::read_ctl(enum AccessControl ctl, Address address) const {
+    // TODO u32 is no longer guaranteed maximum
     switch (ctl) {
-    case AC_NONE:
-        return 0;
-    case AC_BYTE:
-        return read_generic<int8_t>(address, false);
-    case AC_HALFWORD:
-        return read_generic<int16_t>(address, false);
-    case AC_WORD:
-        return read_generic<int32_t>(address, false);
-    case AC_BYTE_UNSIGNED:
-        return read_generic<uint8_t>(address, false);
-    case AC_HALFWORD_UNSIGNED:
-        return read_generic<uint16_t>(address, false);
+    case AC_NONE: return 0;
+    case AC_I8: return (int8_t)read_u8(address);
+    case AC_I16: return (int16_t)read_u16(address);
+    case AC_U32: return read_u32(address);
+    case AC_U8: return read_u8(address);
+    case AC_U16: return read_u16(address);
     default: {
         throw QTMIPS_EXCEPTION(
             UnknownMemoryControl,

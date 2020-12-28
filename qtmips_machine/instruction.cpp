@@ -747,49 +747,168 @@ static const struct InstructionMap instruction_map[] = {
      .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_NB_SKIP_DS | IMF_BGTZ_BLEZ},
     {"BGTZL",   IT_I, NOALU, NOMEM, nullptr, {"s", "p"}, 0x5c000000, 0xfc1f0000,         // BGTZL
      .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BRANCH | IMF_NB_SKIP_DS | IMF_BGTZ_BLEZ | IMF_BJ_NOT},
-    IM_UNKNOWN,  // 24
-    IM_UNKNOWN,  // 25
-    IM_UNKNOWN,  // 26
-    IM_UNKNOWN,  // 27
-    {"REGIMM", IT_I, NOALU, NOMEM, special2_instruction_map, {}, 0, 0,  // SPECIAL2
-    .flags = IMF_SUB_ENCODE(6, 0)},
-    IM_UNKNOWN,  // 29
-    IM_UNKNOWN,  // 30
-    {"SPECIAL3", IT_R, NOALU, NOMEM, special3_instruction_map, {}, 0, 0, //
-    .flags = IMF_SUB_ENCODE(6, 0)},
-    {"LB",     IT_I, ALU_OP_ADDU, AC_BYTE, nullptr, {"t", "o(b)"}, 0x80000000, 0xfc000000,  // LB
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LH",     IT_I, ALU_OP_ADDU, AC_HALFWORD, nullptr, {"t", "o(b)"}, 0x84000000, 0xfc000000,  // LH
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWL",    IT_I, ALU_OP_ADDU, AC_WORD_LEFT, nullptr, {"t", "o(b)"}, 0x88000000, 0xfc000000,    // LWL - unsupported
-     .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT},
-    {"LW",     IT_I, ALU_OP_ADDU, AC_WORD, nullptr, {"t", "o(b)"}, 0x8c000000, 0xfc000000,  // LW
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LBU",    IT_I, ALU_OP_ADDU, AC_BYTE_UNSIGNED, nullptr, {"t", "o(b)"}, 0x90000000, 0xfc000000,  // LBU
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LHU",    IT_I, ALU_OP_ADDU, AC_HALFWORD_UNSIGNED, nullptr, {"t", "o(b)"}, 0x94000000, 0xfc000000,   // LHU
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWR",    IT_I, ALU_OP_ADDU, AC_WORD_RIGHT, nullptr, {"t", "o(b)"}, 0x98000000, 0xfc000000,    // LWR - unsupported
-     .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT},
-    IM_UNKNOWN,  // 39
-    {"SB",     IT_I, ALU_OP_ADDU, AC_BYTE, nullptr, {"t", "o(b)"}, 0xa0000000, 0xfc000000,  // SB
-     .flags = FLAGS_ALU_I_STORE},
-    {"SH",     IT_I, ALU_OP_ADDU, AC_HALFWORD, nullptr, {"t", "o(b)"}, 0xa4000000, 0xfc000000,   // SH
-     .flags = FLAGS_ALU_I_STORE},
-    {"SWL",    IT_I, ALU_OP_ADDU, AC_WORD_LEFT, nullptr, {"t", "o(b)"}, 0xa8000000, 0xfc000000,    // SWL
-     .flags = FLAGS_ALU_I_STORE},
-    {"SW",     IT_I, ALU_OP_ADDU, AC_WORD, nullptr, {"t", "o(b)"}, 0xac000000, 0xfc000000,  // SW
-     .flags = FLAGS_ALU_I_STORE},
-    IM_UNKNOWN,  // 44
-    IM_UNKNOWN,  // 45
-    {"SWR",    IT_I, ALU_OP_ADDU, AC_WORD_RIGHT, nullptr, {"t", "o(b)"}, 0xb8000000, 0xfc000000,    // SWR
-     .flags = FLAGS_ALU_I_STORE},
-    {"CACHE",  IT_I, ALU_OP_ADDU, AC_CACHE_OP, nullptr, {"k", "o(b)"}, 0xbc000000, 0xfc000000, // CACHE
-     .flags = IMF_SUPPORTED | IMF_ALUSRC | IMF_MEM},
-    {"LL",     IT_I, ALU_OP_ADDU, AC_LOAD_LINKED, nullptr, {"t", "o(b)"}, 0xc0000000, 0xfc000000,  // LL
-     .flags = FLAGS_ALU_I_LOAD},
-    {"LWC1", IT_I, NOALU, NOMEM, nullptr, {"T", "o(b)"}, 0xc4000000, 0xfc000000,
-     .flags = IMF_SUPPORTED},
+    IM_UNKNOWN, // 24
+    IM_UNKNOWN, // 25
+    IM_UNKNOWN, // 26
+    IM_UNKNOWN, // 27
+    { "REGIMM",
+      IT_I,
+      NOALU,
+      NOMEM,
+      special2_instruction_map,
+      {},
+      0,
+      0, // SPECIAL2
+      .flags = IMF_SUB_ENCODE(6, 0) },
+    IM_UNKNOWN, // 29
+    IM_UNKNOWN, // 30
+    { "SPECIAL3",
+      IT_R,
+      NOALU,
+      NOMEM,
+      special3_instruction_map,
+      {},
+      0,
+      0, //
+      .flags = IMF_SUB_ENCODE(6, 0) },
+    { "LB",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_I8,
+      nullptr,
+      { "t", "o(b)" },
+      0x80000000,
+      0xfc000000, // LB
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LH",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_I16,
+      nullptr,
+      { "t", "o(b)" },
+      0x84000000,
+      0xfc000000, // LH
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LWL",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_WORD_LEFT,
+      nullptr,
+      { "t", "o(b)" },
+      0x88000000,
+      0xfc000000, // LWL - unsupported
+      .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT },
+    { "LW",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_U32,
+      nullptr,
+      { "t", "o(b)" },
+      0x8c000000,
+      0xfc000000, // LW
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LBU",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_U8,
+      nullptr,
+      { "t", "o(b)" },
+      0x90000000,
+      0xfc000000, // LBU
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LHU",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_U16,
+      nullptr,
+      { "t", "o(b)" },
+      0x94000000,
+      0xfc000000, // LHU
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LWR",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_WORD_RIGHT,
+      nullptr,
+      { "t", "o(b)" },
+      0x98000000,
+      0xfc000000, // LWR - unsupported
+      .flags = FLAGS_ALU_I_LOAD | IMF_ALU_REQ_RT },
+    IM_UNKNOWN, // 39
+    { "SB",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_I8,
+      nullptr,
+      { "t", "o(b)" },
+      0xa0000000,
+      0xfc000000, // SB
+      .flags = FLAGS_ALU_I_STORE },
+    { "SH",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_I16,
+      nullptr,
+      { "t", "o(b)" },
+      0xa4000000,
+      0xfc000000, // SH
+      .flags = FLAGS_ALU_I_STORE },
+    { "SWL",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_WORD_LEFT,
+      nullptr,
+      { "t", "o(b)" },
+      0xa8000000,
+      0xfc000000, // SWL
+      .flags = FLAGS_ALU_I_STORE },
+    { "SW",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_U32,
+      nullptr,
+      { "t", "o(b)" },
+      0xac000000,
+      0xfc000000, // SW
+      .flags = FLAGS_ALU_I_STORE },
+    IM_UNKNOWN, // 44
+    IM_UNKNOWN, // 45
+    { "SWR",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_WORD_RIGHT,
+      nullptr,
+      { "t", "o(b)" },
+      0xb8000000,
+      0xfc000000, // SWR
+      .flags = FLAGS_ALU_I_STORE },
+    { "CACHE",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_CACHE_OP,
+      nullptr,
+      { "k", "o(b)" },
+      0xbc000000,
+      0xfc000000, // CACHE
+      .flags = IMF_SUPPORTED | IMF_ALUSRC | IMF_MEM },
+    { "LL",
+      IT_I,
+      ALU_OP_ADDU,
+      AC_LOAD_LINKED,
+      nullptr,
+      { "t", "o(b)" },
+      0xc0000000,
+      0xfc000000, // LL
+      .flags = FLAGS_ALU_I_LOAD },
+    { "LWC1",
+      IT_I,
+      NOALU,
+      NOMEM,
+      nullptr,
+      { "T", "o(b)" },
+      0xc4000000,
+      0xfc000000,
+      .flags = IMF_SUPPORTED},
     IM_UNKNOWN,  // 50
     {"PREF", IT_I, NOALU, NOMEM, nullptr, {"k", "o(b)"}, 0xcc000000, 0xfc000000,            // PREF
      .flags = IMF_SUPPORTED},
