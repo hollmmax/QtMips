@@ -33,14 +33,15 @@
  *
  ******************************************************************************/
 
-#include "cache.h"
-#include "cache_policy.h"
+#include "../memory/backend/memory.h"
+#include "../memory/cache/cache.h"
+#include "../memory/cache/cache_policy.h"
+#include "../memory/mmu.h"
 #include "tst_machine.h"
 
 using namespace machine;
 
-void MachineTests::cache_data()
-{
+void MachineTests::cache_data() {
     QTest::addColumn<CacheConfig>("cache_c");
     QTest::addColumn<unsigned>("hit");
     QTest::addColumn<unsigned>("miss");
@@ -72,38 +73,28 @@ void MachineTests::cache() {
     QFETCH(unsigned, miss);
 
     Memory m;
-    Cache cch(&m, &cache_c);
+    TrivialMMU m_frontend(&m);
+    Cache cch(&m_frontend, &cache_c);
 
     // Test reads //
-    m.write_word(0x200, 0x24);
-    m.write_word(0x204, 0x66);
-    m.write_word(0x21c, 0x12);
-    m.write_word(0x300, 0x32);
+    memory_write_u32(&m, 0x200, 0x24);
+    memory_write_u32(&m, 0x204, 0x66);
+    memory_write_u32(&m, 0x21c, 0x12);
+    memory_write_u32(&m, 0x300, 0x32);
     for (int i = 0; i < 2; i++) {
-        QCOMPARE(cch.read_word(0x200), (std::uint32_t)0x24);
-        QCOMPARE(cch.read_word(0x204), (std::uint32_t)0x66);
-        QCOMPARE(cch.read_word(0x21c), (std::uint32_t)0x12);
-        QCOMPARE(cch.read_word(0x300), (std::uint32_t)0x32);
+        QCOMPARE(cch.read_u32(0x200_addr), (std::uint32_t)0x24);
+        QCOMPARE(cch.read_u32(0x204_addr), (std::uint32_t)0x66);
+        QCOMPARE(cch.read_u32(0x21c_addr), (std::uint32_t)0x12);
+        QCOMPARE(cch.read_u32(0x300_addr), (std::uint32_t)0x32);
     }
 
     // Test writes //
-    cch.write_word(0x700, 0x24);
-    QCOMPARE(m.read_word(0x700), (std::uint32_t)0x24);
-    cch.write_word(0x700, 0x23);
-    QCOMPARE(m.read_word(0x700), (std::uint32_t)0x23);
+    cch.write_u32(0x700_addr, 0x24);
+    QCOMPARE(memory_read_u32(&m, 0x700), (std::uint32_t)0x24);
+    cch.write_u32(0x700_addr, 0x23);
+    QCOMPARE(memory_read_u32(&m, 0x700), (std::uint32_t)0x23);
 
     // Verify counts
-    QCOMPARE(cch.hit(), hit);
-    QCOMPARE(cch.miss(), miss);
-}
-
-/**
- * Random policy can select any index within associativity range
- */
-void MachineTests::cache_policy_rand()
-{
-    for (size_t assoc = 1; assoc < 32; assoc <<= 1) {
-        auto policy = CachePolicyRAND(assoc);
-        QVERIFY(policy.select_index_to_evict(0) < assoc);
-    }
+    QCOMPARE(cch.get_hit_count(), hit);
+    QCOMPARE(cch.get_miss_count(), miss);
 }

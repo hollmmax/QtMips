@@ -33,10 +33,12 @@
  *
  ******************************************************************************/
 
-#include <iostream>
-#include "tst_machine.h"
-#include "programloader.h"
+#include "../memory/memory_utils.h"
 #include "instruction.h"
+#include "programloader.h"
+#include "tst_machine.h"
+
+#include <iostream>
 
 using namespace machine;
 
@@ -49,8 +51,13 @@ void MachineTests::program_loader() {
     pl.to_memory(&m);
 
     // 	addi $1, $0, 6
-    QCOMPARE(Instruction(m.read_word(PC_INIT)), Instruction(8, 0, 1, 6));
-    // j (8)0020000 (only 28 bits are used and they are logically shifted left by 2)
-    QCOMPARE(Instruction(m.read_word(PC_INIT + 4)), Instruction(2, 0x20000 >> 2));
-    // TODO add some more code to data and do more compares (for example more sections)
+    QCOMPARE(
+        Instruction(memory_read_u32(&m, PC_INIT)), Instruction(8, 0, 1, 6));
+    // j (8)0020000 (only 28 bits are used and they are logically shifted left
+    // by 2)
+    QCOMPARE(
+        Instruction(memory_read_u32(&m, PC_INIT + 4)),
+        Instruction(2, Address(0x20000 >> 2)));
+    // TODO add some more code to data and do more compares (for example more
+    // sections)
 }

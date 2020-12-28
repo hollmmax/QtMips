@@ -12,8 +12,10 @@
  *
  * Copyright (c) 2017-2019 Karel Koci<cynerd@email.cz>
  * Copyright (c) 2019      Pavel Pisa <pisa@cmp.felk.cvut.cz>
+ * Copyright (c) 2020      Jakub Dupak <dupak.jakub@gmail.com>
+ * Copyright (c) 2020      Max Hollmann <hollmmax@fel.cvut.cz>
  *
- * Faculty of Electrical Engineering (http://www.fel.cvut.cz)
+ *  Faculty of Electrical Engineering (http://www.fel.cvut.cz)
  * Czech Technical University        (http://www.cvut.cz/)
  *
  * This program is free software; you can redistribute it and/or
@@ -33,9 +35,9 @@
  *
  ******************************************************************************/
 
+#include "../alu.h"
+#include "../qtmipsexception.h"
 #include "tst_machine.h"
-#include "alu.h"
-#include "qtmipsexception.h"
 
 using namespace machine;
 
@@ -48,170 +50,88 @@ void MachineTests::alu_data() {
     QTest::addColumn<Registers>("regs_res");
     QTest::addColumn<std::uint32_t>("res");
 
-    QTest::newRow("SLL") << ALU_OP_SLL \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0x80000001 \
-                         << (std::uint8_t)3 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0x8;
-    QTest::newRow("SRL") << ALU_OP_SRL \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0x80000008 \
-                         << (std::uint8_t)3 \
-                         << Registers() \
-                         << Registers() \
+    QTest::newRow("SLL") << ALU_OP_SLL << (std::uint32_t)0
+                         << (std::uint32_t)0x80000001 << (std::uint8_t)3
+                         << Registers() << Registers() << (std::uint32_t)0x8;
+    QTest::newRow("SRL") << ALU_OP_SRL << (std::uint32_t)0
+                         << (std::uint32_t)0x80000008 << (std::uint8_t)3
+                         << Registers() << Registers()
                          << (std::uint32_t)0x10000001;
-    QTest::newRow("SRA") << ALU_OP_SRA \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0x80000008 \
-                         << (std::uint8_t)3 \
-                         << Registers() \
-                         << Registers() \
+    QTest::newRow("SRA") << ALU_OP_SRA << (std::uint32_t)0
+                         << (std::uint32_t)0x80000008 << (std::uint8_t)3
+                         << Registers() << Registers()
                          << (std::uint32_t)0xF0000001;
-    QTest::newRow("SLLV") << ALU_OP_SLLV \
-                         << (std::uint32_t)3 \
-                         << (std::uint32_t)0x80000001 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0x8;
-    QTest::newRow("SRLV") << ALU_OP_SRLV \
-                         << (std::uint32_t)3 \
-                         << (std::uint32_t)0x80000008 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0x10000001;
-    QTest::newRow("SRAV") << ALU_OP_SRAV \
-                         << (std::uint32_t)3 \
-                         << (std::uint32_t)0x80000008 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0xF0000001;
-    // JR and JALR should have no effect and we test that in core (it really doesn't make sense to test it here)
-    QTest::newRow("MOVZ") << ALU_OP_MOVZ \
-                         << (std::uint32_t)22 \
-                         << (std::uint32_t)0 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)22;
-    QTest::newRow("MOVN") << ALU_OP_MOVN \
-                         << (std::uint32_t)22 \
-                         << (std::uint32_t)1 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)22;
+    QTest::newRow("SLLV") << ALU_OP_SLLV << (std::uint32_t)3
+                          << (std::uint32_t)0x80000001 << (std::uint8_t)0
+                          << Registers() << Registers() << (std::uint32_t)0x8;
+    QTest::newRow("SRLV") << ALU_OP_SRLV << (std::uint32_t)3
+                          << (std::uint32_t)0x80000008 << (std::uint8_t)0
+                          << Registers() << Registers()
+                          << (std::uint32_t)0x10000001;
+    QTest::newRow("SRAV") << ALU_OP_SRAV << (std::uint32_t)3
+                          << (std::uint32_t)0x80000008 << (std::uint8_t)0
+                          << Registers() << Registers()
+                          << (std::uint32_t)0xF0000001;
+    // JR and JALR should have no effect and we test that in core (it really
+    // doesn't make sense to test it here)
+    QTest::newRow("MOVZ") << ALU_OP_MOVZ << (std::uint32_t)22
+                          << (std::uint32_t)0 << (std::uint8_t)0 << Registers()
+                          << Registers() << (std::uint32_t)22;
+    QTest::newRow("MOVN") << ALU_OP_MOVN << (std::uint32_t)22
+                          << (std::uint32_t)1 << (std::uint8_t)0 << Registers()
+                          << Registers() << (std::uint32_t)22;
     {
-    Registers init;
-    init.write_hi_lo(true, 42);
-    init.write_hi_lo(false, 24);
-    Registers res(init);
-    QTest::newRow("MFHI") << ALU_OP_MFHI \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0 \
-                         << (std::uint8_t)0 \
-                         << init \
-                         << res \
-                         << (std::uint32_t)42;
-    QTest::newRow("MFLO") << ALU_OP_MFLO \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0 \
-                         << (std::uint8_t)0 \
-                         << init \
-                         << res \
-                         << (std::uint32_t)24;
-    res.write_hi_lo(true, 43);
-    QTest::newRow("MTHI") << ALU_OP_MTHI \
-                         << (std::uint32_t)43 \
-                         << (std::uint32_t)0 \
-                         << (std::uint8_t)0 \
-                         << init \
-                         << res \
-                         << (std::uint32_t)0;
-    res.write_hi_lo(true, 42);
-    res.write_hi_lo(false, 23);
-    QTest::newRow("MTLO") << ALU_OP_MTLO \
-                         << (std::uint32_t)23 \
-                         << (std::uint32_t)0 \
-                         << (std::uint8_t)0 \
-                         << init \
-                         << res \
-                         << (std::uint32_t)0;
+        Registers init;
+        init.write_hi_lo(true, 42);
+        init.write_hi_lo(false, 24);
+        Registers res(init);
+        QTest::newRow("MFHI")
+            << ALU_OP_MFHI << (std::uint32_t)0 << (std::uint32_t)0
+            << (std::uint8_t)0 << init << res << (std::uint32_t)42;
+        QTest::newRow("MFLO")
+            << ALU_OP_MFLO << (std::uint32_t)0 << (std::uint32_t)0
+            << (std::uint8_t)0 << init << res << (std::uint32_t)24;
+        res.write_hi_lo(true, 43);
+        QTest::newRow("MTHI")
+            << ALU_OP_MTHI << (std::uint32_t)43 << (std::uint32_t)0
+            << (std::uint8_t)0 << init << res << (std::uint32_t)0;
+        res.write_hi_lo(true, 42);
+        res.write_hi_lo(false, 23);
+        QTest::newRow("MTLO")
+            << ALU_OP_MTLO << (std::uint32_t)23 << (std::uint32_t)0
+            << (std::uint8_t)0 << init << res << (std::uint32_t)0;
     }
-    QTest::newRow("ADD") << ALU_OP_ADD \
-                         << (std::uint32_t)24 \
-                         << (std::uint32_t)66 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
+    QTest::newRow("ADD") << ALU_OP_ADD << (std::uint32_t)24 << (std::uint32_t)66
+                         << (std::uint8_t)0 << Registers() << Registers()
                          << (std::uint32_t)90;
-    QTest::newRow("ADDU") << ALU_OP_ADDU \
-                         << (std::uint32_t)24 \
-                         << (std::uint32_t)66 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)90;
-    QTest::newRow("SUB") << ALU_OP_SUB \
-                         << (std::uint32_t)66 \
-                         << (std::uint32_t)24 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
+    QTest::newRow("ADDU") << ALU_OP_ADDU << (std::uint32_t)24
+                          << (std::uint32_t)66 << (std::uint8_t)0 << Registers()
+                          << Registers() << (std::uint32_t)90;
+    QTest::newRow("SUB") << ALU_OP_SUB << (std::uint32_t)66 << (std::uint32_t)24
+                         << (std::uint8_t)0 << Registers() << Registers()
                          << (std::uint32_t)42;
-    QTest::newRow("SUBU") << ALU_OP_SUBU \
-                         << (std::uint32_t)24 \
-                         << (std::uint32_t)66 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)-42;
-    QTest::newRow("AND") << ALU_OP_AND \
-                         << (std::uint32_t)0xA81 \
-                         << (std::uint32_t)0x603 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0x201;
-    QTest::newRow("OR") << ALU_OP_OR \
-                         << (std::uint32_t)0xA81 \
-                         << (std::uint32_t)0x603 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0xE83;
-    QTest::newRow("XOR") << ALU_OP_XOR \
-                         << (std::uint32_t)0xA81 \
-                         << (std::uint32_t)0x603 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)0xC82;
-    QTest::newRow("NOR") << ALU_OP_NOR \
-                         << (std::uint32_t)0xA81 \
-                         << (std::uint32_t)0x603 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
+    QTest::newRow("SUBU") << ALU_OP_SUBU << (std::uint32_t)24
+                          << (std::uint32_t)66 << (std::uint8_t)0 << Registers()
+                          << Registers() << (std::uint32_t)-42;
+    QTest::newRow("AND") << ALU_OP_AND << (std::uint32_t)0xA81
+                         << (std::uint32_t)0x603 << (std::uint8_t)0
+                         << Registers() << Registers() << (std::uint32_t)0x201;
+    QTest::newRow("OR") << ALU_OP_OR << (std::uint32_t)0xA81
+                        << (std::uint32_t)0x603 << (std::uint8_t)0
+                        << Registers() << Registers() << (std::uint32_t)0xE83;
+    QTest::newRow("XOR") << ALU_OP_XOR << (std::uint32_t)0xA81
+                         << (std::uint32_t)0x603 << (std::uint8_t)0
+                         << Registers() << Registers() << (std::uint32_t)0xC82;
+    QTest::newRow("NOR") << ALU_OP_NOR << (std::uint32_t)0xA81
+                         << (std::uint32_t)0x603 << (std::uint8_t)0
+                         << Registers() << Registers()
                          << (std::uint32_t)0xFFFFF17C;
-    QTest::newRow("SLT") << ALU_OP_SLT \
-                         << (std::uint32_t)-31 \
-                         << (std::uint32_t)24 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)1;
-    QTest::newRow("SLTU") << ALU_OP_SLTU \
-                         << (std::uint32_t)24 \
-                         << (std::uint32_t)32 \
-                         << (std::uint8_t)0 \
-                         << Registers() \
-                         << Registers() \
-                         << (std::uint32_t)1;
+    QTest::newRow("SLT") << ALU_OP_SLT << (std::uint32_t)-31
+                         << (std::uint32_t)24 << (std::uint8_t)0 << Registers()
+                         << Registers() << (std::uint32_t)1;
+    QTest::newRow("SLTU") << ALU_OP_SLTU << (std::uint32_t)24
+                          << (std::uint32_t)32 << (std::uint8_t)0 << Registers()
+                          << Registers() << (std::uint32_t)1;
 }
 
 void MachineTests::alu() {
@@ -225,7 +145,7 @@ void MachineTests::alu() {
     QFETCH(Registers, regs_res);
     QFETCH(std::uint32_t, res);
 
-    QCOMPARE(alu_operate(op, s , t, sa, 0, &regs_init, discard, excause), res);
+    QCOMPARE(alu_operate(op, s, t, sa, 0, &regs_init, discard, excause), res);
     QCOMPARE(regs_res, regs_init);
     QCOMPARE(excause, EXCAUSE_NONE);
 }
@@ -237,46 +157,36 @@ void MachineTests::alu_trap_overflow_data() {
     QTest::addColumn<enum ExceptionCause>("excause");
     // Note no sa as shift unstruction has no exceptions
 
-    QTest::newRow("ADD") << (std::uint8_t)ALU_OP_ADD \
-                         << (std::uint32_t)0x8fffffff \
-                         << (std::uint32_t)0x90000000 \
+    QTest::newRow("ADD") << (std::uint8_t)ALU_OP_ADD
+                         << (std::uint32_t)0x8fffffff
+                         << (std::uint32_t)0x90000000 << EXCAUSE_OVERFLOW;
+    QTest::newRow("SUB") << (std::uint8_t)ALU_OP_SUB
+                         << (std::uint32_t)0x80000003 << (std::uint32_t)4
                          << EXCAUSE_OVERFLOW;
-    QTest::newRow("SUB") << (std::uint8_t)ALU_OP_SUB \
-                         << (std::uint32_t)0x80000003 \
-                         << (std::uint32_t)4 \
-                         << EXCAUSE_OVERFLOW;
-    QTest::newRow("TEQ") << (std::uint8_t)ALU_OP_TEQ \
-                         << (std::uint32_t)0x12345678 \
-                         << (std::uint32_t)0x12345678 \
-                         << EXCAUSE_TRAP;
-    QTest::newRow("TEQ") << (std::uint8_t)ALU_OP_TEQ \
-                         << (std::uint32_t)0x12345679 \
-                         << (std::uint32_t)0x12345678 \
-                         << EXCAUSE_NONE;
-    QTest::newRow("TNE") << (std::uint8_t)ALU_OP_TNE \
-                         << (std::uint32_t)0x12345678 \
-                         << (std::uint32_t)0x12345679 \
-                         << EXCAUSE_TRAP;
-    QTest::newRow("TNE") << (std::uint8_t)ALU_OP_TNE \
-                         << (std::uint32_t)0x12345678 \
-                         << (std::uint32_t)0x12345678 \
-                         << EXCAUSE_NONE;
-    QTest::newRow("TGE") << (std::uint8_t)ALU_OP_TGE \
-                         << (std::uint32_t)0x12345679 \
-                         << (std::uint32_t)0x12345678 \
-                         << EXCAUSE_TRAP;
-    QTest::newRow("TGEU") << (std::uint8_t)ALU_OP_TGEU \
-                         << (std::uint32_t)0x12345679 \
-                         << (std::uint32_t)0x12345678 \
-                         << EXCAUSE_TRAP;
-    QTest::newRow("TLT") << (std::uint8_t)ALU_OP_TLT \
-                         << (std::uint32_t)0x12345678 \
-                         << (std::uint32_t)0x12345679 \
-                         << EXCAUSE_TRAP;
-    QTest::newRow("TLTU") << (std::uint8_t)ALU_OP_TLTU \
-                         << (std::uint32_t)0x12345678 \
-                         << (std::uint32_t)0x12345679 \
-                         << EXCAUSE_TRAP;
+    QTest::newRow("TEQ") << (std::uint8_t)ALU_OP_TEQ
+                         << (std::uint32_t)0x12345678
+                         << (std::uint32_t)0x12345678 << EXCAUSE_TRAP;
+    QTest::newRow("TEQ") << (std::uint8_t)ALU_OP_TEQ
+                         << (std::uint32_t)0x12345679
+                         << (std::uint32_t)0x12345678 << EXCAUSE_NONE;
+    QTest::newRow("TNE") << (std::uint8_t)ALU_OP_TNE
+                         << (std::uint32_t)0x12345678
+                         << (std::uint32_t)0x12345679 << EXCAUSE_TRAP;
+    QTest::newRow("TNE") << (std::uint8_t)ALU_OP_TNE
+                         << (std::uint32_t)0x12345678
+                         << (std::uint32_t)0x12345678 << EXCAUSE_NONE;
+    QTest::newRow("TGE") << (std::uint8_t)ALU_OP_TGE
+                         << (std::uint32_t)0x12345679
+                         << (std::uint32_t)0x12345678 << EXCAUSE_TRAP;
+    QTest::newRow("TGEU") << (std::uint8_t)ALU_OP_TGEU
+                          << (std::uint32_t)0x12345679
+                          << (std::uint32_t)0x12345678 << EXCAUSE_TRAP;
+    QTest::newRow("TLT") << (std::uint8_t)ALU_OP_TLT
+                         << (std::uint32_t)0x12345678
+                         << (std::uint32_t)0x12345679 << EXCAUSE_TRAP;
+    QTest::newRow("TLTU") << (std::uint8_t)ALU_OP_TLTU
+                          << (std::uint32_t)0x12345678
+                          << (std::uint32_t)0x12345679 << EXCAUSE_TRAP;
 }
 
 void MachineTests::alu_trap_overflow() {
@@ -289,10 +199,9 @@ void MachineTests::alu_trap_overflow() {
     Registers regs;
 
     // Only runtime exception is expected as any other exception is a bug
-    alu_operate((enum AluOp)op, s , t, 0, 0, &regs, discard, exc);
+    alu_operate((enum AluOp)op, s, t, 0, 0, &regs, discard, exc);
     QCOMPARE((uint)exc, (uint)excause);
 }
-
 
 void MachineTests::alu_except_data() {
     QTest::addColumn<std::uint8_t>("op");
@@ -300,9 +209,8 @@ void MachineTests::alu_except_data() {
     QTest::addColumn<std::uint32_t>("t");
 
     // Just test that we can throw unsupported ALU operation
-    QTest::newRow("?") << (std::uint8_t)ALU_OP_LAST \
-                         << (std::uint32_t)0 \
-                         << (std::uint32_t)0;
+    QTest::newRow("?") << (std::uint8_t)ALU_OP_LAST << (std::uint32_t)0
+                       << (std::uint32_t)0;
 }
 
 void MachineTests::alu_except() {
@@ -315,7 +223,8 @@ void MachineTests::alu_except() {
 
 #ifdef QVERIFY_EXCEPTION_THROWN
     // Only runtime exception is expected as any other exception is a bug
-    QVERIFY_EXCEPTION_THROWN(alu_operate((enum AluOp)op, s , t, 0, 0, &regs, discard, excause),
-                             QtMipsExceptionRuntime);
+    QVERIFY_EXCEPTION_THROWN(
+        alu_operate((enum AluOp)op, s, t, 0, 0, &regs, discard, excause),
+        QtMipsExceptionRuntime);
 #endif
 }

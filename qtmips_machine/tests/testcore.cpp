@@ -33,11 +33,14 @@
  *
  ******************************************************************************/
 
-#include <QVector>
+#include "../core.h"
+#include "../machineconfig.h"
+#include "../memory/backend/memory.h"
+#include "../memory/cache/cache.h"
+#include "../memory/mmu.h"
 #include "tst_machine.h"
-#include "core.h"
-#include "cache.h"
-#include "machineconfig.h"
+
+#include <QVector>
 
 using namespace machine;
 
@@ -45,179 +48,144 @@ static void core_regs_data() {
     QTest::addColumn<Instruction>("i");
     QTest::addColumn<Registers>("init");
     QTest::addColumn<Registers>("res");
-    // Note that we shouldn't be touching program counter as that is handled automatically and differs if we use pipelining
+    // Note that we shouldn't be touching program counter as that is handled
+    // automatically and differs if we use pipelining
 
     // Arithmetic instructions
     {
-    Registers regs_init;
-    regs_init.write_gp(24, 24);
-    regs_init.write_gp(25, 12);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 36);
-    QTest::newRow("ADD") << Instruction(0, 24, 25, 26, 0, 32) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("ADDU") << Instruction(0, 24, 25, 26, 0, 33) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("ADDI") << Instruction(8, 24, 26, 12) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("ADDIU") << Instruction(9, 24, 26, 12) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 12);
-    QTest::newRow("SUB") << Instruction(0, 24, 25, 26, 0, 34) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SUBU") << Instruction(0, 24, 25, 26, 0, 35) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_gp(24, 24);
+        regs_init.write_gp(25, 12);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 36);
+        QTest::newRow("ADD")
+            << Instruction(0, 24, 25, 26, 0, 32) << regs_init << regs_res;
+        QTest::newRow("ADDU")
+            << Instruction(0, 24, 25, 26, 0, 33) << regs_init << regs_res;
+        QTest::newRow("ADDI")
+            << Instruction(8, 24, 26, 12) << regs_init << regs_res;
+        QTest::newRow("ADDIU")
+            << Instruction(9, 24, 26, 12) << regs_init << regs_res;
+        regs_res.write_gp(26, 12);
+        QTest::newRow("SUB")
+            << Instruction(0, 24, 25, 26, 0, 34) << regs_init << regs_res;
+        QTest::newRow("SUBU")
+            << Instruction(0, 24, 25, 26, 0, 35) << regs_init << regs_res;
     }
     {
-    Registers regs_init;
-    regs_init.write_gp(24, 12);
-    regs_init.write_gp(25, 24);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 1);
-    QTest::newRow("SLT") << Instruction(0, 24, 25, 26, 0, 42) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SLTU") << Instruction(0, 24, 25, 26, 0, 43) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SLTI") << Instruction(10, 24, 26, 24) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SLTIU") << Instruction(11, 24, 26, 24) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_gp(24, 12);
+        regs_init.write_gp(25, 24);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 1);
+        QTest::newRow("SLT")
+            << Instruction(0, 24, 25, 26, 0, 42) << regs_init << regs_res;
+        QTest::newRow("SLTU")
+            << Instruction(0, 24, 25, 26, 0, 43) << regs_init << regs_res;
+        QTest::newRow("SLTI")
+            << Instruction(10, 24, 26, 24) << regs_init << regs_res;
+        QTest::newRow("SLTIU")
+            << Instruction(11, 24, 26, 24) << regs_init << regs_res;
     }
 
     // Shift instructions
     {
-    Registers regs_init;
-    regs_init.write_gp(24, 0xf0);
-    regs_init.write_gp(25, 3);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 0x780);
-    QTest::newRow("SLL") << Instruction(0, 0, 24, 26, 3, 0) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SLLV") << Instruction(0, 25, 24, 26, 0, 4) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0x1e);
-    QTest::newRow("SLR") << Instruction(0, 0, 24, 26, 3, 2) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SLRV") << Instruction(0, 25, 24, 26, 0, 6) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_gp(24, 0xf0);
+        regs_init.write_gp(25, 3);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 0x780);
+        QTest::newRow("SLL")
+            << Instruction(0, 0, 24, 26, 3, 0) << regs_init << regs_res;
+        QTest::newRow("SLLV")
+            << Instruction(0, 25, 24, 26, 0, 4) << regs_init << regs_res;
+        regs_res.write_gp(26, 0x1e);
+        QTest::newRow("SLR")
+            << Instruction(0, 0, 24, 26, 3, 2) << regs_init << regs_res;
+        QTest::newRow("SLRV")
+            << Instruction(0, 25, 24, 26, 0, 6) << regs_init << regs_res;
     }
     {
-    Registers regs_init;
-    regs_init.write_gp(24, 0x800000f0);
-    regs_init.write_gp(25, 3);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 0xF000001e);
-    QTest::newRow("SRA") << Instruction(0, 0, 24, 26, 3, 3) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("SRAV") << Instruction(0, 25, 24, 26, 0, 7) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_gp(24, 0x800000f0);
+        regs_init.write_gp(25, 3);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 0xF000001e);
+        QTest::newRow("SRA")
+            << Instruction(0, 0, 24, 26, 3, 3) << regs_init << regs_res;
+        QTest::newRow("SRAV")
+            << Instruction(0, 25, 24, 26, 0, 7) << regs_init << regs_res;
     }
 
     // Logical instructions
     {
-    Registers regs_init;
-    regs_init.write_gp(24, 0xf0);
-    regs_init.write_gp(25, 0xe1);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 0xe0);
-    QTest::newRow("AND") << Instruction(0, 24, 25, 26, 0, 36) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("ANDI") << Instruction(12, 24, 26, 0xe1) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0xf1);
-    QTest::newRow("OR") << Instruction(0, 24, 25, 26, 0, 37) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("ORI") << Instruction(13, 24, 26, 0xe1) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0x11);
-    QTest::newRow("XOR") << Instruction(0, 24, 25, 26, 0, 38) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("XORI") << Instruction(14, 24, 26, 0xe1) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0xffffff0e);
-    QTest::newRow("NOR") << Instruction(0, 24, 25, 26, 0, 39) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0xf00f0000);
-    QTest::newRow("LUI") << Instruction(15, 0, 26, 0xf00f) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_gp(24, 0xf0);
+        regs_init.write_gp(25, 0xe1);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 0xe0);
+        QTest::newRow("AND")
+            << Instruction(0, 24, 25, 26, 0, 36) << regs_init << regs_res;
+        QTest::newRow("ANDI")
+            << Instruction(12, 24, 26, 0xe1) << regs_init << regs_res;
+        regs_res.write_gp(26, 0xf1);
+        QTest::newRow("OR")
+            << Instruction(0, 24, 25, 26, 0, 37) << regs_init << regs_res;
+        QTest::newRow("ORI")
+            << Instruction(13, 24, 26, 0xe1) << regs_init << regs_res;
+        regs_res.write_gp(26, 0x11);
+        QTest::newRow("XOR")
+            << Instruction(0, 24, 25, 26, 0, 38) << regs_init << regs_res;
+        QTest::newRow("XORI")
+            << Instruction(14, 24, 26, 0xe1) << regs_init << regs_res;
+        regs_res.write_gp(26, 0xffffff0e);
+        QTest::newRow("NOR")
+            << Instruction(0, 24, 25, 26, 0, 39) << regs_init << regs_res;
+        regs_res.write_gp(26, 0xf00f0000);
+        QTest::newRow("LUI")
+            << Instruction(15, 0, 26, 0xf00f) << regs_init << regs_res;
     }
 
     // Move instructions
     {
-    Registers regs_init;
-    regs_init.write_hi_lo(true, 24);
-    regs_init.write_hi_lo(false, 28);
-    regs_init.write_gp(24, 55);
-    regs_init.write_gp(25, 56);
-    regs_init.write_gp(27, 21);
-    regs_init.write_gp(28, 22);
-    Registers regs_res(regs_init);
-    regs_res.write_gp(26, 24);
-    QTest::newRow("MFHI") << Instruction(0, 0, 0, 26, 0, 16) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 28);
-    QTest::newRow("MFLO") << Instruction(0, 0, 0, 26, 0, 18) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(26, 0);
-    regs_res.write_hi_lo(true, 21);
-    QTest::newRow("MTHI") << Instruction(0, 27, 0, 0, 0, 17) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_hi_lo(true, 24);
-    regs_res.write_hi_lo(false, 22);
-    QTest::newRow("MTLO") << Instruction(0, 28, 0, 0, 0, 19) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_hi_lo(false, 28);
-    QTest::newRow("MOVZ-F") << Instruction(0, 24, 24, 25, 0, 10) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("MOVN-F") << Instruction(0, 24, 1, 25, 0, 11) \
-                         << regs_init \
-                         << regs_res;
-    regs_res.write_gp(25, 55);
-    QTest::newRow("MOVZ-T") << Instruction(0, 24, 1, 25, 0, 10) \
-                         << regs_init \
-                         << regs_res;
-    QTest::newRow("MOVN-T") << Instruction(0, 24, 24, 25, 0, 11) \
-                         << regs_init \
-                         << regs_res;
+        Registers regs_init;
+        regs_init.write_hi_lo(true, 24);
+        regs_init.write_hi_lo(false, 28);
+        regs_init.write_gp(24, 55);
+        regs_init.write_gp(25, 56);
+        regs_init.write_gp(27, 21);
+        regs_init.write_gp(28, 22);
+        Registers regs_res(regs_init);
+        regs_res.write_gp(26, 24);
+        QTest::newRow("MFHI")
+            << Instruction(0, 0, 0, 26, 0, 16) << regs_init << regs_res;
+        regs_res.write_gp(26, 28);
+        QTest::newRow("MFLO")
+            << Instruction(0, 0, 0, 26, 0, 18) << regs_init << regs_res;
+        regs_res.write_gp(26, 0);
+        regs_res.write_hi_lo(true, 21);
+        QTest::newRow("MTHI")
+            << Instruction(0, 27, 0, 0, 0, 17) << regs_init << regs_res;
+        regs_res.write_hi_lo(true, 24);
+        regs_res.write_hi_lo(false, 22);
+        QTest::newRow("MTLO")
+            << Instruction(0, 28, 0, 0, 0, 19) << regs_init << regs_res;
+        regs_res.write_hi_lo(false, 28);
+        QTest::newRow("MOVZ-F")
+            << Instruction(0, 24, 24, 25, 0, 10) << regs_init << regs_res;
+        QTest::newRow("MOVN-F")
+            << Instruction(0, 24, 1, 25, 0, 11) << regs_init << regs_res;
+        regs_res.write_gp(25, 55);
+        QTest::newRow("MOVZ-T")
+            << Instruction(0, 24, 1, 25, 0, 10) << regs_init << regs_res;
+        QTest::newRow("MOVN-T")
+            << Instruction(0, 24, 24, 25, 0, 11) << regs_init << regs_res;
     }
 }
 
-void MachineTests::singlecore_regs_data() {
-    core_regs_data();
-}
+void MachineTests::singlecore_regs_data() { core_regs_data(); }
 
-void MachineTests::pipecore_regs_data() {
-    core_regs_data();
-}
+void MachineTests::pipecore_regs_data() { core_regs_data(); }
 
 void MachineTests::singlecore_regs() {
     QFETCH(Instruction, i);
@@ -225,17 +193,25 @@ void MachineTests::singlecore_regs() {
     QFETCH(Registers, res);
 
     Memory mem; // Just memory (it shouldn't be used here except instruction)
-    mem.write_word(res.read_pc(), i.data()); // Store single instruction (anything else should be 0 so NOP effectively)
+    TrivialMMU mem_frontend(&mem);
+    memory_write_u32(&mem, res.read_pc().get_raw(), i.data()); // Store single
+                                                               // instruction
+                                                               // (anything else
+                                                               // should be 0 so
+                                                               // NOP
+                                                               // effectively)
     Memory mem_used(mem); // Create memory copy
+    TrivialMMU mem_used_frontend(&mem);
 
-    CoreSingle core(&init, &mem_used, &mem_used, true);
-    core.step(); // Single step should be enought as this is risc without pipeline
+    CoreSingle core(&init, &mem_used_frontend, &mem_used_frontend, true);
+    core.step(); // Single step should be enought as this is risc without
+                 // pipeline
     core.step();
 
     res.pc_inc();
     res.pc_inc(); // We did single step	so increment program counter accordingly
-    QCOMPARE(init, res); // After doing changes from initial state this should be same state as in case of passed expected result
-    QCOMPARE(mem, mem_used); // There should be no change in memory
+    QCOMPARE(init, res); // After doing changes from initial state this should
+                         // be same state as in case of passed expected result
 }
 
 void MachineTests::pipecore_regs() {
@@ -244,113 +220,118 @@ void MachineTests::pipecore_regs() {
     QFETCH(Registers, res);
 
     Memory mem; // Just memory (it shouldn't be used here except instruction)
-    mem.write_word(res.read_pc(), i.data()); // Store single instruction (anything else should be 0 so NOP effectively)
+    TrivialMMU mem_frontend(&mem);
+    memory_write_u32(&mem, res.read_pc().get_raw(), i.data()); // Store single
+                                                               // instruction
+                                                               // (anything else
+                                                               // should be 0 so
+                                                               // NOP
+                                                               // effectively)
 
     Memory mem_used(mem);
+    TrivialMMU mem_used_frontend(&mem_used);
 
     res.pc_jmp(0x14);
 
-    CorePipelined core(&init, &mem_used, &mem_used);
+    CorePipelined core(&init, &mem_used_frontend, &mem_used_frontend);
     for (int i = 0; i < 5; i++)
         core.step(); // Fire steps for five pipelines stages
 
-    //cout << "well:" << init.read_gp(26) << ":" << regs_used.read_gp(26) << endl;
-    QCOMPARE(init, res); // After doing changes from initial state this should be same state as in case of passed expected result
+    // cout << "well:" << init.read_gp(26) << ":" << regs_used.read_gp(26) <<
+    // endl;
+    QCOMPARE(init, res); // After doing changes from initial state this should
+                         // be same state as in case of passed expected result
     QCOMPARE(mem, mem_used); // There should be no change in memory
 }
 
 static void core_jmp_data() {
     QTest::addColumn<Instruction>("i");
     QTest::addColumn<Registers>("regs");
-    QTest::addColumn<std::uint32_t>("pc");
+    QTest::addColumn<uint64_t>("pc");
 
     Registers regs;
     regs.write_gp(14, -22);
     regs.write_gp(15, 22);
     regs.write_gp(16, -22);
     regs.write_gp(12, 0x80040000);
-    QTest::newRow("B") << Instruction(4, 0, 0, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BEQ") << Instruction(4, 14, 16, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BEQ-BACK") << Instruction(4, 14, 16, -4) \
-                         << regs \
-                         << regs.read_pc() + 4 - 16;
-    QTest::newRow("BNE") << Instruction(5, 14, 15, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BGEZ") << Instruction(1, 15, 1, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BGTZ") << Instruction(7, 15, 0, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BLEZ") << Instruction(6, 14, 0, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("BLTZ") << Instruction(1, 14, 0, 61) \
-                         << regs \
-                         << regs.read_pc() + 4 + (61 << 2);
-    QTest::newRow("J") << Instruction(2, 24) \
-                         << regs \
-                         << 0x80000000 + (24 << 2);
-    QTest::newRow("JR") << Instruction(0, 12, 0, 0, 0, 8) \
-                         << regs \
-                         << 0x80040000;
+    QTest::newRow("B") << Instruction(4, 0, 0, 61) << regs
+                       << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BEQ") << Instruction(4, 14, 16, 61) << regs
+                         << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BEQ-BACK") << Instruction(4, 14, 16, -4) << regs
+                              << regs.read_pc().get_raw() + 4 - 16;
+    QTest::newRow("BNE") << Instruction(5, 14, 15, 61) << regs
+                         << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BGEZ") << Instruction(1, 15, 1, 61) << regs
+                          << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BGTZ") << Instruction(7, 15, 0, 61) << regs
+                          << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BLEZ") << Instruction(6, 14, 0, 61) << regs
+                          << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("BLTZ") << Instruction(1, 14, 0, 61) << regs
+                          << regs.read_pc().get_raw() + 4 + (61 << 2);
+    QTest::newRow("J") << Instruction(2, Address(24)) << regs
+                       << Address(0x80000000).get_raw() + (24 << 2);
+    QTest::newRow("JR") << Instruction(0, 12, 0, 0, 0, 8) << regs
+                        << Address(0x80040000).get_raw();
 }
 
-void MachineTests::singlecore_jmp_data() {
-    core_jmp_data();
-}
+void MachineTests::singlecore_jmp_data() { core_jmp_data(); }
 
-void MachineTests::pipecore_jmp_data() {
-    core_jmp_data();
-}
+void MachineTests::pipecore_jmp_data() { core_jmp_data(); }
 
 void MachineTests::singlecore_jmp() {
     QFETCH(Instruction, i);
     QFETCH(Registers, regs);
-    QFETCH(std::uint32_t, pc);
+    QFETCH(uint64_t, pc);
 
     Memory mem;
-    mem.write_word(regs.read_pc(), i.data());
+    TrivialMMU mem_frontend(&mem);
+    memory_write_u32(&mem, regs.read_pc().get_raw(), i.data());
     Memory mem_used(mem);
+    TrivialMMU mem_used_frontend(&mem_used);
     Registers regs_used(regs);
 
-    CoreSingle core(&regs_used, &mem_used, &mem_used, true);
+    CoreSingle core(&regs_used, &mem_used_frontend, &mem_used_frontend, true);
     core.step();
-    QCOMPARE(regs.read_pc() + 4, regs_used.read_pc()); // First execute delay slot
+    QCOMPARE(regs.read_pc() + 4, regs_used.read_pc()); // First execute delay
+                                                       // slot
     core.step();
-    QCOMPARE(pc, regs_used.read_pc()); // Now do jump
+    QCOMPARE(pc, regs_used.read_pc().get_raw()); // Now do jump
 
-    QCOMPARE(mem, mem_used); // There should be no change in memory
-    regs_used.pc_abs_jmp(regs.read_pc()); // Reset program counter before we do registers compare
+    QCOMPARE(mem, mem_used);              // There should be no change in memory
+    regs_used.pc_abs_jmp(regs.read_pc()); // Reset program counter before we do
+                                          // registers compare
     QCOMPARE(regs, regs_used); // There should be no change in registers now
 }
 
 void MachineTests::pipecore_jmp() {
     QFETCH(Instruction, i);
     QFETCH(Registers, regs);
-    QFETCH(std::uint32_t, pc);
+    QFETCH(uint64_t, pc);
 
     Memory mem;
-    mem.write_word(regs.read_pc(), i.data());
+    TrivialMMU mem_frontend(&mem);
+    memory_write_u32(&mem, regs.read_pc().get_raw(), i.data());
     Memory mem_used(mem);
+    TrivialMMU mem_used_frontend(&mem_used);
     Registers regs_used(regs);
 
-    CorePipelined core(&regs_used, &mem_used, &mem_used);
+    CorePipelined core(&regs_used, &mem_used_frontend, &mem_used_frontend);
     core.step();
     QCOMPARE(regs.read_pc() + 4, regs_used.read_pc()); // First just fetch
     core.step();
-    QCOMPARE(pc, regs_used.read_pc()); // Now do jump
+    QCOMPARE(pc, regs_used.read_pc().get_raw()); // Now do jump
     for (int i = 0; i < 3; i++)
-        core.step(); // Follow up with three other steps to complete pipeline to be sure that instruction has no side effects
+        core.step(); // Follow up with three other steps to complete pipeline to
+                     // be sure that instruction has no side effects
 
-    QCOMPARE(mem, mem_used); // There should be no change in memory
-    regs.pc_abs_jmp(pc + 12); // Set reference pc to three more instructions later (where regs_used should be)
-    QCOMPARE(regs, regs_used); // There should be no change in registers now (except pc)
+    QCOMPARE(mem, mem_used);           // There should be no change in memory
+    regs.pc_abs_jmp(Address(pc + 12)); // Set reference pc to three more
+                                       // instructions later (where regs_used
+                                       // should be)
+    QCOMPARE(regs, regs_used); // There should be no change in registers now
+                               // (except pc)
 }
 
 static void core_mem_data() {
@@ -362,76 +343,48 @@ static void core_mem_data() {
 
     // Load
     {
-    Memory mem;
-    mem.write_word(0x24, 0xA3242526);
-    Registers regs;
-    regs.write_gp(1, 0x22);
-    Registers regs_res(regs);
-    regs_res.write_gp(21, 0xFFFFFFA3);
-    QTest::newRow("LB") << Instruction(32, 1, 21, 0x2) \
-                         << regs \
-                         << regs_res \
-                         << mem \
-                         << mem;
-    regs_res.write_gp(21, 0xFFFFA324);
-    QTest::newRow("LH") << Instruction(33, 1, 21, 0x2) \
-                         << regs \
-                         << regs_res \
-                         << mem \
-                         << mem;
-    regs_res.write_gp(21, 0xA3242526);
-    QTest::newRow("LW") << Instruction(35, 1, 21, 0x2) \
-                         << regs \
-                         << regs_res \
-                         << mem \
-                         << mem;
-    regs_res.write_gp(21, 0x000000A3);
-    QTest::newRow("LBU") << Instruction(36, 1, 21, 0x2) \
-                         << regs \
-                         << regs_res \
-                         << mem \
-                         << mem;
-    regs_res.write_gp(21, 0x0000A324);
-    QTest::newRow("LHU") << Instruction(37, 1, 21, 0x2) \
-                         << regs \
-                         << regs_res \
-                         << mem \
-                         << mem;
+        Memory mem;
+        memory_write_u32(&mem, 0x24, 0xA3242526);
+        Registers regs;
+        regs.write_gp(1, 0x22);
+        Registers regs_res(regs);
+        regs_res.write_gp(21, 0xFFFFFFA3);
+        QTest::newRow("LB")
+            << Instruction(32, 1, 21, 0x2) << regs << regs_res << mem << mem;
+        regs_res.write_gp(21, 0xFFFFA324);
+        QTest::newRow("LH")
+            << Instruction(33, 1, 21, 0x2) << regs << regs_res << mem << mem;
+        regs_res.write_gp(21, 0xA3242526);
+        QTest::newRow("LW")
+            << Instruction(35, 1, 21, 0x2) << regs << regs_res << mem << mem;
+        regs_res.write_gp(21, 0x000000A3);
+        QTest::newRow("LBU")
+            << Instruction(36, 1, 21, 0x2) << regs << regs_res << mem << mem;
+        regs_res.write_gp(21, 0x0000A324);
+        QTest::newRow("LHU")
+            << Instruction(37, 1, 21, 0x2) << regs << regs_res << mem << mem;
     }
     // Store
     {
-    Registers regs;
-    regs.write_gp(1, 0x22);
-    regs.write_gp(21, 0x23242526);
-    Memory mem;
-    mem.write_byte(0x24, 0x26); // Note: store least significant byte
-    QTest::newRow("SB") << Instruction(40, 1, 21, 0x2) \
-                         << regs \
-                         << regs \
-                         << Memory() \
-                         << mem;
-    mem.write_hword(0x24, 0x2526);
-    QTest::newRow("SH") << Instruction(41, 1, 21, 0x2) \
-                         << regs \
-                         << regs \
-                         << Memory() \
-                         << mem;
-    mem.write_word(0x24, 0x23242526);
-    QTest::newRow("SH") << Instruction(43, 1, 21, 0x2) \
-                         << regs \
-                         << regs \
-                         << Memory() \
-                         << mem;
+        Registers regs;
+        regs.write_gp(1, 0x22);
+        regs.write_gp(21, 0x23242526);
+        Memory mem;
+        memory_write_u8(&mem, 0x24, 0x26); // Note: store least significant byte
+        QTest::newRow("SB")
+            << Instruction(40, 1, 21, 0x2) << regs << regs << Memory() << mem;
+        memory_write_u16(&mem, 0x24, 0x2526);
+        QTest::newRow("SH")
+            << Instruction(41, 1, 21, 0x2) << regs << regs << Memory() << mem;
+        memory_write_u32(&mem, 0x24, 0x23242526);
+        QTest::newRow("SW")
+            << Instruction(43, 1, 21, 0x2) << regs << regs << Memory() << mem;
     }
 }
 
-void MachineTests::singlecore_mem_data() {
-    core_mem_data();
-}
+void MachineTests::singlecore_mem_data() { core_mem_data(); }
 
-void MachineTests::pipecore_mem_data() {
-    core_mem_data();
-}
+void MachineTests::pipecore_mem_data() { core_mem_data(); }
 
 void MachineTests::singlecore_mem() {
     QFETCH(Instruction, i);
@@ -441,10 +394,11 @@ void MachineTests::singlecore_mem() {
     QFETCH(Memory, mem_res);
 
     // Write instruction to both memories
-    mem_init.write_word(regs_init.read_pc(), i.data());
-    mem_res.write_word(regs_init.read_pc(), i.data());
+    memory_write_u32(&mem_init, regs_init.read_pc().get_raw(), i.data());
+    memory_write_u32(&mem_res, regs_init.read_pc().get_raw(), i.data());
 
-    CoreSingle core(&regs_init, &mem_init, &mem_init, true);
+    TrivialMMU mem_init_frontend(&mem_init);
+    CoreSingle core(&regs_init, &mem_init_frontend, &mem_init_frontend, true);
     core.step();
     core.step();
 
@@ -462,10 +416,11 @@ void MachineTests::pipecore_mem() {
     QFETCH(Memory, mem_res);
 
     // Write instruction to both memories
-    mem_init.write_word(regs_init.read_pc(), i.data());
-    mem_res.write_word(regs_init.read_pc(), i.data());
+    memory_write_u32(&mem_init, regs_init.read_pc().get_raw(), i.data());
+    memory_write_u32(&mem_res, regs_init.read_pc().get_raw(), i.data());
 
-    CorePipelined core(&regs_init, &mem_init, &mem_init);
+    TrivialMMU mem_init_frontend(&mem_init);
+    CorePipelined core(&regs_init, &mem_init_frontend, &mem_init_frontend);
     for (int i = 0; i < 5; i++)
         core.step(); // Fire steps for five pipelines stages
 
@@ -480,11 +435,12 @@ static void core_alu_forward_data() {
     QTest::addColumn<QVector<uint32_t>>("code");
     QTest::addColumn<Registers>("reg_init");
     QTest::addColumn<Registers>("reg_res");
-    // Note that we shouldn't be touching program counter as that is handled automatically and differs if we use pipelining
+    // Note that we shouldn't be touching program counter as that is handled
+    // automatically and differs if we use pipelining
 
     // Test forwarding of ALU operands
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // objdump -D to src: ^[^ \t]+[ \t]+([^ \t]+)[ \t]+([^ \t].*)$
             0x20020001, // addi    v0,zero,1
             0x20011111, // addi    at,zero,4369
@@ -499,7 +455,7 @@ static void core_alu_forward_data() {
             0x00000000, // nop
         };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
         regs_res.write_gp(1, 0x2222);
         regs_res.write_gp(2, 3);
@@ -511,10 +467,9 @@ static void core_alu_forward_data() {
         QTest::newRow("alu_forward_1") << code << regs_init << regs_res;
     }
 
-
     // Test forwarding in JR and JALR
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // start: = 0x80020000
             0x3c041111, // lui     a0,0x1111
             0x3c052222, // lui     a1,0x2222
@@ -548,7 +503,7 @@ static void core_alu_forward_data() {
             0x00000000, // nop
         };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
         regs_res.write_gp(1, 0x00000000);
         regs_res.write_gp(2, 0xffffabcd);
@@ -561,13 +516,13 @@ static void core_alu_forward_data() {
         regs_res.write_gp(16, 0x00007777);
         regs_res.write_gp(17, 0xffffabcd);
         regs_res.write_gp(31, 0x80020038);
-        regs_res.pc_abs_jmp(0x80020060);
+        regs_res.pc_abs_jmp(0x80020060_addr);
         QTest::newRow("j_jal_jalr") << code << regs_init << regs_res;
     }
 
     // Test multiplication and division
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // start:
             0x3c021234, // lui     v0,0x1234
             0x34425678, // ori     v0,v0,0x5678
@@ -590,22 +545,24 @@ static void core_alu_forward_data() {
             0x00000000, // nop
         };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
-        std::uint32_t val_a = 0x12345678;
-        std::uint32_t val_b = 0xabcdef01;
-        std::uint64_t val_u64;
+        uint32_t val_a = 0x12345678;
+        uint32_t val_b = 0xabcdef01;
+        uint64_t val_u64;
         std::int64_t val_s64;
         regs_res.write_gp(2, val_a);
         regs_res.write_gp(3, val_b);
         val_s64 = (std::int64_t)(std::int32_t)val_a * (std::int32_t)val_b;
-        regs_res.write_gp(16, (std::uint32_t)(val_s64 & 0xffffffff));
-        regs_res.write_gp(17, (std::uint32_t)(val_s64 >> 32));
-        val_u64 = (std::uint64_t)val_a * val_b;
-        regs_res.write_gp(18, (std::uint32_t)(val_u64 & 0xffffffff));
-        regs_res.write_gp(19, (std::uint32_t)(val_u64 >> 32));
-        regs_res.write_gp(20, (std::uint32_t)((std::int32_t)val_b / (std::int32_t)val_a));
-        regs_res.write_gp(21, (std::uint32_t)((std::int32_t)val_b % (std::int32_t)val_a));
+        regs_res.write_gp(16, (uint32_t)(val_s64 & 0xffffffff));
+        regs_res.write_gp(17, (uint32_t)(val_s64 >> 32));
+        val_u64 = (uint64_t)val_a * val_b;
+        regs_res.write_gp(18, (uint32_t)(val_u64 & 0xffffffff));
+        regs_res.write_gp(19, (uint32_t)(val_u64 >> 32));
+        regs_res.write_gp(
+            20, (uint32_t)((std::int32_t)val_b / (std::int32_t)val_a));
+        regs_res.write_gp(
+            21, (uint32_t)((std::int32_t)val_b % (std::int32_t)val_a));
         regs_res.write_gp(22, val_b / val_a);
         regs_res.write_gp(23, val_b % val_a);
         regs_res.write_hi_lo(false, regs_res.read_gp(22));
@@ -616,7 +573,7 @@ static void core_alu_forward_data() {
 
     // branches
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // start:
             0x2001ffff, // addi    at,zero,-1
             0x20020001, // addi    v0,zero,1
@@ -667,7 +624,7 @@ static void core_alu_forward_data() {
             0x00000000, // nop
         };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
         regs_res.write_gp(1, 2);
         regs_res.write_gp(2, 1);
@@ -675,39 +632,51 @@ static void core_alu_forward_data() {
         regs_res.write_gp(4, 2);
         regs_res.write_gp(5, 1);
         regs_res.pc_abs_jmp(regs_init.read_pc() + 4 * code.length());
-        QTest::newRow("branch_conditions_test") << code << regs_init << regs_res;
+        QTest::newRow("branch_conditions_test")
+            << code << regs_init << regs_res;
     }
 }
 
-void MachineTests::singlecore_alu_forward_data() {
-    core_alu_forward_data();
-}
+void MachineTests::singlecore_alu_forward_data() { core_alu_forward_data(); }
 
-void MachineTests::pipecore_alu_forward_data() {
-    core_alu_forward_data();
-}
+void MachineTests::pipecore_alu_forward_data() { core_alu_forward_data(); }
 
-void MachineTests::pipecorestall_alu_forward_data() {
-    core_alu_forward_data();
-}
+void MachineTests::pipecorestall_alu_forward_data() { core_alu_forward_data(); }
 
-static void run_code_fragment(Core &core, Registers &reg_init, Registers &reg_res,
-                              Memory &mem_init, Memory &mem_res, QVector<uint32_t> &code) {
-    std::uint32_t addr = reg_init.read_pc();
+static void run_code_fragment(
+    Core& core,
+    Registers& reg_init,
+    Registers& reg_res,
+    Memory& mem_init,
+    Memory& mem_res,
+    QVector<uint32_t>& code) {
+    uint64_t addr = reg_init.read_pc().get_raw();
 
     foreach (uint32_t i, code) {
-        mem_init.write_word(addr, i);
-        mem_res.write_word(addr, i);
+        memory_write_u32(&mem_init, addr, i);
+        memory_write_u32(&mem_res, addr, i);
         addr += 4;
     }
 
-    for (int k = 10000; k ; k--) {
-        core.step(); // Single step should be enought as this is risc without pipeline
-        if (reg_init.read_pc() == reg_res.read_pc() && k > 6) // reached end of the code fragment
+    for (int k = 10000; k; k--) {
+        core.step(); // Single step should be enought as this is risc without
+                     // pipeline
+        if (reg_init.read_pc() == reg_res.read_pc() && k > 6) // reached end of
+                                                              // the code
+                                                              // fragment
             k = 6; // add some cycles to finish processing
     }
     reg_res.pc_abs_jmp(reg_init.read_pc()); // We do not compare result pc
-    QCOMPARE(reg_init, reg_res); // After doing changes from initial state this should be same state as in case of passed expected result
+    for (int i = 0; i < 32; ++i) {
+        if (reg_init.read_gp(i) != reg_res.read_gp(i)) {
+            printf(
+                "DIFF reg[%d] %lx %lx\n", i, reg_init.read_gp(i).as_u64(),
+                reg_res.read_gp(i).as_u64());
+        }
+    }
+    QCOMPARE(reg_init, reg_res); // After doing changes from initial state this
+                                 // should be same state as in case of passed
+                                 // expected result
     QCOMPARE(mem_init, mem_res); // There should be no change in memory
 }
 
@@ -716,8 +685,10 @@ void MachineTests::singlecore_alu_forward() {
     QFETCH(Registers, reg_init);
     QFETCH(Registers, reg_res);
     Memory mem_init;
+    TrivialMMU mem_init_frontend(&mem_init);
     Memory mem_res;
-    CoreSingle core(&reg_init, &mem_init, &mem_init, true);
+    TrivialMMU mem_res_frontend(&mem_res);
+    CoreSingle core(&reg_init, &mem_init_frontend, &mem_init_frontend, true);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -726,8 +697,12 @@ void MachineTests::pipecore_alu_forward() {
     QFETCH(Registers, reg_init);
     QFETCH(Registers, reg_res);
     Memory mem_init;
+    TrivialMMU mem_init_frontend(&mem_init);
     Memory mem_res;
-    CorePipelined core(&reg_init, &mem_init, &mem_init, MachineConfig::HU_STALL_FORWARD);
+    TrivialMMU mem_res_frontend(&mem_res);
+    CorePipelined core(
+        &reg_init, &mem_init_frontend, &mem_init_frontend,
+        MachineConfig::HU_STALL_FORWARD);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -736,8 +711,12 @@ void MachineTests::pipecorestall_alu_forward() {
     QFETCH(Registers, reg_init);
     QFETCH(Registers, reg_res);
     Memory mem_init;
+    TrivialMMU mem_init_frontend(&mem_init);
     Memory mem_res;
-    CorePipelined core(&reg_init, &mem_init, &mem_init, MachineConfig::HU_STALL);
+    TrivialMMU mem_res_frontend(&mem_res);
+    CorePipelined core(
+        &reg_init, &mem_init_frontend, &mem_init_frontend,
+        MachineConfig::HU_STALL);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -752,7 +731,7 @@ static void core_memory_tests_data() {
 
     // Test
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // objdump -d to src: ^[^ \t]+[ \t]+([^ \t]+)[ \t]+([^ \t].*)$
 
             // _start:
@@ -800,10 +779,12 @@ static void core_memory_tests_data() {
             0x08008023, // j       8002008c <end_loop>
             0x00000000, // nop
         };
-        QVector<uint32_t> data_init{5, 3, 4, 1, 15, 8, 9, 2, 10, 6, 11, 1, 6, 9, 12};
-        QVector<uint32_t> data_res{ 1, 1, 2, 3, 4, 5, 6, 6, 8, 9, 9, 10, 11, 12, 15};
+        QVector<uint32_t> data_init { 5,  3, 4,  1, 15, 8, 9, 2,
+                                      10, 6, 11, 1, 6,  9, 12 };
+        QVector<uint32_t> data_res { 1, 1, 2, 3,  4,  5,  6, 6,
+                                     8, 9, 9, 10, 11, 12, 15 };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
         regs_res.write_gp(1, 0x38);
         regs_res.write_gp(16, 0x3c);
@@ -813,25 +794,26 @@ static void core_memory_tests_data() {
         regs_res.write_gp(20, 0xf);
         regs_res.write_gp(21, 0xf);
         regs_res.pc_abs_jmp(regs_init.read_pc() + 4 * code.length() - 4);
-        std::uint32_t addr;
+        uint32_t addr;
         Memory mem_init;
         addr = 0x1000;
         foreach (uint32_t i, data_init) {
-            mem_init.write_word(addr, i);
+            memory_write_u32(&mem_init, addr, i);
             addr += 4;
         }
         Memory mem_res;
         addr = 0x1000;
         foreach (uint32_t i, data_res) {
-            mem_res.write_word(addr, i);
+            memory_write_u32(&mem_res, addr, i);
             addr += 4;
         }
-        QTest::newRow("cache_insert_sort") << code << regs_init << regs_res << mem_init << mem_res;
+        QTest::newRow("cache_insert_sort")
+            << code << regs_init << regs_res << mem_init << mem_res;
     }
 
     // lwr, lwl, swr, swl
     {
-        QVector<uint32_t> code{
+        QVector<uint32_t> code {
             // __start:
             0x3c1c8003, // lui     gp,0x8003
             0x279c90d0, // addiu   gp,gp,-28464
@@ -882,7 +864,7 @@ static void core_memory_tests_data() {
             // mem:
         };
         Registers regs_init;
-        regs_init.pc_abs_jmp(0x80020000);
+        regs_init.pc_abs_jmp(0x80020000_addr);
         Registers regs_res(regs_init);
 
         regs_res.write_gp(2, 0xaabbcc01);
@@ -908,38 +890,37 @@ static void core_memory_tests_data() {
         regs_res.write_gp(27, 0x80020100);
         regs_res.write_gp(28, 0x800290d0);
 
-        std::uint32_t addr;
+        uint32_t addr;
         Memory mem_init;
         addr = 0x80020100;
-        QVector<uint32_t> data_init{0x01020304, 0x05060708, 0x090a0b0c, 0x0d0e0f00,
-                                    0x11121314, 0x15161718, 0x191a1b1c, 0x1d1e1f10,
-                                    0x21222324, 0x25262728, 0x292a2b2c, 0x2d2e2f20};
+        QVector<uint32_t> data_init { 0x01020304, 0x05060708, 0x090a0b0c,
+                                      0x0d0e0f00, 0x11121314, 0x15161718,
+                                      0x191a1b1c, 0x1d1e1f10, 0x21222324,
+                                      0x25262728, 0x292a2b2c, 0x2d2e2f20 };
         foreach (uint32_t i, data_init) {
-            mem_init.write_word(addr, i);
+            memory_write_u32(&mem_init, addr, i);
             addr += 4;
         }
         Memory mem_res;
         addr = 0x80020100;
-        QVector<uint32_t> data_res{0xdd020304, 0xccdd0708, 0xbbccdd0c, 0xaabbccdd,
-                                   0x11121314, 0xaabbccdd, 0x19aabbcc, 0x1d1eaabb,
-                                   0x212223aa, 0x25262728, 0x292a2b2c, 0x2d2e2f20};
+        QVector<uint32_t> data_res { 0xdd020304, 0xccdd0708, 0xbbccdd0c,
+                                     0xaabbccdd, 0x11121314, 0xaabbccdd,
+                                     0x19aabbcc, 0x1d1eaabb, 0x212223aa,
+                                     0x25262728, 0x292a2b2c, 0x2d2e2f20 };
         foreach (uint32_t i, data_res) {
-            mem_res.write_word(addr, i);
+            memory_write_u32(&mem_res, addr, i);
             addr += 4;
         }
 
         regs_res.pc_abs_jmp(regs_init.read_pc() + 4 * code.length() - 4);
-        QTest::newRow("lwr_lrl_swr_swl") << code << regs_init << regs_res << mem_init << mem_res;
+        QTest::newRow("lwr_lrl_swr_swl")
+            << code << regs_init << regs_res << mem_init << mem_res;
     }
 }
 
-void MachineTests::singlecore_memory_tests_data() {
-    core_memory_tests_data();
-}
+void MachineTests::singlecore_memory_tests_data() { core_memory_tests_data(); }
 
-void MachineTests::pipecore_nc_memory_tests_data() {
-    core_memory_tests_data();
-}
+void MachineTests::pipecore_nc_memory_tests_data() { core_memory_tests_data(); }
 
 void MachineTests::pipecore_wt_na_memory_tests_data() {
     core_memory_tests_data();
@@ -949,9 +930,7 @@ void MachineTests::pipecore_wt_a_memory_tests_data() {
     core_memory_tests_data();
 }
 
-void MachineTests::pipecore_wb_memory_tests_data() {
-    core_memory_tests_data();
-}
+void MachineTests::pipecore_wb_memory_tests_data() { core_memory_tests_data(); }
 
 void MachineTests::singlecore_memory_tests() {
     QFETCH(QVector<uint32_t>, code);
@@ -959,7 +938,9 @@ void MachineTests::singlecore_memory_tests() {
     QFETCH(Registers, reg_res);
     QFETCH(Memory, mem_init);
     QFETCH(Memory, mem_res);
-    CoreSingle core(&reg_init, &mem_init, &mem_init, true);
+    TrivialMMU mem_init_frontend(&mem_init);
+    TrivialMMU mem_res_frontend(&mem_res);
+    CoreSingle core(&reg_init, &mem_init_frontend, &mem_init_frontend, true);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -969,7 +950,11 @@ void MachineTests::pipecore_nc_memory_tests() {
     QFETCH(Registers, reg_res);
     QFETCH(Memory, mem_init);
     QFETCH(Memory, mem_res);
-    CorePipelined core(&reg_init, &mem_init, &mem_init, MachineConfig::HU_STALL_FORWARD);
+    TrivialMMU mem_init_frontend(&mem_init);
+    TrivialMMU mem_res_frontend(&mem_res);
+    CorePipelined core(
+        &reg_init, &mem_init_frontend, &mem_init_frontend,
+        MachineConfig::HU_STALL_FORWARD);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -979,6 +964,8 @@ void MachineTests::pipecore_wt_na_memory_tests() {
     QFETCH(Registers, reg_res);
     QFETCH(Memory, mem_init);
     QFETCH(Memory, mem_res);
+    TrivialMMU mem_init_frontend(&mem_init);
+    TrivialMMU mem_res_frontend(&mem_res);
     CacheConfig cache_conf;
     cache_conf.set_enabled(true);
     cache_conf.set_sets(2); // Number of sets
@@ -986,9 +973,11 @@ void MachineTests::pipecore_wt_na_memory_tests() {
     cache_conf.set_associativity(2); // Degree of associativity
     cache_conf.set_replacement_policy(CacheConfig::RP_LRU);
     cache_conf.set_write_policy(CacheConfig::WP_THROUGH_NOALLOC);
-    Cache i_cache(&mem_init, &cache_conf);
-    Cache d_cache(&mem_init, &cache_conf);
-    CorePipelined core(&reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
+
+    Cache i_cache(&mem_init_frontend, &cache_conf);
+    Cache d_cache(&mem_init_frontend, &cache_conf);
+    CorePipelined core(
+        &reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -998,6 +987,8 @@ void MachineTests::pipecore_wt_a_memory_tests() {
     QFETCH(Registers, reg_res);
     QFETCH(Memory, mem_init);
     QFETCH(Memory, mem_res);
+    TrivialMMU mem_init_frontend(&mem_init);
+    TrivialMMU mem_res_frontend(&mem_res);
     CacheConfig cache_conf;
     cache_conf.set_enabled(true);
     cache_conf.set_sets(2); // Number of sets
@@ -1005,9 +996,10 @@ void MachineTests::pipecore_wt_a_memory_tests() {
     cache_conf.set_associativity(2); // Degree of associativity
     cache_conf.set_replacement_policy(CacheConfig::RP_LRU);
     cache_conf.set_write_policy(CacheConfig::WP_THROUGH_ALLOC);
-    Cache i_cache(&mem_init, &cache_conf);
-    Cache d_cache(&mem_init, &cache_conf);
-    CorePipelined core(&reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
+    Cache i_cache(&mem_init_frontend, &cache_conf);
+    Cache d_cache(&mem_init_frontend, &cache_conf);
+    CorePipelined core(
+        &reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
 
@@ -1017,6 +1009,8 @@ void MachineTests::pipecore_wb_memory_tests() {
     QFETCH(Registers, reg_res);
     QFETCH(Memory, mem_init);
     QFETCH(Memory, mem_res);
+    TrivialMMU mem_init_frontend(&mem_init);
+    TrivialMMU mem_res_frontend(&mem_res);
     CacheConfig cache_conf;
     cache_conf.set_enabled(true);
     cache_conf.set_sets(4); // Number of sets
@@ -1024,8 +1018,9 @@ void MachineTests::pipecore_wb_memory_tests() {
     cache_conf.set_associativity(2); // Degree of associativity
     cache_conf.set_replacement_policy(CacheConfig::RP_LRU);
     cache_conf.set_write_policy(CacheConfig::WP_BACK);
-    Cache i_cache(&mem_init, &cache_conf);
-    Cache d_cache(&mem_init, &cache_conf);
-    CorePipelined core(&reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
+    Cache i_cache(&mem_init_frontend, &cache_conf);
+    Cache d_cache(&mem_init_frontend, &cache_conf);
+    CorePipelined core(
+        &reg_init, &i_cache, &d_cache, MachineConfig::HU_STALL_FORWARD);
     run_code_fragment(core, reg_init, reg_res, mem_init, mem_res, code);
 }
