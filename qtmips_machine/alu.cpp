@@ -117,8 +117,7 @@ RegisterValue machine::alu_operate(enum AluOp operation, RegisterValue s,
             return t.as_i32() >> sa;
         case ALU_OP_SLLV:
             return t.as_u32() << (s.as_u32() & 0x1fU);
-        case ALU_OP_SRLV:
-            return t.as_u32() >> (s.as_u32() & 0x1fU);
+        case ALU_OP_SRLV: return t.as_u32() >> (s.as_u32() & 0x1fU);
         case ALU_OP_ROTRV:
             u32_val = s.as_u32() & 0x1fU;
             if (!u32_val)
@@ -128,20 +127,17 @@ RegisterValue machine::alu_operate(enum AluOp operation, RegisterValue s,
             // Note: same note as in case of SRA
             return t.as_i32() >> (s.as_u32() & 0x1fU);
         case ALU_OP_MOVZ:
-        case ALU_OP_MOVN:
             // Signal discard of result when condition is not true
+            discard = (t.as_u32() != 0);
+            return discard ? 0 : s;
+        case ALU_OP_MOVN:
+            // Same note as MOVZ
             discard = (t.as_u32() == 0);
-            return discard ? 0: s;
-        case ALU_OP_MFHI:
-            return regs->read_hi_lo(true);
-        case ALU_OP_MTHI:
-            regs->write_hi_lo(true, s);
-            return 0x0;
-        case ALU_OP_MFLO:
-            return regs->read_hi_lo(false);
-        case ALU_OP_MTLO:
-            regs->write_hi_lo(false, s);
-            return 0x0;
+            return discard ? 0 : s;
+        case ALU_OP_MFHI: return regs->read_hi_lo(true);
+        case ALU_OP_MTHI: regs->write_hi_lo(true, s); return 0x0;
+        case ALU_OP_MFLO: return regs->read_hi_lo(false);
+        case ALU_OP_MTLO: regs->write_hi_lo(false, s); return 0x0;
         case ALU_OP_MULT:
             s64_val = (std::int64_t) s.as_i32() * t.as_i32();
             alu_write_hi_lo_64bit(regs, (std::uint64_t)s64_val);
