@@ -54,7 +54,6 @@ Cache::Cache(
     , access_pen_b(memory_access_penalty_b)
     , replacement_policy(CachePolicy::get_policy_instance(config))
 {
-
     // Skip memory allocation if cache is disabled
     if (!config->enabled()) {
         return;
@@ -62,7 +61,7 @@ Cache::Cache(
 
     dt.resize(
         config->associativity(),
-        std::vector<CacheBlock>(
+        std::vector<CacheLine>(
             config->set_count(),
             { .valid = false,
               .dirty = false,
@@ -72,23 +71,27 @@ Cache::Cache(
 
 Cache::~Cache() = default;
 
-WriteResult Cache::write(Address address, const void* source, size_t size)
-{
-    if (!cache_config.enabled()
-        || (address >= uncached_start && address <= uncached_last)) {
+WriteResult Cache::write(
+    Address destination,
+    const void* source,
+    size_t size,
+    WriteOptions options) {
+    if (!cache_config.enabled() || is_in_uncached_area(destination)) {
         mem_writes++;
         emit memory_writes_update(mem_writes);
         update_all_statistics();
-        return mem->write(address, source, size);
+        return mem->write(destination, source, size, options);
     }
 
-    const bool changed = access(address, &source, size, WRITE);
+    // FIXME: Get rid of the cast
+    const bool changed
+        = access(destination, const_cast<void*>(source), size, WRITE);
 
     if (cache_config.write_policy() != CacheConfig::WP_BACK) {
         mem_writes++;
         emit memory_writes_update(mem_writes);
         update_all_statistics();
-        return mem->write(address, source, size);
+        return mem->write(destination, source, size, options);
     }
 
     return { .n_bytes = size, .changed = changed };
@@ -100,8 +103,7 @@ ReadResult Cache::read(
     size_t size,
     ReadOptions options) const
 {
-    if (!cache_config.enabled()
-        || (source >= uncached_start && source <= uncached_last)) {
+    if (!cache_config.enabled() || is_in_uncached_area(source)) {
         mem_reads++;
         emit memory_reads_update(mem_reads);
         update_all_statistics();
@@ -112,26 +114,28 @@ ReadResult Cache::read(
         if (!(location_status(source) & LOCSTAT_CACHED)) {
             mem->read(source, destination, size, options);
         } else {
-            debug_rword(source, destination, size);
+            debug_read(source, destination, size);
         }
         return {};
     }
 
-    access(source, &destination, size, READ);
+    access(source, destination, size, READ);
 
     return {};
 }
+bool Cache::is_in_uncached_area(Address source) const {
+    return (source >= uncached_start && source <= uncached_last);
+}
 
-void Cache::flush()
-{
+void Cache::flush() {
     if (!cache_config.enabled()) {
         return;
     }
 
-    for (size_t assoc_index = cache_config.associativity(); assoc_index > 0;
-         assoc_index--) {
+    for (size_t assoc_index = 0; assoc_index < cache_config.associativity();
+         assoc_index += 1) {
         for (size_t set_index = 0; set_index < cache_config.set_count();
-             set_index++) {
+             set_index += 1) {
             if (dt[assoc_index][set_index].valid) {
                 kick(assoc_index, set_index);
                 emit cache_update(
@@ -154,10 +158,9 @@ void Cache::reset()
                 block.valid = false;
             }
         }
+        // Note: We don't have to zero replacement policy data as those are
+        // zeroed when first used on invalid cell.
     }
-
-    // Note: we don't have to zero replacement policy data as those are zeroed
-    // when first used on invalid cell
 
     hit_read = 0;
     hit_write = 0;
@@ -186,16 +189,15 @@ void Cache::reset()
     }
 }
 
-void Cache::debug_rword(Address source, void* destination, size_t size) const
-{
+void Cache::debug_read(Address source, void* destination, size_t size) const {
     CacheLocation loc = compute_location(source);
     for (size_t assoc_index = 0; assoc_index < cache_config.associativity();
          assoc_index++) {
-        if (dt[assoc_index][loc.set].valid
-            && dt[assoc_index][loc.set].tag == loc.tag) {
+        if (dt[assoc_index][loc.row].valid
+            && dt[assoc_index][loc.row].tag == loc.tag) {
             memory_copy(
                 destination,
-                (byte*)&dt[assoc_index][loc.set].data[loc.col] + loc.bytes,
+                (byte*)&dt[assoc_index][loc.row].data[loc.col] + loc.byte,
                 size);
             return;
         }
@@ -224,15 +226,15 @@ bool Cache::access(
             return false;
         }
 
-        assoc_index = replacement_policy->select_index_to_evict(loc.set);
-        kick(assoc_index, loc.set);
+        assoc_index = replacement_policy->select_way_to_evict(loc.row);
+        kick(assoc_index, loc.row);
 
         SANITY_ASSERT(
             assoc_index < cache_config.associativity(),
             "Probably unimplemented replacement policy");
     }
 
-    struct CacheBlock& cd = dt[assoc_index][loc.set];
+    struct CacheLine& cd = dt[assoc_index][loc.row];
 
     // Update statistics and otherwise read from memory
     if (cd.valid) {
@@ -252,8 +254,9 @@ bool Cache::access(
         emit miss_update(get_miss_count());
 
         mem->read(
-            calc_base_address(loc.tag, loc.set), cd.data.data(),
+            calc_base_address(loc.tag, loc.row), cd.data.data(),
             cache_config.block_size() * BLOCK_ITEM_SIZE, { .debug = false });
+
         cd.valid = true;
         cd.dirty = false;
         cd.tag = loc.tag;
@@ -265,9 +268,9 @@ bool Cache::access(
         update_all_statistics();
     }
 
-    replacement_policy->update_stats(assoc_index, loc.set, cd.valid);
+    replacement_policy->update_stats(assoc_index, loc.row, cd.valid);
 
-    const int64_t overlap = std::max(
+    const int64_t overlap = std::min(
         loc.col * BLOCK_ITEM_SIZE + size
             - cache_config.block_size() * BLOCK_ITEM_SIZE,
         { 0 });
@@ -276,21 +279,20 @@ bool Cache::access(
     bool changed = false;
 
     if (access_type == READ) {
-        memory_copy(buffer, &cd.data[loc.col] + loc.bytes, size1);
+        memory_copy(buffer, (byte*)&cd.data[loc.col] + loc.byte, size1);
     } else if (access_type == WRITE) {
         cd.dirty = true;
-        changed = !memory_compare(&cd.data[loc.col] + loc.bytes, buffer, size1);
+        changed = !memory_compare(&cd.data[loc.col] + loc.byte, buffer, size1);
         if (changed) {
-            memory_copy(&cd.data[loc.col] + loc.bytes, buffer, size1);
+            memory_copy(((byte*)&cd.data[loc.col]) + loc.byte, buffer, size1);
             change_counter++;
         }
     }
-
     const auto last_affected_col
         = (loc.col * BLOCK_ITEM_SIZE + size1) / BLOCK_ITEM_SIZE;
     for (auto col = loc.col; col < last_affected_col; col++) {
         emit cache_update(
-            assoc_index, loc.set, col, cd.valid, cd.dirty, cd.tag,
+            assoc_index, loc.row, col, cd.valid, cd.dirty, cd.tag,
             cd.data.data(), access_type);
     }
 
@@ -304,22 +306,22 @@ bool Cache::access(
     return changed;
 }
 
-size_t Cache::find_block_index(const CacheLocation& loc) const
-{
+size_t Cache::find_block_index(const CacheLocation& loc) const {
     uint32_t index = 0;
-    while (index < cache_config.associativity()
-           && (!dt[index][loc.set].valid || dt[index][loc.set].tag != loc.tag))
+    while (
+        index < cache_config.associativity()
+        && (!dt[index][loc.row].valid || dt[index][loc.row].tag != loc.tag)) {
         index++;
+    }
     return index;
 }
 
-void Cache::kick(size_t assoc_index, size_t set_index) const
-{
-    struct CacheBlock& cd = dt[assoc_index][set_index];
+void Cache::kick(size_t way, size_t row) const {
+    struct CacheLine& cd = dt[way][row];
     if (cd.dirty && cache_config.write_policy() == CacheConfig::WP_BACK) {
         mem->write(
-            calc_base_address(cd.tag, set_index), cd.data.data(),
-            cache_config.block_size() * BLOCK_ITEM_SIZE);
+            calc_base_address(cd.tag, row), cd.data.data(),
+            cache_config.block_size() * BLOCK_ITEM_SIZE, {});
         mem_writes += cache_config.block_size();
         burst_writes += cache_config.block_size() - 1;
         emit memory_writes_update(mem_writes);
@@ -329,7 +331,7 @@ void Cache::kick(size_t assoc_index, size_t set_index) const
 
     change_counter++;
 
-    replacement_policy->update_stats(assoc_index, set_index, false);
+    replacement_policy->update_stats(way, row, false);
 }
 
 void Cache::update_all_statistics() const
@@ -338,22 +340,29 @@ void Cache::update_all_statistics() const
         get_stall_count(), get_speed_improvement(), get_hit_rate());
 }
 
-Address Cache::calc_base_address(size_t tag, size_t set_index) const
-{
+Address Cache::calc_base_address(size_t tag, size_t row) const {
     return Address(
-        (tag * cache_config.set_count() + set_index) * cache_config.block_size()
+        (tag * cache_config.set_count() + row) * cache_config.block_size()
         * BLOCK_ITEM_SIZE);
 }
 
-CacheLocation Cache::compute_location(Address address) const
-{
+CacheLocation Cache::compute_location(Address address) const {
+    // Get address in multiples of 4 byte (basic storage unit size) amd get the
+    // reminder to addreess individual byte.
     auto word_index = address.get_raw() / BLOCK_ITEM_SIZE;
-    auto word_count = cache_config.block_size() * cache_config.set_count();
-    auto index = word_index % word_count;
-    return { .set = index / cache_config.block_size(),
-             .col = index % cache_config.block_size(),
-             .tag = word_index / word_count,
-             .bytes = address.get_raw() % BLOCK_ITEM_SIZE };
+    auto byte = address.get_raw() % BLOCK_ITEM_SIZE;
+    // Associativity does not incluence location (hit will be on the
+    // same place in each way). Lets therefore assume associtivty degree 1.
+    // Same address modulo `way_size_words` will alias (up to associativity).
+    auto way_size_words = cache_config.set_count() * cache_config.block_size();
+    // Index in a way, when rows and cols would be rearranged into 1D array.
+    auto index_in_way = word_index % way_size_words;
+    auto tag = word_index / way_size_words;
+
+    return { .row = index_in_way / cache_config.block_size(),
+             .col = index_in_way % cache_config.block_size(),
+             .tag = tag,
+             .byte = byte };
 }
 
 enum LocationStatus Cache::location_status(Address address) const
@@ -362,7 +371,7 @@ enum LocationStatus Cache::location_status(Address address) const
 
     if (cache_config.enabled()) {
         for (auto const& set : dt) {
-            auto const& block = set[loc.set];
+            auto const& block = set[loc.row];
 
             if (block.valid && block.tag == loc.tag) {
                 if (block.dirty

@@ -399,13 +399,13 @@ void NewDialogCacheHandler::enabled(bool val) {
 }
 
 void NewDialogCacheHandler::numsets() {
-	config->set_sets(ui->number_of_sets->value());
-	nd->switch2custom();
+    config->set_set_count(ui->number_of_sets->value());
+    nd->switch2custom();
 }
 
 void NewDialogCacheHandler::blocksize() {
-	config->set_blocks(ui->block_size->value());
-	nd->switch2custom();
+    config->set_block_size(ui->block_size->value());
+    nd->switch2custom();
 }
 
 void NewDialogCacheHandler::degreeassociativity() {

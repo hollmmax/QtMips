@@ -115,8 +115,8 @@ void configure_cache(CacheConfig &cacheconf, QStringList cachearg, QString which
         std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache incorrect (correct lru,4,2,2,wb)." << std::endl;
         exit(1);
     }
-    cacheconf.set_sets(pieces.at(0).toLong());
-    cacheconf.set_blocks(pieces.at(1).toLong());
+    cacheconf.set_set_count(pieces.at(0).toLong());
+    cacheconf.set_block_size(pieces.at(1).toLong());
     cacheconf.set_associativity(pieces.at(2).toLong());
     if (cacheconf.set_count() == 0 || cacheconf.block_size() == 0 || cacheconf.associativity() == 0) {
         std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache cannot have zero component." << std::endl;

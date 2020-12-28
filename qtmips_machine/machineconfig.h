@@ -66,14 +66,14 @@ public:
 
     enum WritePolicy {
         WP_THROUGH_NOALLOC, // Write through
-        WP_THROUGH_ALLOC, // Write through
-        WP_BACK // Write back
+        WP_THROUGH_ALLOC,   // Write through
+        WP_BACK             // Write back
     };
 
     // If cache should be used or not
     void set_enabled(bool);
-    void set_sets(unsigned); // Number of sets
-    void set_blocks(unsigned); // Number of blocks
+    void set_set_count(unsigned);     // Number of sets
+    void set_block_size(unsigned);    // Number of blocks in a set
     void set_associativity(unsigned); // Degree of associativity
     void set_replacement_policy(enum ReplacementPolicy);
     void set_write_policy(enum WritePolicy);

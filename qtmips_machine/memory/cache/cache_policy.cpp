@@ -41,66 +41,60 @@
 
 namespace machine {
 
-std::unique_ptr<CachePolicy> CachePolicy::get_policy_instance(const CacheConfig* config)
-{
+std::unique_ptr<CachePolicy>
+CachePolicy::get_policy_instance(const CacheConfig* config) {
     switch (config->replacement_policy()) {
     case CacheConfig::RP_RAND:
         return std::make_unique<CachePolicyRAND>(config->associativity());
     case CacheConfig::RP_LRU:
-        return std::make_unique<CachePolicyLRU>(config->associativity(), config->set_count());
+        return std::make_unique<CachePolicyLRU>(
+            config->associativity(), config->set_count());
     case CacheConfig::RP_LFU:
-        return std::make_unique<CachePolicyLFU>(config->associativity(), config->set_count());
+        return std::make_unique<CachePolicyLFU>(
+            config->associativity(), config->set_count());
     }
 }
 
-CachePolicyLRU::CachePolicyLRU(
-    size_t associativity,
-    size_t set_count)
-{
-    stats.resize(associativity);
-    for (auto row : stats) {
-        row.reserve(set_count);
-        for (size_t i = 0; i < set_count; i++) {
+CachePolicyLRU::CachePolicyLRU(size_t associativity, size_t set_count)
+    : associativity(associativity) {
+    stats.resize(set_count);
+    for (auto& row : stats) {
+        row.reserve(associativity);
+        for (size_t i = 0; i < associativity; i++) {
             row.push_back(i);
         }
     }
 }
 
-void CachePolicyLRU::update_stats(
-    size_t assoc_index,
-    size_t set_index,
-    bool is_valid)
-{
-    uint32_t next_asi = assoc_index;
+void CachePolicyLRU::update_stats(size_t way, size_t row, bool is_valid) {
+    uint32_t next_way = way;
 
     if (is_valid) {
-        ssize_t i = stats.size() - 1;
-        while (stats[set_index][i] != assoc_index) {
-            SANITY_ASSERT(i >= 0, "LRU lost the way from priority queue - access");
-            std::swap(stats[set_index][i], next_asi);
+        ssize_t i = associativity - 1;
+        while (stats.at(row).at(i) != way) {
+            SANITY_ASSERT(
+                i >= 0, "LRU lost the way from priority queue - access");
+            std::swap(stats.at(row).at(i), next_way);
             i--;
         }
     } else {
         size_t i = 0;
-        while (stats[set_index][i] != assoc_index) {
-            SANITY_ASSERT(i < stats.size(), "LRU lost the way from priority queue - access");
-            std::swap(stats[set_index][i], next_asi);
+        while (stats.at(row).at(i) != way) {
+            SANITY_ASSERT(
+                i < stats.size(),
+                "LRU lost the way from priority queue - access");
+            std::swap(stats.at(row).at(i), next_way);
             i++;
         }
     }
 }
 
-size_t CachePolicyLRU::select_index_to_evict(size_t set_index) const
-{
-    return stats[set_index][0];
+size_t CachePolicyLRU::select_way_to_evict(size_t row) const {
+    return stats.at(row).at(0);
 }
 
-void CachePolicyLFU::update_stats(
-    size_t assoc_index,
-    size_t set_index,
-    bool is_valid)
-{
-    auto& stat_item = stats[set_index][assoc_index];
+void CachePolicyLFU::update_stats(size_t way, size_t row, bool is_valid) {
+    auto& stat_item = stats.at(row).at(way);
 
     if (is_valid) {
         stat_item += 1;
@@ -109,46 +103,37 @@ void CachePolicyLFU::update_stats(
     }
 }
 
-size_t CachePolicyLFU::select_index_to_evict(size_t set_index) const
-{
-    size_t lowest = stats[set_index][0];
+size_t CachePolicyLFU::select_way_to_evict(size_t row) const {
+    size_t lowest = stats.at(row).at(0);
     size_t index = 0;
     for (size_t i = 1; i < stats.size(); i++) {
-        if (stats[set_index][i] == 0) {
+        if (stats.at(row).at(i) == 0) {
             // Only invalid blocks have zero stat
             return i;
         }
-        if (lowest > stats[set_index][i]) {
-            lowest = stats[set_index][i];
+        if (lowest > stats.at(row).at(i)) {
+            lowest = stats.at(row).at(i);
             index = i;
         }
     }
     return index;
 }
 
-CachePolicyLFU::CachePolicyLFU(
-    size_t associativity,
-    size_t set_count)
-{
-    stats.resize(associativity, std::vector<uint32_t>(set_count, 0));
+CachePolicyLFU::CachePolicyLFU(size_t associativity, size_t set_count) {
+    stats.resize(set_count, std::vector<uint32_t>(associativity, 0));
 }
 
-void CachePolicyRAND::update_stats(
-    size_t assoc_index,
-    size_t set_index,
-    bool is_valid)
-{
-    UNUSED(assoc_index);
-    UNUSED(set_index);
+void CachePolicyRAND::update_stats(size_t way, size_t row, bool is_valid) {
+    UNUSED(way);
+    UNUSED(row);
     UNUSED(is_valid);
 
     // NOP
 }
 
-size_t CachePolicyRAND::select_index_to_evict(size_t set_index) const
-{
-    UNUSED(set_index);
-    return std::rand() % associativity;
+size_t CachePolicyRAND::select_way_to_evict(size_t row) const {
+    UNUSED(row);
+    return std::rand() % associativity; // NOLINT(cert-msc50-cpp)
 }
 
 }

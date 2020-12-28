@@ -49,22 +49,16 @@ void MachineTests::cache_data() {
     CacheConfig cache_c;
     cache_c.set_write_policy(CacheConfig::WP_THROUGH_ALLOC);
     cache_c.set_enabled(true);
-    cache_c.set_sets(8);
-    cache_c.set_blocks(1);
+    cache_c.set_set_count(8);
+    cache_c.set_block_size(1);
     cache_c.set_associativity(1);
-    QTest::newRow("Directly mapped") << cache_c \
-                                     << (unsigned)3 \
-                                     << (unsigned)7;
-    cache_c.set_sets(1);
-    cache_c.set_blocks(8);
-    QTest::newRow("Wide") << cache_c \
-                                     << (unsigned)5 \
-                                     << (unsigned)5;
-    cache_c.set_sets(4);
-    cache_c.set_blocks(4);
-    QTest::newRow("Square") << cache_c \
-                                     << (unsigned)4 \
-                                     << (unsigned)6;
+    QTest::newRow("Directly mapped") << cache_c << (unsigned)3 << (unsigned)7;
+    cache_c.set_set_count(1);
+    cache_c.set_block_size(8);
+    QTest::newRow("Wide") << cache_c << (unsigned)5 << (unsigned)5;
+    cache_c.set_set_count(4);
+    cache_c.set_block_size(4);
+    QTest::newRow("Square") << cache_c << (unsigned)4 << (unsigned)6;
 }
 
 void MachineTests::cache() {

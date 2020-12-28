@@ -42,24 +42,31 @@
 
 namespace machine {
 
+/**
+ * Tetermines location of address in single way of cache. This mean, where given
+ * addrees should be stored, if present.
+ */
 struct CacheLocation {
-    size_t set;
+    size_t row;
     size_t col;
     size_t tag;
-    size_t bytes;
+    size_t byte;
 };
 
-struct CacheBlock {
+/**
+ * Single cache line. Appropriate cache block is stored in `data`.
+ */
+struct CacheLine {
     bool valid, dirty;
     size_t tag;
     std::vector<uint32_t> data;
 };
 
-enum AccessType {
-    READ,
-    WRITE
-};
+/**
+ * This is preffer over bool (write = true|false) for better readability.
+ */
+enum AccessType { READ, WRITE };
 
 }
 
-#endif //QTMIPS_CACHE_TYPES_H
+#endif // QTMIPS_CACHE_TYPES_H

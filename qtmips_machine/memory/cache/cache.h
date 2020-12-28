@@ -48,6 +48,24 @@ namespace machine {
 
 constexpr size_t BLOCK_ITEM_SIZE = sizeof(uint32_t);
 
+/**
+ * NOTE ON TERMINILOGY:
+ * N-way set associative cache consist of N ways (where N is degree
+ * of associtivity). Arguments requesting N are called `associativity` of the
+ * cache. Each way consist of blocks. (When we want to highlight, that we talk
+ * about data + management tags, we speek of cache line. When we speek about
+ * location of block within a way, we use the term `row`. Each block consits of
+ * some number of basic storage units (here `uint32_t`). To locate a single unit
+ * withing block, we use therm `col` (as column).
+ *
+ * Set is consists of all block on the same row accross the ways.
+ *
+ * We can imagine a cache as 3D array indexed via triple (`way`, `row`, `col`).
+ * Row and col are derived from part of a address deterministically. The rest
+ * of the address is called `tag`. Set is obtained via linear search and placing
+ * into cache, it is determined by cache replacement policy
+ * (see `memory/cache/cache_policy.h`).
+ */
 class Cache : public FrontendMemory {
     Q_OBJECT
 
@@ -64,7 +82,8 @@ public:
     WriteResult write(
         Address destination,
         const void* source,
-        size_t size) override;
+        size_t size,
+        WriteOptions options) override;
 
     ReadResult read(
         Address source,
@@ -74,17 +93,18 @@ public:
 
     uint32_t get_change_counter() const override;
 
-    void flush(); // flush cache
+    void flush();         // flush cache
     void sync() override; // Same as flush
 
-    uint32_t get_hit_count() const; // Number of recorded hits
-    uint32_t get_miss_count() const; // Number of recorded misses
-    uint32_t get_read_count() const; // Number backing/main memory reads
-    uint32_t get_write_count() const; // Number backing/main memory writes
-    uint32_t get_stall_count() const; // Number of wasted get_cycle_count in memory waiting statistic
-    double get_speed_improvement()
-        const; // Speed improvement in percents in comare with no used cache
-    double get_hit_rate() const; // Usage efficiency in percents
+    uint32_t get_hit_count() const;       // Number of recorded hits
+    uint32_t get_miss_count() const;      // Number of recorded misses
+    uint32_t get_read_count() const;      // Number backing/main memory reads
+    uint32_t get_write_count() const;     // Number backing/main memory writes
+    uint32_t get_stall_count() const;     // Number of wasted get_cycle_count in
+                                          // memory waiting statistic
+    double get_speed_improvement() const; // Speed improvement in percents in
+                                          // comare with no used cache
+    double get_hit_rate() const;          // Usage efficiency in percents
 
     void reset(); // Reset whole state of cache
 
@@ -104,8 +124,8 @@ signals:
         double hit_rate) const;
 
     void cache_update(
-        size_t associat,
-        size_t set,
+        size_t way,
+        size_t row,
         size_t col,
         bool valid,
         bool dirty,
@@ -125,22 +145,13 @@ private:
     const uint32_t access_pen_r, access_pen_w, access_pen_b;
     const std::unique_ptr<CachePolicy> replacement_policy;
 
-    mutable std::vector<std::vector<CacheBlock>> dt;
+    mutable std::vector<std::vector<CacheLine>> dt;
 
-    mutable uint32_t hit_read = 0,
-                     miss_read = 0,
-                     hit_write = 0,
-                     miss_write = 0,
-                     mem_reads = 0,
-                     mem_writes = 0,
-                     burst_reads = 0,
-                     burst_writes = 0,
-                     change_counter = 0;
+    mutable uint32_t hit_read = 0, miss_read = 0, hit_write = 0, miss_write = 0,
+                     mem_reads = 0, mem_writes = 0, burst_reads = 0,
+                     burst_writes = 0, change_counter = 0;
 
-    void debug_rword(
-        Address source,
-        void* destination,
-        size_t size) const;
+    void debug_read(Address source, void* destination, size_t size) const;
 
     bool access(
         Address address,
@@ -148,13 +159,9 @@ private:
         size_t size,
         AccessType access_type) const;
 
-    void kick(
-        size_t assoc_index,
-        size_t set_index) const;
+    void kick(size_t way, size_t row) const;
 
-    Address calc_base_address(
-        size_t tag,
-        size_t set_index) const;
+    Address calc_base_address(size_t tag, size_t row) const;
 
     void update_all_statistics() const;
 
@@ -164,9 +171,12 @@ private:
      * Searches for given tag in a set
      *
      * @param loc       requested location in cache
-     * @return          associatity index of found block, max index + 1 if not found
+     * @return          associatity index of found block, max index + 1 if not
+     * found
      */
     size_t find_block_index(const CacheLocation& loc) const;
+
+    bool is_in_uncached_area(Address source) const;
 };
 
 } // namespace machine

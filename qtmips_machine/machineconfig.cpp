@@ -104,15 +104,14 @@ void CacheConfig::preset(enum ConfigPresets p) {
     case CP_PIPE:
     case CP_SINGLE_CACHE:
         set_enabled(true);
-        set_sets(4);
-        set_blocks(2);
+        set_set_count(4);
+        set_block_size(2);
         set_associativity(2);
         set_replacement_policy(RP_RAND);
         set_write_policy(WP_THROUGH_NOALLOC);
         break;
     case CP_SINGLE:
-    case CP_PIPE_NO_HAZARD:
-        set_enabled(false);
+    case CP_PIPE_NO_HAZARD: set_enabled(false);
     }
 }
 
@@ -120,13 +119,9 @@ void CacheConfig::set_enabled(bool v) {
     en = v;
 }
 
-void CacheConfig::set_sets(unsigned v) {
-    n_sets = v > 0 ? v : 1;
-}
+void CacheConfig::set_set_count(unsigned v) { n_sets = v > 0 ? v : 1; }
 
-void CacheConfig::set_blocks(unsigned v) {
-    n_blocks = v > 0 ? v : 1;
-}
+void CacheConfig::set_block_size(unsigned v) { n_blocks = v > 0 ? v : 1; }
 
 void CacheConfig::set_associativity(unsigned v) {
     d_associativity = v > 0 ? v : 1;

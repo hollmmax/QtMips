@@ -43,25 +43,32 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+using std::size_t;
 
 namespace machine {
 
 /**
- * Cache replacement policy interface
+ * Cache replacement policy interface.
+ *
+ * For clarification of cache terminiology, see docstring of `Cache` in
+ * `memory/cache/cache.h`.
  */
 class CachePolicy {
 public:
-    virtual size_t select_index_to_evict(size_t set_index) const = 0;
+    virtual size_t select_way_to_evict(size_t row) const = 0;
 
-    virtual void update_stats(
-        size_t assoc_index,
-        size_t set_index,
-        bool is_valid)
-        = 0;
+    /**
+     * To be called by cache on any change of validity.
+     * @param way           associativity way
+     * @param row           cache row (index of block/set)
+     * @param is_valid      is cache data valid (as in `cd.valid`)
+     */
+    virtual void update_stats(size_t way, size_t row, bool is_valid) = 0;
 
     virtual ~CachePolicy() = default;
 
-    static std::unique_ptr<CachePolicy> get_policy_instance(const CacheConfig* config);
+    static std::unique_ptr<CachePolicy>
+    get_policy_instance(const CacheConfig* config);
 };
 
 /**
@@ -73,22 +80,23 @@ public:
  */
 class CachePolicyLRU final : public CachePolicy {
 public:
-    CachePolicyLRU(
-        size_t associativity,
-        size_t set_count);
+    /**
+     * @param associativity     degree of assiciaivity
+     * @param set_count         number of blocks / rows in a way (or sets in
+     * cache)
+     */
+    CachePolicyLRU(size_t associativity, size_t set_count);
 
-    size_t select_index_to_evict(size_t set_index) const final;
+    size_t select_way_to_evict(size_t row) const final;
 
-    void update_stats(
-        size_t assoc_index,
-        size_t set_index,
-        bool is_valid) final;
+    void update_stats(size_t way, size_t row, bool is_valid) final;
 
 private:
     /**
      * Last access order queues for each cache set (row)
      */
     std::vector<std::vector<uint32_t>> stats;
+    const size_t associativity;
 };
 
 /**
@@ -99,16 +107,16 @@ private:
  */
 class CachePolicyLFU final : public CachePolicy {
 public:
-    CachePolicyLFU(
-        size_t associativity,
-        size_t set_count);
+    /**
+     * @param associativity     degree of assiciaivity
+     * @param set_count         number of blocks / rows is way (or sets in
+     * cache)
+     */
+    CachePolicyLFU(size_t associativity, size_t set_count);
 
-    size_t select_index_to_evict(size_t set_index) const final;
+    size_t select_way_to_evict(size_t row) const final;
 
-    void update_stats(
-        size_t assoc_index,
-        size_t set_index,
-        bool is_valid) final;
+    void update_stats(size_t way, size_t row, bool is_valid) final;
 
 private:
     std::vector<std::vector<uint32_t>> stats;
@@ -116,23 +124,20 @@ private:
 
 class CachePolicyRAND final : public CachePolicy {
 public:
+    /**
+     * @param associativity     degree of associativity
+     */
     explicit CachePolicyRAND(size_t associativity)
-        : associativity(associativity)
-    {
-    }
+        : associativity(associativity) {}
 
-private:
-    size_t select_index_to_evict(size_t set_index) const final;
+    size_t select_way_to_evict(size_t row) const final;
 
-    void update_stats(
-        size_t assoc_index,
-        size_t set_index,
-        bool is_valid) final;
+    void update_stats(size_t way, size_t row, bool is_valid) final;
 
 private:
     size_t associativity;
 };
 
-}
+} // namespace machine
 
-#endif //QTMIPS_CACHE_POLICY_H
+#endif // QTMIPS_CACHE_POLICY_H
