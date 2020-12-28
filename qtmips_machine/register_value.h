@@ -45,7 +45,7 @@ namespace machine {
  *
  * TODO: make compile time option
  */
-using register_storage_t = uint64_t;
+using register_storage_t = uint32_t;
 
 /**
  * Represents a value stored in register
@@ -68,63 +68,42 @@ public:
      * Constructor needs to be defined even for uint32_t as cpp cannot decide
      *  whether to use uint64_t or int32_t.
      */
-    constexpr inline RegisterValue(uint64_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(uint64_t value) : data(value) {};
 
-    constexpr inline RegisterValue(uint32_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(uint32_t value) : data(value) {};
 
-    constexpr inline RegisterValue()
-        : data(0) {};
+    constexpr inline RegisterValue() : data(0) {};
 
     constexpr inline RegisterValue(const RegisterValue& other) = default;
 
     /* Sign-extending constructors */
 
-    constexpr inline RegisterValue(int64_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(int64_t value) : data(value) {};
 
-    constexpr inline RegisterValue(int32_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(int32_t value) : data(value) {};
 
-    constexpr inline RegisterValue(int16_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(int16_t value) : data(value) {};
 
-    constexpr inline RegisterValue(int8_t value)
-        : data(value) {};
+    constexpr inline RegisterValue(int8_t value) : data(value) {};
 
-    constexpr inline int32_t as_i32() const
-    {
-        return (int32_t)data;
-    };
+    constexpr inline int32_t as_i32() const { return (int32_t)data; };
 
-    constexpr inline uint32_t as_u32() const
-    {
-        return (uint32_t)data;
-    };
+    constexpr inline uint32_t as_u32() const { return (uint32_t)data; };
 
-    constexpr inline uint64_t as_u64() const
-    {
-        return (uint64_t)data;
-    };
+    constexpr inline uint64_t as_u64() const { return (uint64_t)data; };
 
-    constexpr inline int64_t as_i64() const
-    {
-        return (int64_t)data;
-    };
+    constexpr inline int64_t as_i64() const { return (int64_t)data; };
 
     /**
      * Equality operator is implemented as bit by bit comparison is reasonable
      *  for bit array.
      * It is necessary to make gp-register array comparable.
      */
-    constexpr inline bool operator==(const RegisterValue& other) const
-    {
+    constexpr inline bool operator==(const RegisterValue& other) const {
         return data == other.data;
     }
 
-    constexpr inline bool operator!=(const RegisterValue& other) const
-    {
+    constexpr inline bool operator!=(const RegisterValue& other) const {
         return !(other == *this);
     }
 
@@ -132,5 +111,5 @@ private:
     register_storage_t data;
 };
 
-}
-#endif //QTMIPS_REGISTER_VALUE_H
+} // namespace machine
+#endif // QTMIPS_REGISTER_VALUE_H
