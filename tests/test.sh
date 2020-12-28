@@ -101,8 +101,8 @@ qtmips_make() {
 	mkdir -p "$BUILD_DIR"
 	local ORIG="$(pwd)"
 	cd "$BUILD_DIR"
-	qtchooser -run-tool=qmake -qt=5 "$PROJECT_ROOT" || echo_fail "QtMips qmake failed!"
-	make "$@" || echo_fail "QtMips build failed! (target: $@)"
+	qmake "$PROJECT_ROOT" "QMAKE_CC = clang" "QMAKE_CXX = clang++ -Wno-c99-designator" || echo_fail "QtMips qmake failed!"
+	make "$@" "-j$(nproc)" -s  || echo_fail "QtMips build failed! (target: $@)"
 	cd "$ORIG"
 }
 
