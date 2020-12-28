@@ -54,10 +54,6 @@ private Q_SLOTS:
     void memory_section_data();
     void memory_endian();
     void memory_compare();
-    void memory_write_ctl();
-    void memory_write_ctl_data();
-    void memory_read_ctl();
-    void memory_read_ctl_data();
     // Program loader
     void program_loader();
     // Instruction
@@ -70,6 +66,10 @@ private Q_SLOTS:
     void alu_trap_overflow_data();
     void alu_except();
     void alu_except_data();
+    // Cache
+    // Core depends on cache, therefore it is tested first.
+    void cache_data();
+    void cache();
     // Core
     void singlecore_regs();
     void singlecore_regs_data();
@@ -99,10 +99,6 @@ private Q_SLOTS:
     void pipecore_wt_na_memory_tests();
     void pipecore_wt_a_memory_tests();
     void pipecore_wb_memory_tests();
-    // Cache
-    void cache_data();
-    void cache();
-    void cache_policy_rand();
 };
 
 #endif // TST_MACHINE_H
