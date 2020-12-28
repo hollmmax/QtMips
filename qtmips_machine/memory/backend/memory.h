@@ -139,6 +139,8 @@ private:
     static union MemoryTree*
     copy_section_tree(const union MemoryTree*, size_t depth);
 };
-}
+} // namespace machine
+
+Q_DECLARE_METATYPE(machine::Memory);
 
 #endif // QTMIPS_MACHINE_MEMORY_H
