@@ -218,12 +218,15 @@ void Core::set_c0_userlocal(std::uint32_t address)
     }
 }
 
-enum ExceptionCause Core::memory_special(enum AccessControl memctl,
-    int mode, bool memread, bool memwrite,
-    RegisterValue towrite_val,
-    RegisterValue rt_value, Address mem_addr)
-{
-    UNUSED(mode);
+enum ExceptionCause Core::memory_special(
+    enum AccessControl memctl,
+    int mode,
+    bool memread,
+    bool memwrite,
+    RegisterValue& towrite_val,
+    RegisterValue rt_value,
+    Address mem_addr) {
+    UNUSED(mode)
 
     uint32_t mask;
     uint32_t shift;

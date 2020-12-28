@@ -65,11 +65,18 @@ WriteResult MemorySection::write(
             QString("Accessing using offset: ") + QString::number(offset));
     }
 
-    bool changed = memory_compare(source, &this->dt[offset], size);
+    // Size the can be read from this section
+    const size_t available_size
+        = std::min(destination + size, this->length()) - destination;
+
+    // TODO, make swap conditional for big endian machies
+    bool changed
+        = !memory_compare(source, &this->dt[destination], available_size);
     if (changed) {
-        memory_copy(&this->dt[offset], source, size);
+        memory_copy(&this->dt[destination], source, available_size);
     }
-    return { .n_bytes = size, .changed = changed };
+
+    return { .n_bytes = available_size, .changed = changed };
 }
 
 ReadResult MemorySection::read(
@@ -79,6 +86,8 @@ ReadResult MemorySection::read(
     ReadOptions options) const
 {
     UNUSED(options)
+
+    size = std::min(source + size, this->length()) - source;
 
     if (source >= this->length()) {
         throw QTMIPS_EXCEPTION(

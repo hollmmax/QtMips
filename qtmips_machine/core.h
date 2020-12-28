@@ -269,10 +269,14 @@ protected:
     void writeback(const struct dtMemory&);
     bool handle_pc(const struct dtDecode&);
 
-    enum ExceptionCause memory_special(enum AccessControl memctl,
-                                       int mode, bool memread, bool memwrite,
-                                       RegisterValue towrite_val,
-                                       RegisterValue rt_value, Address mem_addr);
+    enum ExceptionCause memory_special(
+        enum AccessControl memctl,
+        int mode,
+        bool memread,
+        bool memwrite,
+        RegisterValue& towrite_val,
+        RegisterValue rt_value,
+        Address mem_addr);
 
     // Initialize structures to NOPE instruction
     void dtFetchInit(struct dtFetch &dt);
@@ -282,8 +286,9 @@ protected:
 
 protected:
     unsigned int stall_c;
+
 private:
-    struct hwBreak{
+    struct hwBreak {
         hwBreak(Address addr);
         Address addr;
         unsigned int flags;
