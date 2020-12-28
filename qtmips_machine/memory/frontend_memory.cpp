@@ -168,13 +168,11 @@ T FrontendMemory::read_generic(
 {
     T value;
     read(address, &value, sizeof(T), { .debug = debug_read });
-    return value;
+    return byteswap(value);
 }
 
-template <typename T>
-bool FrontendMemory::write_generic(
-    Address address,
-    const T value)
-{
-    return write(address, &value, sizeof(T)).changed;
+template<typename T>
+bool FrontendMemory::write_generic(Address address, const T value) {
+    const T swapped_value = byteswap(value);
+    return write(address, &swapped_value, sizeof(T), {}).changed;
 }
