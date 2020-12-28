@@ -40,7 +40,7 @@
 
 #include "../address.h"
 #include "../memory_utils.h"
-#include "backend_memory.h"
+#include "./backend_memory.h"
 
 namespace machine {
 
@@ -74,18 +74,18 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 /// Some optimalization options
-// How big memory sections will be in bits (2^6=64)
-constexpr size_t MEMORY_SECTION_BITS = 6;
+// How big memory sections will be in bits (2^8=256 bytes)
+constexpr size_t MEMORY_SECTION_BITS = 8;
 // How big one row of lookup tree will be in bits (2^4=16)
 constexpr size_t MEMORY_TREE_BITS = 4;
 //////////////////////////////////////////////////////////////////////////////
 // Size of one section
-constexpr size_t MEMORY_SECTION_SIZE = 4 * (1u << MEMORY_SECTION_BITS);
+constexpr size_t MEMORY_SECTION_SIZE = (1u << MEMORY_SECTION_BITS);
 // Size of one memory row
 constexpr size_t MEMORY_TREE_ROW_SIZE = (1u << MEMORY_TREE_BITS);
 // Depth of tree
 constexpr size_t MEMORY_TREE_DEPTH
-    = ((30 - MEMORY_SECTION_BITS) / MEMORY_TREE_BITS);
+    = ((32 - MEMORY_SECTION_BITS) / MEMORY_TREE_BITS);
 
 union MemoryTree {
     union MemoryTree* subtree;

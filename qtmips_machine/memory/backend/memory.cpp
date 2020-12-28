@@ -122,7 +122,7 @@ static_assert(
     MEMORY_TREE_ROW_SIZE != 0,
     "Nonzero memory tree row size is required.");
 static_assert(
-    ((30 - MEMORY_SECTION_BITS) % MEMORY_TREE_BITS) == 0,
+    ((32 - MEMORY_SECTION_BITS) % MEMORY_TREE_BITS) == 0,
     "Number of bits in tree row has to be exact division of available number "
     "of bits.");
 
@@ -139,7 +139,7 @@ constexpr uint64_t genmask(size_t size, size_t offset)
  */
 constexpr size_t tree_row_bit_offset(size_t i)
 {
-    return 30 - MEMORY_TREE_BITS - i * MEMORY_TREE_BITS;
+    return 32 - MEMORY_TREE_BITS - i * MEMORY_TREE_BITS;
 }
 
 constexpr size_t get_tree_row(size_t offset, size_t i)
@@ -205,7 +205,7 @@ MemorySection* Memory::get_section(std::uint32_t address, bool create) const
 
 size_t get_section_offset_mask(size_t addr)
 {
-    return addr & genmask(MEMORY_SECTION_SIZE, 2);
+    return addr & genmask(MEMORY_SECTION_BITS, 0);
 }
 
 WriteResult Memory::write(
