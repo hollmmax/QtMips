@@ -232,3 +232,25 @@ MMU::RangeDesc::RangeDesc(
     , owned(owned)
 {
 }
+
+TrivialMMU::TrivialMMU(BackendMemory* backend_memory)
+    : backend_memory(backend_memory) {}
+
+WriteResult TrivialMMU::write(
+    Address destination,
+    const void* source,
+    size_t size,
+    WriteOptions options) {
+    change_counter += 1;
+    return backend_memory->write(destination.get_raw(), source, size, options);
+}
+
+ReadResult TrivialMMU::read(
+    Address source,
+    void* destination,
+    size_t size,
+    ReadOptions options) const {
+    return backend_memory->read(destination, source.get_raw(), size, options);
+}
+
+uint32_t TrivialMMU::get_change_counter() const { return change_counter; }

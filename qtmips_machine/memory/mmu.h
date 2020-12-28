@@ -104,6 +104,33 @@ private:
     RangeDesc* find_range(Address address) const;
     mutable uint32_t change_counter;
 };
-}
 
+/**
+ * Redirects memory requests from frontend to backend one-to-one.
+ * Used in test without cache (core only accepts `FrontendMemory`).
+ */
+class TrivialMMU final : public FrontendMemory {
+public:
+    explicit TrivialMMU(BackendMemory* backend_memory);
+
+    WriteResult write(
+        Address destination,
+        const void* source,
+        size_t size,
+        WriteOptions options) override;
+
+    ReadResult read(
+        Address source,
+        void* destination,
+        size_t size,
+        ReadOptions options) const override;
+
+    uint32_t get_change_counter() const override;
+
+private:
+    BackendMemory* backend_memory;
+    uint32_t change_counter = 0;
+};
+
+} // namespace machine
 #endif // PHYSADDRSPACE_H
