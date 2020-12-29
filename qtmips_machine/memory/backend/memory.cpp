@@ -127,11 +127,17 @@ static_assert(
     "of bits.");
 
 /**
- * Generate mask of given size with given righ offset
+ * Generate mask to get memory section index from address.
+ *
+ * Memory section of section_size 2^`section_size` separably addressable units
+ * each of section_size 2^`unit_size` bytes.
+ *
+ * Example:
+ *  `MemorySection` of 256x1B index is received as
+ *  ```address & genmask(8, 0)```
  */
-constexpr uint64_t genmask(size_t size, size_t offset)
-{
-    return ((1u << size) - 1) << offset;
+constexpr uint64_t genmask(size_t section_size, size_t unit_size) {
+    return ((1U << section_size) - 1) << unit_size;
 }
 
 /**
@@ -142,6 +148,9 @@ constexpr size_t tree_row_bit_offset(size_t i)
     return 32 - MEMORY_TREE_BITS - i * MEMORY_TREE_BITS;
 }
 
+/*
+ * Select branch index from memory tree.
+ */
 constexpr size_t get_tree_row(size_t offset, size_t i)
 {
     return (offset & genmask(MEMORY_TREE_BITS, tree_row_bit_offset(i)))
@@ -153,8 +162,6 @@ Memory::Memory() { this->mt_root = allocate_section_tree(); }
 Memory::Memory(const Memory& m)
 {
     this->mt_root = copy_section_tree(m.get_memorytree_root(), 0);
-    change_counter = 0;
-    write_counter = 0;
 }
 
 Memory::~Memory()
@@ -180,6 +187,8 @@ MemorySection* Memory::get_section(std::uint32_t address, bool create) const
 {
     union MemoryTree* w = this->mt_root;
     size_t row_num;
+    // Walk memory tree branch from root to leaf and create new nodes when
+    // needed and requested (`create` flag).
     for (size_t i = 0; i < (MEMORY_TREE_DEPTH - 1); i++) {
         row_num = get_tree_row(address, i);
         if (w[row_num].subtree == nullptr) { // We don't have this tree so
@@ -212,35 +221,39 @@ WriteResult Memory::write(
     const void* source,
     Offset offset,
     size_t size,
-    WriteOptions options)
-{
-    UNUSED(options)
-
-    WriteResult result {};
-    MemorySection* section = this->get_section(offset, true);
-    result = section->write(
-        source, get_section_offset_mask(offset), size, WriteOptions());
-    write_counter++;
-    if (result.changed) {
-        change_counter++;
-    }
-    return result;
+    WriteOptions options) {
+    return repeat_access_until_completed<WriteResult>(
+        destination, source, size, options,
+        [this](
+            Offset _destination, const void* _source, size_t _size,
+            WriteOptions) {
+            MemorySection* section = this->get_section(_destination, true);
+            return section->write(
+                get_section_offset_mask(_destination), _source, _size, {});
+        });
 }
 
 ReadResult Memory::read(
     Offset source,
     void* destination,
     size_t size,
-    ReadOptions options) const
-{
-    MemorySection* section = this->get_section(source, false);
-    if (section == nullptr) {
-        memset(destination, 0, size);
-    } else {
-        return section->read(
-            get_section_offset_mask(source), destination, size, options);
-    }
-    return { .n_bytes = size };
+    ReadOptions options) const {
+    return repeat_access_until_completed<ReadResult>(
+        destination, source, size, options,
+        [this](
+            void* _destination, Offset _source, size_t _size,
+            ReadOptions _options) -> ReadResult {
+            MemorySection* section = this->get_section(_source, false);
+            if (section == nullptr) {
+                memset(_destination, 0, _size);
+                // TODO Warning read of uninitialized memory
+                return { .n_bytes = _size };
+            } else {
+                return section->read(
+                    _destination, get_section_offset_mask(_source), _size,
+                    _options);
+            }
+        });
 }
 
 bool Memory::operator==(const Memory& m) const
@@ -276,7 +289,6 @@ void Memory::free_section_tree(union MemoryTree* mt, size_t depth)
             delete mt[i].sec;
         }
     }
-    delete mt;
 }
 
 bool Memory::compare_section_tree(
