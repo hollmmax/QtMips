@@ -126,8 +126,6 @@ public:
 
 private:
     union MemoryTree* mt_root;
-    uint32_t change_counter = 0;
-    uint32_t write_counter = 0;
 
     static union MemoryTree* allocate_section_tree();
     static void free_section_tree(union MemoryTree*, size_t depth);
