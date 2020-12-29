@@ -37,6 +37,7 @@
 #define TST_MACHINE_H
 
 #include <QtTest>
+#include <stdint.h>
 
 class MachineTests : public QObject {
     Q_OBJECT

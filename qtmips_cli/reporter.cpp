@@ -39,6 +39,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <utility>
 
 using namespace machine;
 using namespace std;
@@ -74,9 +75,8 @@ void Reporter::expect_fail(enum FailReason reason) {
 void Reporter::add_dump_range(
     std::uint32_t start,
     std::uint32_t len,
-    QString fname)
-{
-    dump_ranges.append({ start, len, fname });
+    QString fname) {
+    dump_ranges.append({ start, len, std::move(fname) });
 }
 
 void Reporter::machine_exit() {
@@ -84,8 +84,9 @@ void Reporter::machine_exit() {
     if (e_fail != 0) {
         cout << "Machine was expected to fail but it didn't." << endl;
         QCoreApplication::exit(1);
-    } else
-        app->exit();
+    } else {
+        QCoreApplication::exit();
+    }
 }
 
 void Reporter::machine_exception_reached() {
@@ -133,13 +134,13 @@ void Reporter::machine_trap(QtMipsException& e) {
 
     bool expected = false;
     auto& etype = typeid(e);
-    if (etype == typeid(QtMipsExceptionUnsupportedInstruction))
+    if (etype == typeid(QtMipsExceptionUnsupportedInstruction)) {
         expected = e_fail & FR_I;
-    else if (etype == typeid(QtMipsExceptionUnsupportedAluOperation))
+    } else if (etype == typeid(QtMipsExceptionUnsupportedAluOperation))
         expected = e_fail & FR_A;
-    else if (etype == typeid(QtMipsExceptionOverflow))
+    else if (etype == typeid(QtMipsExceptionOverflow)) {
         expected = e_fail & FR_O;
-    else if (etype == typeid(QtMipsExceptionUnalignedJump))
+    } else if (etype == typeid(QtMipsExceptionUnalignedJump))
         expected = e_fail & FR_J;
 
     cout << "Machine trapped: " << e.msg(false).toStdString() << endl;
@@ -165,10 +166,11 @@ void Reporter::report() {
         for (int i = 0; i < 32; i++) {
             cout << "R" << i << ":0x";
             out_hex(cout, machine->registers()->read_gp(i).as_u64(), 8);
-            if (i != 31)
+            if (i != 31) {
                 cout << " ";
-            else
+            } else {
                 cout << endl;
+            }
         }
         cout << "HI:0x";
         out_hex(cout, machine->registers()->read_hi_lo(true).as_u64(), 8);
@@ -176,12 +178,19 @@ void Reporter::report() {
         out_hex(cout, machine->registers()->read_hi_lo(false).as_u64(), 8);
         cout << endl;
         for (int i = 1; i < Cop0State::COP0REGS_CNT; i++) {
-            cout << Cop0State::cop0reg_name((Cop0State::Cop0Registers)i).toLocal8Bit().data() << ":0x";
-            out_hex(cout, machine->cop0state()->read_cop0reg((Cop0State::Cop0Registers)i), 8);
-            if (i != Cop0State::COP0REGS_CNT - 1)
+            cout << Cop0State::cop0reg_name((Cop0State::Cop0Registers)i)
+                        .toLocal8Bit()
+                        .data()
+                 << ":0x";
+            out_hex(
+                cout,
+                machine->cop0state()->read_cop0reg((Cop0State::Cop0Registers)i),
+                8);
+            if (i != Cop0State::COP0REGS_CNT - 1) {
                 cout << " ";
-            else
+            } else {
                 cout << endl;
+            }
         }
     }
     if (e_cache_stats) {
@@ -224,13 +233,14 @@ void Reporter::report() {
         out.open(range.fname.toLocal8Bit().data(), ios::out | ios::trunc);
         std::int32_t start = range.start & ~3;
         std::int32_t end = range.start + range.len;
-        if (end < start)
+        if (end < start) {
             end = 0xffffffff;
+        }
         for (std::int32_t addr = start; addr < end; addr += 4) {
             out << "0x";
             // TODO not nice
             uint32_t buffer;
-            machine->memory()->read(addr, &buffer, sizeof(buffer), { false });
+            machine->memory()->read(&buffer, addr, sizeof(buffer), { false });
             out_hex(out, buffer, 8);
             out << endl;
         }

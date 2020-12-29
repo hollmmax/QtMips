@@ -34,8 +34,9 @@
  ******************************************************************************/
 
 #include "registers.h"
-#include "qtmipsexception.h"
+
 #include "memory/address.h"
+#include "qtmipsexception.h"
 
 using namespace machine;
 
@@ -46,20 +47,16 @@ using namespace machine;
 #define SP_INIT 0xbfffff00_addr
 //////////////////////////////////////////////////////////////////////////////
 
-Registers::Registers() : QObject() {
-    reset();
-}
+Registers::Registers() : QObject() { reset(); }
 
-Registers::Registers(const Registers &orig) : QObject() {
+Registers::Registers(const Registers& orig) : QObject() {
     this->pc = orig.read_pc();
     this->lo = orig.read_hi_lo(false);
     this->hi = orig.read_hi_lo(true);
     this->gp = orig.gp;
 }
 
-Address Registers::read_pc() const {
-    return this->pc;
-}
+Address Registers::read_pc() const { return this->pc; }
 
 Address Registers::pc_inc() {
     this->pc += 4;
@@ -70,9 +67,8 @@ Address Registers::pc_inc() {
 Address Registers::pc_jmp(std::int32_t offset) {
     if (offset % 4) {
         throw QTMIPS_EXCEPTION(
-            UnalignedJump,
-            "Trying to jump by unaligned offset", QString::number(offset, 16)
-        );
+            UnalignedJump, "Trying to jump by unaligned offset",
+            QString::number(offset, 16));
     }
     this->pc += offset;
     emit pc_update(this->pc);
@@ -82,9 +78,8 @@ Address Registers::pc_jmp(std::int32_t offset) {
 void Registers::pc_abs_jmp(machine::Address address) {
     if (address.get_raw() % 4) {
         throw QTMIPS_EXCEPTION(
-            UnalignedJump,
-            "Trying to jump to unaligned address", QString::number(address.get_raw(), 16)
-        );
+            UnalignedJump, "Trying to jump to unaligned address",
+            QString::number(address.get_raw(), 16));
     }
     this->pc = address;
     emit pc_update(this->pc);
@@ -96,7 +91,7 @@ void Registers::pc_abs_jmp_28(Address address) {
 
 RegisterValue Registers::read_gp(RegisterId reg) const {
     if (reg.data == 0) {
-        return {0}; // $0 always reads as 0
+        return { 0 }; // $0 always reads as 0
     }
 
     RegisterValue value = this->gp.at(reg.data);
@@ -128,16 +123,24 @@ void Registers::write_hi_lo(bool is_hi, RegisterValue value) {
     emit hi_lo_update(is_hi, value.as_u32());
 }
 
-bool Registers::operator==(const Registers &c) const {
-    if (read_pc() != c.read_pc()) return false;
-    if (this->gp != c.gp) return false;
-    if (read_hi_lo(false).as_u32() != c.read_hi_lo(false).as_u32()) return false;
-    if (read_hi_lo(true).as_u32() != c.read_hi_lo(true).as_u32()) return false;
+bool Registers::operator==(const Registers& c) const {
+    if (read_pc() != c.read_pc()) {
+        return false;
+    }
+    if (this->gp != c.gp) {
+        return false;
+    }
+    if (read_hi_lo(false).as_u32() != c.read_hi_lo(false).as_u32()) {
+        return false;
+    }
+    if (read_hi_lo(true).as_u32() != c.read_hi_lo(true).as_u32()) {
+        return false;
+    }
     return true;
 }
 
-bool Registers::operator!=(const Registers &c) const {
-    return ! this->operator==(c);
+bool Registers::operator!=(const Registers& c) const {
+    return !this->operator==(c);
 }
 
 void Registers::reset() {
@@ -145,8 +148,8 @@ void Registers::reset() {
     for (int i = 1; i < 32; i++) {
         write_gp(i, 0);
     }
-    write_gp(29_reg, SP_INIT.get_raw()); // initialize to safe RAM area - corresponds to Linux
+    write_gp(29_reg, SP_INIT.get_raw()); // initialize to safe RAM area -
+                                         // corresponds to Linux
     write_hi_lo(false, 0);
     write_hi_lo(true, 0);
 }
-

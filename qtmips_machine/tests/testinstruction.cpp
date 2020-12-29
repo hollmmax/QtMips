@@ -50,15 +50,15 @@ void MachineTests::instruction() {
 void MachineTests::instruction_access() {
     Instruction i(0xffffffff);
 
-    QCOMPARE(i.data(), (std::uint32_t)0xffffffff);
-    QCOMPARE(i.opcode(), (std::uint8_t)0x3f);
-    QCOMPARE(i.rs(), (std::uint8_t)0x1f);
-    QCOMPARE(i.rt(), (std::uint8_t)0x1f);
-    QCOMPARE(i.rd(), (std::uint8_t)0x1f);
-    QCOMPARE(i.shamt(), (std::uint8_t)0x1f);
-    QCOMPARE(i.funct(), (std::uint8_t)0x3f);
-    QCOMPARE(i.immediate(), (std::uint16_t)0xffff);
-    QCOMPARE(i.address().get_raw(), (std::uint32_t)0x3ffffff);
+    QCOMPARE(i.data(), (uint32_t)0xffffffff);
+    QCOMPARE(i.opcode(), (uint8_t)0x3f);
+    QCOMPARE(i.rs(), (uint8_t)0x1f);
+    QCOMPARE(i.rt(), (uint8_t)0x1f);
+    QCOMPARE(i.rd(), (uint8_t)0x1f);
+    QCOMPARE(i.shamt(), (uint8_t)0x1f);
+    QCOMPARE(i.funct(), (uint8_t)0x3f);
+    QCOMPARE(i.immediate(), (uint16_t)0xffff);
+    QCOMPARE(i.address().get_raw(), (uint32_t)0x3ffffff);
 }
 
 // TODO test to_str

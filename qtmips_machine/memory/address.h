@@ -38,6 +38,7 @@
 #ifndef QTMIPS_ADDRESS_H
 #define QTMIPS_ADDRESS_H
 #include "../utils.h"
+
 #include <cstdint>
 
 using std::uint64_t;
@@ -47,9 +48,9 @@ namespace machine {
 /**
  * Emulated memory address
  *
- * OPTIMIZATION NOTE: All methods are implemented in header file to support inlining (as we want to
- *  use it as a primitive type) but too keep declaration tidy out-of-line definitions
- *  are proffered.
+ * OPTIMIZATION NOTE: All methods are implemented in header file to support
+ * inlining (as we want to use it as a primitive type) but too keep declaration
+ * tidy out-of-line definitions are proffered.
  */
 class Address {
 private:
@@ -79,7 +80,7 @@ public:
      */
     constexpr bool is_null() const;
 
-    template <typename T>
+    template<typename T>
     constexpr bool is_aligned() const;
 
     /* Eq */
@@ -109,39 +110,22 @@ public:
     constexpr inline int64_t operator-(const Address& other) const;
 };
 
-constexpr Address operator"" _addr(unsigned long long literal)
-{
+constexpr Address operator"" _addr(unsigned long long literal) {
     return Address(literal);
 }
 
-constexpr Address::Address(uint64_t address)
-    : data(address)
-{
-}
+constexpr Address::Address(uint64_t address) : data(address) {}
 
-constexpr Address::Address()
-    : data(0)
-{
-}
+constexpr Address::Address() : data(0) {}
 
-constexpr uint64_t Address::get_raw() const
-{
-    return data;
-}
+constexpr uint64_t Address::get_raw() const { return data; }
 
-constexpr Address Address::null()
-{
-    return Address(0x0);
-}
+constexpr Address Address::null() { return Address(0x0); }
 
-constexpr bool Address::is_null() const
-{
-    return this->get_raw() == 0;
-}
+constexpr bool Address::is_null() const { return this->get_raw() == 0; }
 
-template <typename T>
-constexpr bool Address::is_aligned() const
-{
+template<typename T>
+constexpr bool Address::is_aligned() const {
     return is_aligned_generic<typeof(this->data), T>(this->data);
 }
 
@@ -149,13 +133,11 @@ constexpr bool Address::is_aligned() const
  * Equality operators
  */
 
-constexpr bool Address::operator==(const Address& other) const
-{
+constexpr bool Address::operator==(const Address& other) const {
     return this->get_raw() == other.get_raw();
 }
 
-constexpr bool Address::operator!=(const Address& other) const
-{
+constexpr bool Address::operator!=(const Address& other) const {
     return this->get_raw() != other.get_raw();
 }
 
@@ -163,23 +145,19 @@ constexpr bool Address::operator!=(const Address& other) const
  * Ordering operators
  */
 
-constexpr bool Address::operator<(const Address& other) const
-{
+constexpr bool Address::operator<(const Address& other) const {
     return this->get_raw() < other.get_raw();
 }
 
-constexpr bool Address::operator>(const Address& other) const
-{
+constexpr bool Address::operator>(const Address& other) const {
     return this->get_raw() > other.get_raw();
 }
 
-constexpr bool Address::operator<=(const Address& other) const
-{
+constexpr bool Address::operator<=(const Address& other) const {
     return this->get_raw() <= other.get_raw();
 }
 
-constexpr bool Address::operator>=(const Address& other) const
-{
+constexpr bool Address::operator>=(const Address& other) const {
     return this->get_raw() >= other.get_raw();
 }
 
@@ -187,52 +165,39 @@ constexpr bool Address::operator>=(const Address& other) const
  * Offset arithmetic operators
  */
 
-constexpr Address Address::operator+(const uint64_t& offset) const
-{
+constexpr Address Address::operator+(const uint64_t& offset) const {
     return Address(this->get_raw() + offset);
 }
 
-constexpr Address Address::operator-(const uint64_t& offset) const
-{
+constexpr Address Address::operator-(const uint64_t& offset) const {
     return Address(this->get_raw() - offset);
 }
 
-void Address::operator+=(const uint64_t& offset)
-{
-    data += offset;
-}
+void Address::operator+=(const uint64_t& offset) { data += offset; }
 
-void Address::operator-=(const uint64_t& offset)
-{
-    data -= offset;
-}
+void Address::operator-=(const uint64_t& offset) { data -= offset; }
 
 /*
  * Bitwise operators
  */
 
-constexpr Address Address::operator&(const uint64_t& mask) const
-{
+constexpr Address Address::operator&(const uint64_t& mask) const {
     return Address(this->get_raw() & mask);
 }
 
-constexpr Address Address::operator|(const uint64_t& mask) const
-{
+constexpr Address Address::operator|(const uint64_t& mask) const {
     return Address(this->get_raw() | mask);
 }
 
-constexpr Address Address::operator^(const uint64_t& mask) const
-{
+constexpr Address Address::operator^(const uint64_t& mask) const {
     return Address(get_raw() ^ mask);
 }
 
-constexpr Address Address::operator>>(const uint64_t& size) const
-{
+constexpr Address Address::operator>>(const uint64_t& size) const {
     return Address(this->get_raw() >> size);
 }
 
-constexpr Address Address::operator<<(const uint64_t& size) const
-{
+constexpr Address Address::operator<<(const uint64_t& size) const {
     return Address(this->get_raw() << size);
 }
 
@@ -240,11 +205,10 @@ constexpr Address Address::operator<<(const uint64_t& size) const
  * Distance arithmetic operators
  */
 
-constexpr int64_t Address::operator-(const Address& other) const
-{
+constexpr int64_t Address::operator-(const Address& other) const {
     return this->get_raw() - other.get_raw();
 }
 
 } // namespace machine
 
-#endif //QTMIPS_ADDRESS_H
+#endif // QTMIPS_ADDRESS_H

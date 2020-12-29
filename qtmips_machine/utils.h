@@ -77,9 +77,8 @@ void ignore(const T&) {}
  * @param address       address to check
  * @return              true if is aligned
  */
-template <typename Address, typename T>
-inline bool is_aligned_generic(Address address)
-{
+template<typename Address, typename T>
+inline bool is_aligned_generic(Address address) {
     return static_cast<uintptr_t>(address) % std::alignment_of<T>::value;
 }
 

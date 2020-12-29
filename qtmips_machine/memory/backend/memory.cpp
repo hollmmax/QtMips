@@ -55,8 +55,7 @@ WriteResult MemorySection::write(
     Offset destination,
     const void* source,
     size_t size,
-    WriteOptions options)
-{
+    WriteOptions options) {
     UNUSED(options)
 
     if (destination >= this->length()) {
@@ -83,8 +82,7 @@ ReadResult MemorySection::read(
     void* destination,
     Offset source,
     size_t size,
-    ReadOptions options) const
-{
+    ReadOptions options) const {
     UNUSED(options)
 
     size = std::min(source + size, this->length()) - source;

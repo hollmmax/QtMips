@@ -36,69 +36,81 @@
 #ifndef QTMIPSMACHINE_H
 #define QTMIPSMACHINE_H
 
+#include "core.h"
+#include "machineconfig.h"
+#include "memory/backend/lcddisplay.h"
+#include "memory/backend/memory.h"
+#include "memory/backend/peripheral.h"
+#include "memory/backend/peripspiled.h"
+#include "memory/backend/serialport.h"
+#include "memory/cache/cache.h"
+#include "memory/mmu.h"
+#include "qtmipsexception.h"
+#include "registers.h"
+#include "symboltable.h"
+
 #include <QObject>
 #include <QTimer>
 #include <cstdint>
-#include "qtmipsexception.h"
-#include "machineconfig.h"
-#include "registers.h"
-#include "core.h"
-#include "memory/cache/cache.h"
-#include "memory/mmu.h"
-#include "memory/backend/peripheral.h"
-#include "memory/backend/serialport.h"
-#include "memory/backend/peripspiled.h"
-#include "memory/backend/lcddisplay.h"
-#include "memory/backend/memory.h"
-#include "symboltable.h"
 
 namespace machine {
 
 class QtMipsMachine : public QObject {
     Q_OBJECT
 public:
-    QtMipsMachine(const MachineConfig &cc, bool load_symtab = false, bool load_executable = true);
+    QtMipsMachine(
+        const MachineConfig& cc,
+        bool load_symtab = false,
+        bool load_executable = true);
     ~QtMipsMachine();
 
-    const MachineConfig &config();
+    const MachineConfig& config();
     void set_speed(unsigned int ips, unsigned int time_chunk = 0);
 
-    const Registers *registers();
-    const Cop0State *cop0state();
-    const Memory *memory();
-    Memory *memory_rw();
-    const Cache *cache_program();
-    const Cache *cache_data();
-    Cache *cache_data_rw();
+    const Registers* registers();
+    const Cop0State* cop0state();
+    const Memory* memory();
+    Memory* memory_rw();
+    const Cache* cache_program();
+    const Cache* cache_data();
+    Cache* cache_data_rw();
     void cache_sync();
-    const  MMU *physical_address_space();
-    MMU *physical_address_space_rw();
-    SerialPort *serial_port();
-    PeripSpiLed *peripheral_spi_led();
-    LcdDisplay *peripheral_lcd_display();
-    const SymbolTable *symbol_table(bool create = false);
-    SymbolTable *symbol_table_rw(bool create = false);
-    void set_symbol(QString name, std::uint32_t value, std::uint32_t size,
-                    unsigned char info = 0, unsigned char other = 0);
-    const Core *core();
-    const CoreSingle *core_singe();
-    const CorePipelined *core_pipelined();
+    const MMU* physical_address_space();
+    MMU* physical_address_space_rw();
+    SerialPort* serial_port();
+    PeripSpiLed* peripheral_spi_led();
+    LcdDisplay* peripheral_lcd_display();
+    const SymbolTable* symbol_table(bool create = false);
+    SymbolTable* symbol_table_rw(bool create = false);
+    void set_symbol(
+        QString name,
+        std::uint32_t value,
+        std::uint32_t size,
+        unsigned char info = 0,
+        unsigned char other = 0);
+    const Core* core();
+    const CoreSingle* core_singe();
+    const CorePipelined* core_pipelined();
     bool executable_loaded() const;
 
     enum Status {
-        ST_READY, // Machine is ready to be started or step to be called
+        ST_READY,   // Machine is ready to be started or step to be called
         ST_RUNNING, // Machine is running
-        ST_BUSY, // Machine is calculating step
-        ST_EXIT, // Machine exited
-        ST_TRAPPED // Machine exited with failure
+        ST_BUSY,    // Machine is calculating step
+        ST_EXIT,    // Machine exited
+        ST_TRAPPED  // Machine exited with failure
     };
     enum Status status();
     bool exited();
 
-    void register_exception_handler(ExceptionCause excause, ExceptionHandler *exhandler);
+    void register_exception_handler(
+        ExceptionCause excause,
+        ExceptionHandler* exhandler);
     bool addressapce_insert_range(
-        BackendMemory *mem_acces, Address start_addr,
-        Address last_addr, bool move_ownership);
+        BackendMemory* mem_acces,
+        Address start_addr,
+        Address last_addr,
+        bool move_ownership);
 
     void insert_hwbreak(Address address);
     void remove_hwbreak(Address address);
@@ -117,9 +129,9 @@ public slots:
 
 signals:
     void program_exit();
-    void program_trap(machine::QtMipsException &e);
+    void program_trap(machine::QtMipsException& e);
     void status_change(enum machine::QtMipsMachine::Status st);
-    void tick(); // Time tick
+    void tick();      // Time tick
     void post_tick(); // Emitted after tick to allow updates
     void set_interrupt_signal(uint irq_num, bool active);
 
@@ -130,25 +142,25 @@ private:
     void step_internal(bool skip_break = false);
     MachineConfig mcnf;
 
-    Registers *regs;
+    Registers* regs;
     Memory *mem, *mem_program_only;
-    MMU *physaddrspace;
-    SerialPort *ser_port;
-    PeripSpiLed *perip_spi_led;
-    LcdDisplay *perip_lcd_display;
+    MMU* physaddrspace;
+    SerialPort* ser_port;
+    PeripSpiLed* perip_spi_led;
+    LcdDisplay* perip_lcd_display;
     Cache *cch_program, *cch_data;
-    Cop0State *cop0st;
-    Core *cr;
+    Cop0State* cop0st;
+    Core* cr;
 
-    QTimer *run_t;
+    QTimer* run_t;
     unsigned int time_chunk;
 
-    SymbolTable *symtab;
+    SymbolTable* symtab;
     Address program_end;
     enum Status stat;
     void set_status(enum Status st);
 };
 
-}
+} // namespace machine
 
 #endif // QTMIPSMACHINE_H

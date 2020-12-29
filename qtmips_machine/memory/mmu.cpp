@@ -34,17 +34,14 @@
  ******************************************************************************/
 
 #include "mmu.h"
+
 #include "memory_utils.h"
 
 using namespace machine;
 
-MMU::MMU()
-    : change_counter(0)
-{
-}
+MMU::MMU() : change_counter(0) {}
 
-MMU::~MMU()
-{
+MMU::~MMU() {
     while (!ranges_by_access.isEmpty()) {
         RangeDesc* p_range = ranges_by_addr.first();
         ranges_by_addr.remove(p_range->last_addr);
@@ -108,24 +105,20 @@ ReadResult MMU::read(
         });
 }
 
-std::uint32_t MMU::get_change_counter() const
-{
-    return change_counter;
-}
+uint32_t MMU::get_change_counter() const { return change_counter; }
 
-enum LocationStatus MMU::location_status(Address address) const
-{
+enum LocationStatus MMU::location_status(Address address) const {
     const RangeDesc* p_range = find_range(address);
     if (p_range == nullptr) {
         return LOCSTAT_ILLEGAL;
     }
     return LOCSTAT_NONE;
-    //    return p_range->backend_memory->location_status(Address(address - p_range->start_addr)); // TODO: Where to store?
+    //    return p_range->backend_memory->location_status(Address(address -
+    //    p_range->start_addr)); // TODO: Where to store?
     // spaces
 }
 
-MMU::RangeDesc* MMU::find_range(Address address) const
-{
+MMU::RangeDesc* MMU::find_range(Address address) const {
     MMU::RangeDesc* p_range;
     auto i = ranges_by_addr.lowerBound(address);
     if (i == ranges_by_addr.end()) {
@@ -142,12 +135,13 @@ bool MMU::insert_range(
     BackendMemory* mem_access,
     Address start_addr,
     Address last_addr,
-    bool move_ownership)
-{
-    auto* p_range = new RangeDesc(mem_access, start_addr, last_addr, move_ownership);
+    bool move_ownership) {
+    auto* p_range
+        = new RangeDesc(mem_access, start_addr, last_addr, move_ownership);
     auto i = ranges_by_addr.lowerBound(start_addr);
     if (i != ranges_by_addr.end()) {
-        if (i.value()->start_addr <= last_addr && i.value()->last_addr >= start_addr) {
+        if (i.value()->start_addr <= last_addr
+            && i.value()->last_addr >= start_addr) {
             return false;
         }
     }
@@ -155,12 +149,12 @@ bool MMU::insert_range(
     ranges_by_access.insert(mem_access, p_range);
     //    connect(
     //        mem_access, &BackendMemory::external_change_notify,this, SLOT(
-    //        range_external_change(const FrontendMemory*, std::uint32_t, std::uint32_t, bool)));
+    //        range_external_change(const FrontendMemory*, uint32_t,
+    //        uint32_t, bool)));
     return true;
 }
 
-bool MMU::remove_range(BackendMemory* mem_acces)
-{
+bool MMU::remove_range(BackendMemory* mem_acces) {
     RangeDesc* p_range = ranges_by_access.take(mem_acces);
     if (p_range == nullptr) {
         return false;
@@ -173,10 +167,7 @@ bool MMU::remove_range(BackendMemory* mem_acces)
     return true;
 }
 
-void MMU::clean_range(
-    Address start_addr,
-    Address last_addr)
-{
+void MMU::clean_range(Address start_addr, Address last_addr) {
     auto i = ranges_by_addr.lowerBound(start_addr);
     while (i != ranges_by_addr.end()) {
         RangeDesc* p_range = i.value();
@@ -193,8 +184,7 @@ void MMU::range_backend_external_change(
     const BackendMemory* mem_access,
     Offset start_offset,
     Offset last_offset,
-    bool external)
-{
+    bool external) {
     if (external) {
         change_counter++;
     }
@@ -203,7 +193,8 @@ void MMU::range_backend_external_change(
         RangeDesc* p_range = i.value();
         ++i;
         emit external_change_notify(
-            this, p_range->start_addr + start_offset, p_range->start_addr + last_offset, external);
+            this, p_range->start_addr + start_offset,
+            p_range->start_addr + last_offset, external);
     }
 }
 
@@ -215,9 +206,7 @@ MMU::RangeDesc::RangeDesc(
     : backend_memory(mem_access)
     , start_addr(start_addr)
     , last_addr(last_addr)
-    , owned(owned)
-{
-}
+    , owned(owned) {}
 
 TrivialMMU::TrivialMMU(BackendMemory* backend_memory)
     : backend_memory(backend_memory) {}

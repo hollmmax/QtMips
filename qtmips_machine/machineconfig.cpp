@@ -34,7 +34,9 @@
  ******************************************************************************/
 
 #include "machineconfig.h"
+
 #include <QMap>
+#include <utility>
 
 using namespace machine;
 
@@ -68,7 +70,7 @@ CacheConfig::CacheConfig() {
     write_pol = DFC_WRITE;
 }
 
-CacheConfig::CacheConfig(const CacheConfig *cc) {
+CacheConfig::CacheConfig(const CacheConfig* cc) {
     en = cc->enabled();
     n_sets = cc->set_count();
     n_blocks = cc->block_size();
@@ -79,16 +81,18 @@ CacheConfig::CacheConfig(const CacheConfig *cc) {
 
 #define N(STR) (prefix + QString(STR))
 
-CacheConfig::CacheConfig(const QSettings *sts, const QString &prefix) {
+CacheConfig::CacheConfig(const QSettings* sts, const QString& prefix) {
     en = sts->value(N("Enabled"), DFC_EN).toBool();
     n_sets = sts->value(N("Sets"), DFC_SETS).toUInt();
     n_blocks = sts->value(N("Blocks"), DFC_BLOCKS).toUInt();
     d_associativity = sts->value(N("Associativity"), DFC_ASSOC).toUInt();
-    replac_pol = (enum ReplacementPolicy)sts->value(N("Replacement"), DFC_REPLAC).toUInt();
+    replac_pol
+        = (enum ReplacementPolicy)sts->value(N("Replacement"), DFC_REPLAC)
+              .toUInt();
     write_pol = (enum WritePolicy)sts->value(N("Write"), DFC_WRITE).toUInt();
 }
 
-void CacheConfig::store(QSettings *sts, const QString &prefix) {
+void CacheConfig::store(QSettings* sts, const QString& prefix) const {
     sts->setValue(N("Enabled"), enabled());
     sts->setValue(N("Sets"), set_count());
     sts->setValue(N("Blocks"), block_size());
@@ -115,9 +119,7 @@ void CacheConfig::preset(enum ConfigPresets p) {
     }
 }
 
-void CacheConfig::set_enabled(bool v) {
-    en = v;
-}
+void CacheConfig::set_enabled(bool v) { en = v; }
 
 void CacheConfig::set_set_count(unsigned v) { n_sets = v > 0 ? v : 1; }
 
@@ -131,25 +133,15 @@ void CacheConfig::set_replacement_policy(enum ReplacementPolicy v) {
     replac_pol = v;
 }
 
-void CacheConfig::set_write_policy(enum WritePolicy v) {
-    write_pol = v;
-}
+void CacheConfig::set_write_policy(enum WritePolicy v) { write_pol = v; }
 
-bool CacheConfig::enabled() const {
-    return en;
-}
+bool CacheConfig::enabled() const { return en; }
 
-unsigned CacheConfig::set_count() const {
-    return n_sets;
-}
+unsigned CacheConfig::set_count() const { return n_sets; }
 
-unsigned CacheConfig::block_size() const {
-    return n_blocks;
-}
+unsigned CacheConfig::block_size() const { return n_blocks; }
 
-unsigned CacheConfig::associativity() const {
-    return d_associativity;
-}
+unsigned CacheConfig::associativity() const { return d_associativity; }
 
 enum CacheConfig::ReplacementPolicy CacheConfig::replacement_policy() const {
     return replac_pol;
@@ -159,18 +151,15 @@ enum CacheConfig::WritePolicy CacheConfig::write_policy() const {
     return write_pol;
 }
 
-bool CacheConfig::operator==(const CacheConfig &c) const {
+bool CacheConfig::operator==(const CacheConfig& c) const {
 #define CMP(GETTER) (GETTER)() == (c.GETTER)()
-    return CMP(enabled) && \
-            CMP(set_count) && \
-            CMP(block_size) && \
-            CMP(associativity) && \
-            CMP(replacement_policy) && \
-            CMP(write_policy);
+    return CMP(enabled) && CMP(set_count) && CMP(block_size)
+           && CMP(associativity) && CMP(replacement_policy)
+           && CMP(write_policy);
 #undef CMP
 }
 
-bool CacheConfig::operator!=(const CacheConfig &c) const {
+bool CacheConfig::operator!=(const CacheConfig& c) const {
     return !operator==(c);
 }
 
@@ -195,7 +184,7 @@ MachineConfig::MachineConfig() {
     cch_data = CacheConfig();
 }
 
-MachineConfig::MachineConfig(const MachineConfig *cc) {
+MachineConfig::MachineConfig(const MachineConfig* cc) {
     pipeline = cc->pipelined();
     delayslot = cc->delay_slot();
     hunit = cc->hazard_unit();
@@ -218,18 +207,22 @@ MachineConfig::MachineConfig(const MachineConfig *cc) {
 
 #define N(STR) (prefix + QString(STR))
 
-MachineConfig::MachineConfig(const QSettings *sts, const QString &prefix) {
+MachineConfig::MachineConfig(const QSettings* sts, const QString& prefix) {
     pipeline = sts->value(N("Pipelined"), DF_PIPELINE).toBool();
     delayslot = sts->value(N("DelaySlot"), DF_DELAYSLOT).toBool();
     hunit = (enum HazardUnit)sts->value(N("HazardUnit"), DF_HUNIT).toUInt();
-    exec_protect = sts->value(N("MemoryExecuteProtection"), DF_EXEC_PROTEC).toBool();
-    write_protect = sts->value(N("MemoryWriteProtection"), DF_WRITE_PROTEC).toBool();
+    exec_protect
+        = sts->value(N("MemoryExecuteProtection"), DF_EXEC_PROTEC).toBool();
+    write_protect
+        = sts->value(N("MemoryWriteProtection"), DF_WRITE_PROTEC).toBool();
     mem_acc_read = sts->value(N("MemoryRead"), DF_MEM_ACC_READ).toUInt();
     mem_acc_write = sts->value(N("MemoryWrite"), DF_MEM_ACC_WRITE).toUInt();
     mem_acc_burst = sts->value(N("MemoryBurts"), DF_MEM_ACC_BURST).toUInt();
     osem_enable = sts->value(N("OsemuEnable"), true).toBool();
-    osem_known_syscall_stop = sts->value(N("OsemuKnownSyscallStop"), true).toBool();
-    osem_unknown_syscall_stop = sts->value(N("OsemuUnknownSyscallStop"), true).toBool();
+    osem_known_syscall_stop
+        = sts->value(N("OsemuKnownSyscallStop"), true).toBool();
+    osem_unknown_syscall_stop
+        = sts->value(N("OsemuUnknownSyscallStop"), true).toBool();
     osem_interrupt_stop = sts->value(N("OsemuInterruptStop"), true).toBool();
     osem_exception_stop = sts->value(N("OsemuExceptionStop"), true).toBool();
     osem_fs_root = sts->value(N("OsemuFilesystemRoot"), "").toString();
@@ -239,7 +232,7 @@ MachineConfig::MachineConfig(const QSettings *sts, const QString &prefix) {
     cch_data = CacheConfig(sts, N("DataCache_"));
 }
 
-void MachineConfig::store(QSettings *sts, const QString &prefix) {
+void MachineConfig::store(QSettings* sts, const QString& prefix) {
     sts->setValue(N("Pipelined"), pipelined());
     sts->setValue(N("DelaySlot"), delay_slot());
     sts->setValue(N("HazardUnit"), (unsigned)hazard_unit());
@@ -261,7 +254,8 @@ void MachineConfig::store(QSettings *sts, const QString &prefix) {
 #undef N
 
 void MachineConfig::preset(enum ConfigPresets p) {
-    // Note: we set just a minimal subset to get preset (preserving as much of hidden configuration as possible)
+    // Note: we set just a minimal subset to get preset (preserving as much of
+    // hidden configuration as possible)
     switch (p) {
     case CP_SINGLE:
     case CP_SINGLE_CACHE:
@@ -288,38 +282,31 @@ void MachineConfig::preset(enum ConfigPresets p) {
     access_cache_data()->preset(p);
 }
 
-void MachineConfig::set_pipelined(bool v) {
-    pipeline = v;
-}
+void MachineConfig::set_pipelined(bool v) { pipeline = v; }
 
-void MachineConfig::set_delay_slot(bool v) {
-    delayslot = v;
-}
+void MachineConfig::set_delay_slot(bool v) { delayslot = v; }
 
-void MachineConfig::set_hazard_unit(enum MachineConfig::HazardUnit hu)  {
+void MachineConfig::set_hazard_unit(enum MachineConfig::HazardUnit hu) {
     hunit = hu;
 }
 
-bool MachineConfig::set_hazard_unit(QString hukind) {
-    static QMap<QString, enum HazardUnit> hukind_map =  {
-        {"none",  HU_NONE},
-        {"stall", HU_STALL},
-        {"forward", HU_STALL_FORWARD},
-        {"stall-forward", HU_STALL_FORWARD},
+bool MachineConfig::set_hazard_unit(const QString& hukind) {
+    static QMap<QString, enum HazardUnit> hukind_map = {
+        { "none", HU_NONE },
+        { "stall", HU_STALL },
+        { "forward", HU_STALL_FORWARD },
+        { "stall-forward", HU_STALL_FORWARD },
     };
-    if (!hukind_map.contains(hukind))
+    if (!hukind_map.contains(hukind)) {
         return false;
+    }
     set_hazard_unit(hukind_map.value(hukind));
     return true;
 }
 
-void MachineConfig::set_memory_execute_protection(bool v) {
-    exec_protect = v;
-}
+void MachineConfig::set_memory_execute_protection(bool v) { exec_protect = v; }
 
-void MachineConfig::set_memory_write_protection(bool v) {
-    write_protect = v;
-}
+void MachineConfig::set_memory_write_protection(bool v) { write_protect = v; }
 
 void MachineConfig::set_memory_access_time_read(unsigned v) {
     mem_acc_read = v;
@@ -333,9 +320,7 @@ void MachineConfig::set_memory_access_time_burst(unsigned v) {
     mem_acc_burst = v;
 }
 
-void MachineConfig::set_osemu_enable(bool v) {
-    osem_enable = v;
-}
+void MachineConfig::set_osemu_enable(bool v) { osem_enable = v; }
 
 void MachineConfig::set_osemu_known_syscall_stop(bool v) {
     osem_known_syscall_stop = v;
@@ -354,28 +339,18 @@ void MachineConfig::set_osemu_exception_stop(bool v) {
 }
 
 void MachineConfig::set_osemu_fs_root(QString v) {
-    osem_fs_root = v;
+    osem_fs_root = std::move(v);
 }
 
-void MachineConfig::set_reset_at_compile(bool v) {
-    res_at_compile = v;
-}
+void MachineConfig::set_reset_at_compile(bool v) { res_at_compile = v; }
 
-void MachineConfig::set_elf(QString path) {
-    elf_path = path;
-}
+void MachineConfig::set_elf(QString path) { elf_path = std::move(path); }
 
-void MachineConfig::set_cache_program(const CacheConfig &c) {
-    cch_program = c;
-}
+void MachineConfig::set_cache_program(const CacheConfig& c) { cch_program = c; }
 
-void MachineConfig::set_cache_data(const CacheConfig &c) {
-    cch_data = c;
-}
+void MachineConfig::set_cache_data(const CacheConfig& c) { cch_data = c; }
 
-bool MachineConfig::pipelined() const {
-    return pipeline;
-}
+bool MachineConfig::pipelined() const { return pipeline; }
 
 bool MachineConfig::delay_slot() const {
     // Delay slot is always on when pipeline is enabled
@@ -387,13 +362,9 @@ enum MachineConfig::HazardUnit MachineConfig::hazard_unit() const {
     return pipeline ? hunit : machine::MachineConfig::HU_NONE;
 }
 
-bool MachineConfig::memory_execute_protection() const {
-    return exec_protect;
-}
+bool MachineConfig::memory_execute_protection() const { return exec_protect; }
 
-bool MachineConfig::memory_write_protection() const {
-    return write_protect;
-}
+bool MachineConfig::memory_write_protection() const { return write_protect; }
 
 unsigned MachineConfig::memory_access_time_read() const {
     return mem_acc_read > 1 ? mem_acc_read : 1;
@@ -407,66 +378,40 @@ unsigned MachineConfig::memory_access_time_burst() const {
     return mem_acc_burst;
 }
 
-bool MachineConfig::osemu_enable() const {
-    return osem_enable;
-}
+bool MachineConfig::osemu_enable() const { return osem_enable; }
 bool MachineConfig::osemu_known_syscall_stop() const {
     return osem_known_syscall_stop;
 }
 bool MachineConfig::osemu_unknown_syscall_stop() const {
     return osem_unknown_syscall_stop;
 }
-bool MachineConfig::osemu_interrupt_stop() const {
-    return osem_interrupt_stop;
-}
-bool MachineConfig::osemu_exception_stop() const {
-    return osem_exception_stop;
-}
+bool MachineConfig::osemu_interrupt_stop() const { return osem_interrupt_stop; }
+bool MachineConfig::osemu_exception_stop() const { return osem_exception_stop; }
 
-QString MachineConfig::osemu_fs_root() const {
-    return osem_fs_root;
-}
+QString MachineConfig::osemu_fs_root() const { return osem_fs_root; }
 
-bool MachineConfig::reset_at_compile() const {
-    return res_at_compile;
-}
+bool MachineConfig::reset_at_compile() const { return res_at_compile; }
 
-QString MachineConfig::elf() const {
-    return elf_path;
-}
+QString MachineConfig::elf() const { return elf_path; }
 
-const CacheConfig &MachineConfig::cache_program() const {
-    return cch_program;
-}
+const CacheConfig& MachineConfig::cache_program() const { return cch_program; }
 
-const CacheConfig &MachineConfig::cache_data() const {
-    return cch_data;
-}
+const CacheConfig& MachineConfig::cache_data() const { return cch_data; }
 
-CacheConfig *MachineConfig::access_cache_program() {
-    return &cch_program;
-}
+CacheConfig* MachineConfig::access_cache_program() { return &cch_program; }
 
-CacheConfig *MachineConfig::access_cache_data() {
-    return &cch_data;
-}
+CacheConfig* MachineConfig::access_cache_data() { return &cch_data; }
 
-bool MachineConfig::operator==(const MachineConfig &c) const {
+bool MachineConfig::operator==(const MachineConfig& c) const {
 #define CMP(GETTER) (GETTER)() == (c.GETTER)()
-    return CMP(pipelined) && \
-            CMP(delay_slot) && \
-            CMP(hazard_unit) && \
-            CMP(memory_execute_protection) && \
-            CMP(memory_write_protection) && \
-            CMP(memory_access_time_read) && \
-            CMP(memory_access_time_write) && \
-            CMP(memory_access_time_burst) && \
-            CMP(elf) && \
-            CMP(cache_program) && \
-            CMP(cache_data);
+    return CMP(pipelined) && CMP(delay_slot) && CMP(hazard_unit)
+           && CMP(memory_execute_protection) && CMP(memory_write_protection)
+           && CMP(memory_access_time_read) && CMP(memory_access_time_write)
+           && CMP(memory_access_time_burst) && CMP(elf) && CMP(cache_program)
+           && CMP(cache_data);
 #undef CMP
 }
 
-bool MachineConfig::operator!=(const MachineConfig &c) const {
+bool MachineConfig::operator!=(const MachineConfig& c) const {
     return !operator==(c);
 }

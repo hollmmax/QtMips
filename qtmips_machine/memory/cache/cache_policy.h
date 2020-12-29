@@ -40,9 +40,11 @@
 
 #include "../../machineconfig.h"
 #include "cache_types.h"
+
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+
 using std::size_t;
 
 namespace machine {

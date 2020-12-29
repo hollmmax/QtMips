@@ -41,6 +41,7 @@
 #include "../register_value.h"
 #include "address.h"
 #include "memory_utils.h"
+
 #include <QObject>
 #include <cstdint>
 
@@ -88,7 +89,8 @@ public:
      * @param source        emulated adderss of data to be read
      * @param destination   pointer to destination buffer
      * @param size          number of bytes to be read
-     * @param options       additional option like debug mode, see type definition
+     * @param options       additional option like debug mode, see type
+     * definition
      */
     virtual ReadResult read(
         Address source,
@@ -117,7 +119,7 @@ private:
      * @param debug_read    TODO
      * @return              requested data with type T
      */
-    template <typename T>
+    template<typename T>
     T read_generic(Address address, bool debug_read) const;
 
     /**
@@ -134,11 +136,10 @@ private:
      * @param value         value of type T to be writtem
      * @return              true when memory before and after write differs
      */
-    template <typename T>
+    template<typename T>
     bool write_generic(Address address, T value);
 };
 
-}
-
+} // namespace machine
 
 #endif // MEMORY_H

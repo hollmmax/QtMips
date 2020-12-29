@@ -38,10 +38,6 @@
 #include "../memory/memory_utils.h"
 #include "tst_machine.h"
 
-using std::uint16_t;
-using std::uint32_t;
-using std::uint8_t;
-
 using namespace machine;
 
 void MachineTests::memory_data() {

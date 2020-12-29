@@ -39,6 +39,7 @@
 #define QTMIPS_MEMORY_UTILS_H
 
 #include "../utils.h"
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -78,15 +79,13 @@ struct ReadResult {
      */
     size_t n_bytes = 0;
 
-    inline ReadResult operator+(const ReadResult& other) const
-    {
+    inline ReadResult operator+(const ReadResult& other) const {
         return {
             this->n_bytes + other.n_bytes,
         };
     }
 
-    inline void operator+=(const ReadResult& other)
-    {
+    inline void operator+=(const ReadResult& other) {
         this->n_bytes += other.n_bytes;
     }
 };
@@ -106,16 +105,14 @@ struct WriteResult {
      */
     bool changed;
 
-    inline WriteResult operator+(const WriteResult& other) const
-    {
+    inline WriteResult operator+(const WriteResult& other) const {
         return {
             this->n_bytes + other.n_bytes,
             this->changed || other.changed,
         };
     }
 
-    inline void operator+=(const WriteResult& other)
-    {
+    inline void operator+=(const WriteResult& other) {
         this->n_bytes += other.n_bytes;
         this->changed |= other.changed;
     }
@@ -144,8 +141,7 @@ struct AccessNotification {
 
     AccessNotification(size_t offset, uint64_t value)
         : Offset(offset)
-        , size(sizeof(uint64_t))
-    {
+        , size(sizeof(uint64_t)) {
         this->value.u64 = value;
     }
 };
@@ -160,8 +156,7 @@ struct AccessNotification {
  * @param src       source data pointer
  * @param size      number of bytes to copy
  */
-inline void memory_copy(void* dst, const void* src, size_t size)
-{
+inline void memory_copy(void* dst, const void* src, size_t size) {
     switch (size) {
     case 8: *(uint64_t*)dst = *(uint64_t*)src; break;
     case 4: *(uint32_t*)dst = *(uint32_t*)src; break;
@@ -186,8 +181,7 @@ inline void memory_copy(void* dst, const void* src, size_t size)
  * types
  * @param size      number of bytes to set
  */
-inline void memory_set(void* dst, int val, size_t size)
-{
+inline void memory_set(void* dst, int val, size_t size) {
     switch (size) {
     case 8: *(uint64_t*)dst = (uint64_t)val; break;
     case 4: *(uint32_t*)dst = (uint32_t)val; break;
@@ -208,8 +202,7 @@ inline void memory_set(void* dst, int val, size_t size)
  * @param size      number of bytes to compare
  * @return          true if data is identical
  */
-inline bool memory_compare(const void* first, const void* second, size_t size)
-{
+inline bool memory_compare(const void* first, const void* second, size_t size) {
     switch (size) {
     case 8: return *(uint64_t*)first == *(uint64_t*)second;
     case 4: return *(uint32_t*)first == *(uint32_t*)second;
@@ -233,9 +226,8 @@ inline bool memory_compare(const void* first, const void* second, size_t size)
  * @param ptr               pointer-like value used for access
  * @return                  size to be used from alligned access
  */
-template <typename STORAGE_TYPE>
-inline size_t partial_access_size(uintptr_t ptr)
-{
+template<typename STORAGE_TYPE>
+inline size_t partial_access_size(uintptr_t ptr) {
     size_t size = ptr % sizeof(STORAGE_TYPE);
     return (size == 0) ? sizeof(STORAGE_TYPE) : size;
 }

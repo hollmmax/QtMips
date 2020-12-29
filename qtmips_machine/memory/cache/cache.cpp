@@ -34,8 +34,8 @@
  ******************************************************************************/
 
 #include "cache.h"
+
 #include "cache_types.h"
-#include <cstdlib>
 
 namespace machine {
 
@@ -52,8 +52,7 @@ Cache::Cache(
     , access_pen_r(memory_access_penalty_r)
     , access_pen_w(memory_access_penalty_w)
     , access_pen_b(memory_access_penalty_b)
-    , replacement_policy(CachePolicy::get_policy_instance(config))
-{
+    , replacement_policy(CachePolicy::get_policy_instance(config)) {
     // Skip memory allocation if cache is disabled
     if (!config->enabled()) {
         return;
@@ -101,8 +100,7 @@ ReadResult Cache::read(
     Address source,
     void* destination,
     size_t size,
-    ReadOptions options) const
-{
+    ReadOptions options) const {
     if (!cache_config.enabled() || is_in_uncached_area(source)) {
         mem_reads++;
         emit memory_reads_update(mem_reads);
@@ -149,8 +147,7 @@ void Cache::flush() {
 
 void Cache::sync() { flush(); }
 
-void Cache::reset()
-{
+void Cache::reset() {
     // Set all cells to invalid
     if (cache_config.enabled()) {
         for (auto& set : dt) {
@@ -209,8 +206,7 @@ bool Cache::access(
     Address address,
     void* buffer,
     size_t size,
-    AccessType access_type) const
-{
+    AccessType access_type) const {
     const CacheLocation loc = compute_location(address);
     size_t assoc_index = find_block_index(loc);
 
@@ -334,8 +330,7 @@ void Cache::kick(size_t way, size_t row) const {
     replacement_policy->update_stats(way, row, false);
 }
 
-void Cache::update_all_statistics() const
-{
+void Cache::update_all_statistics() const {
     emit statistics_update(
         get_stall_count(), get_speed_improvement(), get_hit_rate());
 }
@@ -365,8 +360,7 @@ CacheLocation Cache::compute_location(Address address) const {
              .byte = byte };
 }
 
-enum LocationStatus Cache::location_status(Address address) const
-{
+enum LocationStatus Cache::location_status(Address address) const {
     const CacheLocation loc = compute_location(address);
 
     if (cache_config.enabled()) {
@@ -399,19 +393,17 @@ uint32_t Cache::get_read_count() const { return mem_reads; }
 
 uint32_t Cache::get_write_count() const { return mem_writes; }
 
-uint32_t Cache::get_stall_count() const
-{
+uint32_t Cache::get_stall_count() const {
     uint32_t st_cycles
         = mem_reads * (access_pen_r - 1) + mem_writes * (access_pen_w - 1);
     if (access_pen_b != 0) {
         st_cycles -= burst_reads * (access_pen_r - access_pen_b)
-            + burst_writes * (access_pen_w - access_pen_b);
+                     + burst_writes * (access_pen_w - access_pen_b);
     }
     return st_cycles;
 }
 
-double Cache::get_speed_improvement() const
-{
+double Cache::get_speed_improvement() const {
     uint32_t lookup_time;
     uint32_t mem_access_time;
     uint32_t comp = hit_read + hit_write + miss_read + miss_write;
@@ -425,15 +417,14 @@ double Cache::get_speed_improvement() const
     mem_access_time = mem_reads * access_pen_r + mem_writes * access_pen_w;
     if (access_pen_b != 0) {
         mem_access_time -= burst_reads * (access_pen_r - access_pen_b)
-            + burst_writes * (access_pen_w - access_pen_b);
+                           + burst_writes * (access_pen_w - access_pen_b);
     }
     return (
         (double)((miss_read + hit_read) * access_pen_r + (miss_write + hit_write) * access_pen_w)
         / (double)(lookup_time + mem_access_time) * 100);
 }
 
-double Cache::get_hit_rate() const
-{
+double Cache::get_hit_rate() const {
     uint32_t comp = hit_read + hit_write + miss_read + miss_write;
     if (comp == 0) {
         return 0.0;
@@ -441,4 +432,4 @@ double Cache::get_hit_rate() const
     return (double)(hit_read + hit_write) / (double)comp * 100.0;
 }
 
-}
+} // namespace machine

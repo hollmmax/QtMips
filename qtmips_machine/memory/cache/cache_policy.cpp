@@ -36,6 +36,7 @@
  ******************************************************************************/
 
 #include "cache_policy.h"
+
 #include "../../qtmipsexception.h"
 #include "../../utils.h"
 
@@ -126,16 +127,14 @@ CachePolicyLFU::CachePolicyLFU(size_t associativity, size_t set_count) {
 }
 
 void CachePolicyRAND::update_stats(size_t way, size_t row, bool is_valid) {
-    UNUSED(way);
-    UNUSED(row);
-    UNUSED(is_valid);
+    UNUSED(way) UNUSED(row) UNUSED(is_valid)
 
     // NOP
 }
 
 size_t CachePolicyRAND::select_way_to_evict(size_t row) const {
-    UNUSED(row);
+    UNUSED(row)
     return std::rand() % associativity; // NOLINT(cert-msc50-cpp)
 }
 
-}
+} // namespace machine

@@ -41,6 +41,7 @@
 #include "../../qtmipsexception.h"
 #include "backend_memory.h"
 #include "peripheral.h"
+
 #include <QMap>
 #include <QObject>
 #include <cstdint>
@@ -92,6 +93,6 @@ private:
     mutable bool rx_irq_active;
 };
 
-}
+} // namespace machine
 
 #endif // SERIALPORT_H

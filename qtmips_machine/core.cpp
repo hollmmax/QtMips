@@ -40,8 +40,12 @@
 
 using namespace machine;
 
-Core::Core(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_data,
-    unsigned int min_cache_row_size, Cop0State* cop0state)
+Core::Core(
+    Registers* regs,
+    FrontendMemory* mem_program,
+    FrontendMemory* mem_data,
+    unsigned int min_cache_row_size,
+    Cop0State* cop0state)
     : ex_handlers()
     , hw_breaks() {
     cycle_c = 0;
@@ -53,8 +57,9 @@ Core::Core(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_dat
     this->ex_default_handler = new StopExceptionHandler();
     this->min_cache_row_size = min_cache_row_size;
     this->hwr_userlocal = 0xe0000000;
-    if (cop0state != nullptr)
+    if (cop0state != nullptr) {
         cop0state->setup_core(this);
+    }
     for (int i = 0; i < EXCAUSE_COUNT; i++) {
         stop_on_exception[i] = true;
         step_over_exception[i] = true;
@@ -62,10 +67,7 @@ Core::Core(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_dat
     step_over_exception[EXCAUSE_INT] = false;
 }
 
-Core::~Core()
-{
-    delete ex_default_handler;
-}
+Core::~Core() { delete ex_default_handler; }
 
 void Core::step(bool skip_break) {
     cycle_c++;
@@ -79,35 +81,17 @@ void Core::reset() {
     do_reset();
 }
 
-unsigned Core::get_cycle_count() const
-{
-    return cycle_c;
-}
+unsigned Core::get_cycle_count() const { return cycle_c; }
 
-unsigned Core::get_stall_count() const
-{
-    return stall_c;
-}
+unsigned Core::get_stall_count() const { return stall_c; }
 
-Registers* Core::get_regs()
-{
-    return regs;
-}
+Registers* Core::get_regs() { return regs; }
 
-Cop0State* Core::get_cop0state()
-{
-    return cop0state;
-}
+Cop0State* Core::get_cop0state() { return cop0state; }
 
-FrontendMemory* Core::get_mem_data()
-{
-    return mem_data;
-}
+FrontendMemory* Core::get_mem_data() { return mem_data; }
 
-FrontendMemory* Core::get_mem_program()
-{
-    return mem_program;
-}
+FrontendMemory* Core::get_mem_program() { return mem_program; }
 
 Core::hwBreak::hwBreak(Address addr) : addr(addr) {
     flags = 0;
@@ -120,8 +104,7 @@ void Core::insert_hwbreak(Address address) {
 
 void Core::remove_hwbreak(Address address) {
     hwBreak* hwbrk = hw_breaks.take(address);
-    if (hwbrk != nullptr)
-        delete hwbrk;
+    delete hwbrk;
 }
 
 bool Core::is_hwbreak(Address address) {
@@ -145,11 +128,11 @@ bool Core::get_step_over_exception(enum ExceptionCause excause) const {
     return step_over_exception[excause];
 }
 
-void Core::register_exception_handler(ExceptionCause excause, ExceptionHandler* exhandler)
-{
+void Core::register_exception_handler(
+    ExceptionCause excause,
+    ExceptionHandler* exhandler) {
     if (excause == EXCAUSE_NONE) {
-        if (ex_default_handler != nullptr)
-            delete ex_default_handler;
+        delete ex_default_handler;
         ex_default_handler = exhandler;
     } else {
         ExceptionHandler* old = ex_handlers.take(excause);
@@ -158,52 +141,62 @@ void Core::register_exception_handler(ExceptionCause excause, ExceptionHandler* 
     }
 }
 
-bool Core::handle_exception(Core* core, Registers* regs, ExceptionCause excause,
-    Address inst_addr, Address next_addr,
-    Address jump_branch_pc, bool in_delay_slot,
-    Address mem_ref_addr)
-{
+bool Core::handle_exception(
+    Core* core,
+    Registers* regs,
+    ExceptionCause excause,
+    Address inst_addr,
+    Address next_addr,
+    Address jump_branch_pc,
+    bool in_delay_slot,
+    Address mem_ref_addr) {
     bool ret = false;
     if (excause == EXCAUSE_HWBREAK) {
-        if (in_delay_slot)
+        if (in_delay_slot) {
             regs->pc_abs_jmp(jump_branch_pc);
-        else
+        } else {
             regs->pc_abs_jmp(inst_addr);
+        }
     }
 
     if (cop0state != nullptr) {
-        if (in_delay_slot)
+        if (in_delay_slot) {
             cop0state->write_cop0reg(Cop0State::EPC, jump_branch_pc.get_raw());
-        else
+        } else {
             cop0state->write_cop0reg(Cop0State::EPC, inst_addr.get_raw());
+        }
         cop0state->update_execption_cause(excause, in_delay_slot);
-        if (cop0state->read_cop0reg(Cop0State::EBase) != 0 && !get_step_over_exception(excause)) {
+        if (cop0state->read_cop0reg(Cop0State::EBase) != 0
+            && !get_step_over_exception(excause)) {
             cop0state->set_status_exl(true);
             regs->pc_abs_jmp(cop0state->exception_pc_address());
         }
     }
 
     ExceptionHandler* exhandler = ex_handlers.value(excause);
-    if (exhandler != nullptr)
-        ret = exhandler->handle_exception(core, regs, excause, inst_addr,
-            next_addr, jump_branch_pc, in_delay_slot,
-            mem_ref_addr);
-    else if (ex_default_handler != nullptr)
-        ret = ex_default_handler->handle_exception(core, regs, excause, inst_addr,
-            next_addr, jump_branch_pc, in_delay_slot,
-            mem_ref_addr);
-    if (get_stop_on_exception(excause))
+    if (exhandler != nullptr) {
+        ret = exhandler->handle_exception(
+            core, regs, excause, inst_addr, next_addr, jump_branch_pc,
+            in_delay_slot, mem_ref_addr);
+    } else if (ex_default_handler != nullptr) {
+        ret = ex_default_handler->handle_exception(
+            core, regs, excause, inst_addr, next_addr, jump_branch_pc,
+            in_delay_slot, mem_ref_addr);
+    }
+    if (get_stop_on_exception(excause)) {
         emit core->stop_on_exception_reached();
+    }
 
     return ret;
 }
 
-void Core::set_c0_userlocal(std::uint32_t address) { // TODO I dont understand
-                                                     // semantic meaning
+void Core::set_c0_userlocal(uint32_t address) { // TODO I dont understand
+                                                // semantic meaning
     hwr_userlocal = address;
     if (cop0state != nullptr) {
-        if (address != cop0state->read_cop0reg(Cop0State::UserLocal))
+        if (address != cop0state->read_cop0reg(Cop0State::UserLocal)) {
             cop0state->write_cop0reg(Cop0State::UserLocal, address);
+        }
     }
 }
 
@@ -227,14 +220,16 @@ enum ExceptionCause Core::memory_special(
         mem_program->sync();
         break;
     case AC_STORE_CONDITIONAL:
-        if (!memwrite)
+        if (!memwrite) {
             break;
+        }
         mem_data->write_u32(mem_addr, rt_value.as_u32());
         towrite_val = 1;
         break;
     case AC_LOAD_LINKED:
-        if (!memread)
+        if (!memread) {
             break;
+        }
         towrite_val = mem_data->read_u32(mem_addr);
         break;
     case AC_WORD_RIGHT:
@@ -245,7 +240,7 @@ enum ExceptionCause Core::memory_special(
             temp = (temp & ~mask) | (rt_value.as_u32() << shift);
             mem_data->write_u32(mem_addr & ~3u, temp);
         } else {
-            shift = (3 - (mem_addr.get_raw() & 3u)) << 3;
+            shift = (3u - (mem_addr.get_raw() & 3u)) << 3;
             mask = 0xffffffff >> shift;
             towrite_val = mem_data->read_u32(mem_addr & ~3u);
             towrite_val
@@ -267,8 +262,7 @@ enum ExceptionCause Core::memory_special(
                 = (towrite_val.as_u32() << shift) | (rt_value.as_u32() & ~mask);
         }
         break;
-    default:
-        break;
+    default: break;
     }
 
     return EXCAUSE_NONE;
@@ -311,30 +305,36 @@ struct Core::dtDecode Core::decode(const struct dtFetch& dt) {
 
     dt.inst.flags_alu_op_mem_ctl(flags, alu_op, mem_ctl);
 
-    if (!(flags & IMF_SUPPORTED))
-        throw QTMIPS_EXCEPTION(UnsupportedInstruction, "Instruction with following encoding is not supported", QString::number(dt.inst.data(), 16));
+    if (!(flags & IMF_SUPPORTED)) {
+        throw QTMIPS_EXCEPTION(
+            UnsupportedInstruction,
+            "Instruction with following encoding is not supported",
+            QString::number(dt.inst.data(), 16));
+    }
 
-    std::uint8_t num_rs = dt.inst.rs();
-    std::uint8_t num_rt = dt.inst.rt();
-    std::uint8_t num_rd = dt.inst.rd();
+    uint8_t num_rs = dt.inst.rs();
+    uint8_t num_rt = dt.inst.rt();
+    uint8_t num_rd = dt.inst.rd();
     RegisterValue val_rs = regs->read_gp(num_rs);
     RegisterValue val_rt = regs->read_gp(num_rt);
-    std::uint32_t immediate_val;
+    uint32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
     bool regd = flags & IMF_REGD;
     bool regd31 = flags & IMF_PC_TO_R31;
 
     // requires rs for beq, bne, blez, bgtz, jr nad jalr
     bool bjr_req_rs = flags & IMF_BJR_REQ_RS;
-    if (flags & IMF_PC8_TO_RT)
+    if (flags & IMF_PC8_TO_RT) {
         val_rt = (dt.inst_addr + 8).get_raw();
+    }
     // requires rt for beq, bne
     bool bjr_req_rt = flags & IMF_BJR_REQ_RT;
 
-    if (flags & IMF_ZERO_EXTEND)
+    if (flags & IMF_ZERO_EXTEND) {
         immediate_val = dt.inst.immediate();
-    else
+    } else {
         immediate_val = sign_extend(dt.inst.immediate());
+    }
 
     if ((flags & IMF_EXCEPTION) && (excause == EXCAUSE_NONE)) {
         excause = dt.inst.encoded_exception();
@@ -407,19 +407,22 @@ struct Core::dtExecute Core::execute(const struct dtDecode& dt) {
     enum ExceptionCause excause = dt.excause;
     RegisterValue alu_val = 0;
 
-    // Handle conditional move (we have to change regwrite signal if conditional is not met)
+    // Handle conditional move (we have to change regwrite signal if conditional
+    // is not met)
     bool regwrite = dt.regwrite;
 
     RegisterValue alu_sec = dt.val_rt;
-    if (dt.alusrc)
+    if (dt.alusrc) {
         alu_sec = dt.immediate_val; // Sign or zero extend immediate value
+    }
 
     if (excause == EXCAUSE_NONE) {
-        alu_val = alu_operate(dt.aluop, dt.val_rs,
-            alu_sec, dt.inst.shamt(), dt.num_rd, regs,
+        alu_val = alu_operate(
+            dt.aluop, dt.val_rs, alu_sec, dt.inst.shamt(), dt.num_rd, regs,
             discard, excause);
-        if (discard)
+        if (discard) {
             regwrite = false;
+        }
 
         switch (dt.aluop) {
         case ALU_OP_RDHWR:
@@ -439,36 +442,47 @@ struct Core::dtExecute Core::execute(const struct dtDecode& dt) {
             case 29: // UserLocal
                 alu_val = hwr_userlocal;
                 break;
-            default:
-                alu_val = 0;
+            default: alu_val = 0;
             }
             break;
         case ALU_OP_MTC0:
-            if (cop0state == nullptr)
-                throw QTMIPS_EXCEPTION(UnsupportedInstruction, "Cop0 not supported", "setup Cop0State");
+            if (cop0state == nullptr) {
+                throw QTMIPS_EXCEPTION(
+                    UnsupportedInstruction, "Cop0 not supported",
+                    "setup Cop0State");
+            }
             cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt);
             break;
         case ALU_OP_MFC0:
-            if (cop0state == nullptr)
-                throw QTMIPS_EXCEPTION(UnsupportedInstruction, "Cop0 not supported", "setup Cop0State");
+            if (cop0state == nullptr) {
+                throw QTMIPS_EXCEPTION(
+                    UnsupportedInstruction, "Cop0 not supported",
+                    "setup Cop0State");
+            }
             alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
             break;
         case ALU_OP_MFMC0:
-            if (cop0state == nullptr)
-                throw QTMIPS_EXCEPTION(UnsupportedInstruction, "Cop0 not supported", "setup Cop0State");
+            if (cop0state == nullptr) {
+                throw QTMIPS_EXCEPTION(
+                    UnsupportedInstruction, "Cop0 not supported",
+                    "setup Cop0State");
+            }
             alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
-            if (dt.inst.funct() & 0x20)
-                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() | 1);
-            else
-                cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() & ~1U);
+            if (dt.inst.funct() & 0x20) {
+                cop0state->write_cop0reg(
+                    dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() | 1);
+            } else {
+                cop0state->write_cop0reg(
+                    dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() & ~1U);
+            }
             break;
         case ALU_OP_ERET:
             regs->pc_abs_jmp(Address(cop0state->read_cop0reg(Cop0State::EPC)));
-            if (cop0state != nullptr)
+            if (cop0state != nullptr) {
                 cop0state->set_status_exl(false);
+            }
             break;
-        default:
-            break;
+        default: break;
         }
     }
 
@@ -490,12 +504,13 @@ struct Core::dtExecute Core::execute(const struct dtDecode& dt) {
     emit execute_rs_num_value(dt.num_rs);
     emit execute_rt_num_value(dt.num_rt);
     emit execute_rd_num_value(dt.num_rd);
-    if (dt.stall)
+    if (dt.stall) {
         emit execute_stall_forward_value(1);
-    else if (dt.ff_rs != FORWARD_NONE || dt.ff_rt != FORWARD_NONE)
+    } else if (dt.ff_rs != FORWARD_NONE || dt.ff_rt != FORWARD_NONE) {
         emit execute_stall_forward_value(2);
-    else
+    } else {
         emit execute_stall_forward_value(0);
+    }
 
     return {
         .inst = dt.inst,
@@ -524,13 +539,16 @@ struct Core::dtMemory Core::memory(const struct dtExecute& dt) {
 
     if (excause == EXCAUSE_NONE) {
         if (dt.memctl > AC_LAST_REGULAR) {
-            excause = memory_special(dt.memctl, dt.inst.rt(), memread, memwrite,
-                towrite_val, dt.val_rt, mem_addr);
+            excause = memory_special(
+                dt.memctl, dt.inst.rt(), memread, memwrite, towrite_val,
+                dt.val_rt, mem_addr);
         } else {
-            if (memwrite)
+            if (memwrite) {
                 mem_data->write_ctl(dt.memctl, mem_addr, dt.val_rt);
-            if (memread)
+            }
+            if (memread) {
                 towrite_val = mem_data->read_ctl(dt.memctl, mem_addr);
+            }
         }
     }
 
@@ -574,13 +592,15 @@ void Core::writeback(const struct dtMemory& dt) {
     emit writeback_memtoreg_value(dt.memtoreg);
     emit writeback_regw_value(dt.regwrite);
     emit writeback_regw_num_value(dt.rwrite);
-    if (dt.regwrite)
+    if (dt.regwrite) {
         regs->write_gp(dt.rwrite, dt.towrite_val);
+    }
 }
 
 bool Core::handle_pc(const struct dtDecode& dt) {
     bool branch = false;
-    emit instruction_program_counter(dt.inst, dt.inst_addr, EXCAUSE_NONE, dt.is_valid);
+    emit instruction_program_counter(
+        dt.inst, dt.inst_addr, EXCAUSE_NONE, dt.is_valid);
 
     if (dt.jump) {
         if (!dt.bjr_req_rs) {
@@ -605,8 +625,9 @@ bool Core::handle_pc(const struct dtDecode& dt) {
             branch = dt.val_rs.as_i32() <= 0;
         }
 
-        if (dt.bj_not)
+        if (dt.bj_not) {
             branch = !branch;
+        }
     }
 
     emit fetch_jump_value(false);
@@ -615,8 +636,9 @@ bool Core::handle_pc(const struct dtDecode& dt) {
 
     if (branch) {
         std::int32_t rel_offset = dt.inst.immediate() << 2;
-        if (rel_offset & (1 << 17))
+        if (rel_offset & (1 << 17)) {
             rel_offset -= 1 << 18;
+        }
         regs->pc_abs_jmp(dt.inst_addr + rel_offset + 4);
     } else {
         regs->pc_inc();
@@ -692,21 +714,23 @@ void Core::dtMemoryInit(struct dtMemory& dt) {
     dt.is_valid = false;
 }
 
-CoreSingle::CoreSingle(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_data,
-    bool jmp_delay_slot, unsigned int min_cache_row_size, Cop0State* cop0state)
-    : Core(regs, mem_program, mem_data, min_cache_row_size, cop0state)
-{
-    if (jmp_delay_slot)
+CoreSingle::CoreSingle(
+    Registers* regs,
+    FrontendMemory* mem_program,
+    FrontendMemory* mem_data,
+    bool jmp_delay_slot,
+    unsigned int min_cache_row_size,
+    Cop0State* cop0state)
+    : Core(regs, mem_program, mem_data, min_cache_row_size, cop0state) {
+    if (jmp_delay_slot) {
         dt_f = new struct Core::dtFetch();
-    else
+    } else {
         dt_f = nullptr;
+    }
     reset();
 }
 
-CoreSingle::~CoreSingle()
-{
-    delete dt_f;
-}
+CoreSingle::~CoreSingle() { delete dt_f; }
 
 void CoreSingle::do_step(bool skip_break) {
     bool branch_taken = false;
@@ -726,7 +750,8 @@ void CoreSingle::do_step(bool skip_break) {
 
     if ((m.stop_if || (m.excause != EXCAUSE_NONE)) && dt_f != nullptr) {
         dtFetchInit(*dt_f);
-        emit instruction_fetched(dt_f->inst, dt_f->inst_addr, dt_f->excause, dt_f->is_valid);
+        emit instruction_fetched(
+            dt_f->inst, dt_f->inst_addr, dt_f->excause, dt_f->is_valid);
         emit fetch_inst_addr_value(STAGEADDR_NONE);
     } else {
         branch_taken = handle_pc(d);
@@ -744,8 +769,9 @@ void CoreSingle::do_step(bool skip_break) {
         if (dt_f != nullptr) {
             regs->pc_abs_jmp(dt_f->inst_addr);
         }
-        handle_exception(this, regs, m.excause, m.inst_addr, regs->read_pc(),
-            prev_inst_addr, m.in_delay_slot, m.mem_addr);
+        handle_exception(
+            this, regs, m.excause, m.inst_addr, regs->read_pc(), prev_inst_addr,
+            m.in_delay_slot, m.mem_addr);
         return;
     }
     prev_inst_addr = m.inst_addr;
@@ -759,11 +785,14 @@ void CoreSingle::do_reset() {
     prev_inst_addr = Address::null();
 }
 
-CorePipelined::CorePipelined(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_data,
+CorePipelined::CorePipelined(
+    Registers* regs,
+    FrontendMemory* mem_program,
+    FrontendMemory* mem_data,
     enum MachineConfig::HazardUnit hazard_unit,
-    unsigned int min_cache_row_size, Cop0State* cop0state)
-    : Core(regs, mem_program, mem_data, min_cache_row_size, cop0state)
-{
+    unsigned int min_cache_row_size,
+    Cop0State* cop0state)
+    : Core(regs, mem_program, mem_data, min_cache_row_size, cop0state) {
     this->hazard_unit = hazard_unit;
     reset();
 }
@@ -784,25 +813,28 @@ void CorePipelined::do_step(bool skip_break) {
     excpt_in_progress = dt_m.excause != EXCAUSE_NONE;
     if (excpt_in_progress) {
         dtExecuteInit(dt_e);
-        emit instruction_executed(dt_e.inst, dt_e.inst_addr, dt_e.excause, dt_e.is_valid);
+        emit instruction_executed(
+            dt_e.inst, dt_e.inst_addr, dt_e.excause, dt_e.is_valid);
         emit execute_inst_addr_value(STAGEADDR_NONE);
     }
     excpt_in_progress = excpt_in_progress || dt_e.excause != EXCAUSE_NONE;
     if (excpt_in_progress) {
         dtDecodeInit(dt_d);
-        emit instruction_decoded(dt_d.inst, dt_d.inst_addr, dt_d.excause, dt_d.is_valid);
+        emit instruction_decoded(
+            dt_d.inst, dt_d.inst_addr, dt_d.excause, dt_d.is_valid);
         emit decode_inst_addr_value(STAGEADDR_NONE);
     }
     excpt_in_progress = excpt_in_progress || dt_e.excause != EXCAUSE_NONE;
     if (excpt_in_progress) {
         dtFetchInit(dt_f);
-        emit instruction_fetched(dt_f.inst, dt_f.inst_addr, dt_f.excause, dt_f.is_valid);
+        emit instruction_fetched(
+            dt_f.inst, dt_f.inst_addr, dt_f.excause, dt_f.is_valid);
         emit fetch_inst_addr_value(STAGEADDR_NONE);
         if (dt_m.excause != EXCAUSE_NONE) {
             regs->pc_abs_jmp(dt_e.inst_addr);
-            handle_exception(this, regs, dt_m.excause, dt_m.inst_addr,
-                dt_e.inst_addr, jump_branch_pc,
-                dt_m.in_delay_slot, dt_m.mem_addr);
+            handle_exception(
+                this, regs, dt_m.excause, dt_m.inst_addr, dt_e.inst_addr,
+                jump_branch_pc, dt_m.in_delay_slot, dt_m.mem_addr);
         }
         return;
     }
@@ -811,12 +843,19 @@ void CorePipelined::do_step(bool skip_break) {
     dt_d.ff_rt = FORWARD_NONE;
 
     if (hazard_unit != MachineConfig::HU_NONE) {
-        // Note: We make exception with $0 as that has no effect when written and is used in nop instruction
+        // Note: We make exception with $0 as that has no effect when written
+        // and is used in nop instruction
 
-#define HAZARD(STAGE) ( \
-    (STAGE).regwrite && (STAGE).rwrite != 0 && ((dt_d.alu_req_rs && (STAGE).rwrite == dt_d.num_rs) || (dt_d.alu_req_rt && (STAGE).rwrite == dt_d.num_rt))) // Note: We make exception with $0 as that has no effect and is used in nop instruction
+#define HAZARD(STAGE)                                                          \
+    ((STAGE).regwrite && (STAGE).rwrite != 0                                   \
+     && ((dt_d.alu_req_rs && (STAGE).rwrite == dt_d.num_rs)                    \
+         || (dt_d.alu_req_rt                                                   \
+             && (STAGE).rwrite == dt_d.num_rt))) // Note: We make exception with
+                                                 // $0 as that has no effect and
+                                                 // is used in nop instruction
 
-        // Write back stage combinatoricly propagates written instruction to decode stage so nothing has to be done for that stage
+        // Write back stage combinatoricly propagates written instruction to
+        // decode stage so nothing has to be done for that stage
         if (HAZARD(dt_m)) {
             // Hazard with instruction in memory stage
             if (hazard_unit == MachineConfig::HU_STALL_FORWARD) {
@@ -829,15 +868,16 @@ void CorePipelined::do_step(bool skip_break) {
                     dt_d.val_rt = dt_m.towrite_val;
                     dt_d.ff_rt = FORWARD_FROM_W;
                 }
-            } else
+            } else {
                 stall = true;
+            }
         }
         if (HAZARD(dt_e)) {
             // Hazard with instruction in execute stage
             if (hazard_unit == MachineConfig::HU_STALL_FORWARD) {
-                if (dt_e.memread)
+                if (dt_e.memread) {
                     stall = true;
-                else {
+                } else {
                     // Forward result value
                     if (dt_d.alu_req_rs && dt_e.rwrite == dt_d.num_rs) {
                         dt_d.val_rs = dt_e.alu_val;
@@ -848,23 +888,32 @@ void CorePipelined::do_step(bool skip_break) {
                         dt_d.ff_rt = FORWARD_FROM_M;
                     }
                 }
-            } else
+            } else {
                 stall = true;
+            }
         }
 #undef HAZARD
-        if (dt_e.rwrite != 0 && dt_e.regwrite && ((dt_d.bjr_req_rs && dt_d.num_rs == dt_e.rwrite) || (dt_d.bjr_req_rt && dt_d.num_rt == dt_e.rwrite))) {
+        if (dt_e.rwrite != 0 && dt_e.regwrite
+            && ((dt_d.bjr_req_rs && dt_d.num_rs == dt_e.rwrite)
+                || (dt_d.bjr_req_rt && dt_d.num_rt == dt_e.rwrite))) {
             stall = true;
             branch_stall = true;
         } else {
-            if (hazard_unit != MachineConfig::HU_STALL_FORWARD || dt_m.memtoreg) {
-                if (dt_m.rwrite != 0 && dt_m.regwrite && ((dt_d.bjr_req_rs && dt_d.num_rs == dt_m.rwrite) || (dt_d.bjr_req_rt && dt_d.num_rt == dt_m.rwrite)))
+            if (hazard_unit != MachineConfig::HU_STALL_FORWARD
+                || dt_m.memtoreg) {
+                if (dt_m.rwrite != 0 && dt_m.regwrite
+                    && ((dt_d.bjr_req_rs && dt_d.num_rs == dt_m.rwrite)
+                        || (dt_d.bjr_req_rt && dt_d.num_rt == dt_m.rwrite))) {
                     stall = true;
+                }
             } else {
-                if (dt_m.rwrite != 0 && dt_m.regwrite && dt_d.bjr_req_rs && dt_d.num_rs == dt_m.rwrite) {
+                if (dt_m.rwrite != 0 && dt_m.regwrite && dt_d.bjr_req_rs
+                    && dt_d.num_rs == dt_m.rwrite) {
                     dt_d.val_rs = dt_m.towrite_val;
                     dt_d.forward_m_d_rs = true;
                 }
-                if (dt_m.rwrite != 0 && dt_m.regwrite && dt_d.bjr_req_rt && dt_d.num_rt == dt_m.rwrite) {
+                if (dt_m.rwrite != 0 && dt_m.regwrite && dt_d.bjr_req_rt
+                    && dt_d.num_rt == dt_m.rwrite) {
                     dt_d.val_rt = dt_m.towrite_val;
                     dt_d.forward_m_d_rt = true;
                 }
@@ -873,7 +922,8 @@ void CorePipelined::do_step(bool skip_break) {
         emit forward_m_d_rs_value(dt_d.forward_m_d_rs);
         emit forward_m_d_rt_value(dt_d.forward_m_d_rt);
     }
-    emit branch_forward_value((dt_d.forward_m_d_rs || dt_d.forward_m_d_rt) ? 2 : branch_stall);
+    emit branch_forward_value(
+        (dt_d.forward_m_d_rs || dt_d.forward_m_d_rt) ? 2 : branch_stall);
 #if 0
     if (stall)
         printf("STALL\n");
@@ -889,8 +939,9 @@ void CorePipelined::do_step(bool skip_break) {
     printf("PC 0x%08lx\n", (unsigned long)dt_f.inst_addr);
 #endif
 
-    if (dt_e.stop_if || dt_m.stop_if)
+    if (dt_e.stop_if || dt_m.stop_if) {
         stall = true;
+    }
 
     emit hu_stall_value(stall);
 
@@ -903,7 +954,8 @@ void CorePipelined::do_step(bool skip_break) {
         } else {
             if (dt_d.nb_skip_ds) {
                 dtFetchInit(dt_f);
-                emit instruction_fetched(dt_f.inst, dt_f.inst_addr, dt_f.excause, dt_f.is_valid);
+                emit instruction_fetched(
+                    dt_f.inst, dt_f.inst_addr, dt_f.excause, dt_f.is_valid);
                 emit fetch_inst_addr_value(STAGEADDR_NONE);
             }
         }
@@ -917,7 +969,8 @@ void CorePipelined::do_step(bool skip_break) {
         } else {
             dtFetchInit(dt_f);
         }
-        // emit instruction_decoded(dt_d.inst, dt_d.inst_addr, dt_d.excause, dt_d.is_valid);
+        // emit instruction_decoded(dt_d.inst, dt_d.inst_addr, dt_d.excause,
+        // dt_d.is_valid);
     }
     if (stall || dt_d.stop_if) {
         stall_c++;
@@ -936,11 +989,15 @@ void CorePipelined::do_reset() {
     dt_m.inst_addr = 0x0_addr;
 }
 
-bool StopExceptionHandler::handle_exception(Core* core, Registers* regs,
-    ExceptionCause excause, Address inst_addr,
-    Address next_addr, Address jump_branch_pc,
-    bool in_delay_slot, Address mem_ref_addr)
-{
+bool StopExceptionHandler::handle_exception(
+    Core* core,
+    Registers* regs,
+    ExceptionCause excause,
+    Address inst_addr,
+    Address next_addr,
+    Address jump_branch_pc,
+    bool in_delay_slot,
+    Address mem_ref_addr) {
 #if 0
     printf("Exception cause %d instruction PC 0x%08lx next PC 0x%08lx jump branch PC 0x%08lx "
            "in_delay_slot %d registers PC 0x%08lx mem ref 0x%08lx\n",
@@ -957,4 +1014,4 @@ bool StopExceptionHandler::handle_exception(Core* core, Registers* regs,
     (void)in_delay_slot, (void)core;
 #endif
     return true;
-};
+}

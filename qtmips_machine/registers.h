@@ -39,6 +39,7 @@
 #include "memory/address.h"
 #include "qtmipsexception.h"
 #include "register_value.h"
+
 #include <QObject>
 #include <array>
 #include <cstdint>
@@ -64,14 +65,13 @@ public:
 inline RegisterId::RegisterId(uint8_t value) : data(value) {
     SANITY_ASSERT(
         data < REGISTER_COUNT,
-        QString("Trying to create register id for out-of-bounds register ") + QString(data)
-   );
+        QString("Trying to create register id for out-of-bounds register ")
+            + QString(data));
 };
 
 inline RegisterId operator"" _reg(unsigned long long value) {
-    return {static_cast<uint8_t>(value)};
+    return { static_cast<uint8_t>(value) };
 }
-
 
 /**
  * Register file
@@ -82,19 +82,24 @@ public:
     Registers();
     Registers(const Registers&);
 
-    Address read_pc() const; // Return current value of program counter
-    Address pc_inc(); // Increment program counter by four bytes
-    Address pc_jmp(int32_t offset); // Relative jump from current location in program counter
-    void pc_abs_jmp(Address address); // Absolute jump in program counter (write to pc)
-    void pc_abs_jmp_28(Address address); // Absolute jump in current 256MB section (basically J implementation)
+    Address read_pc() const;          // Return current value of program counter
+    Address pc_inc();                 // Increment program counter by four bytes
+    Address pc_jmp(int32_t offset);   // Relative jump from current location in
+                                      // program counter
+    void pc_abs_jmp(Address address); // Absolute jump in program counter (write
+                                      // to pc)
+    void pc_abs_jmp_28(Address address); // Absolute jump in current 256MB
+                                         // section (basically J implementation)
 
-    RegisterValue read_gp(RegisterId reg) const; // Read general-purpose register
-    void write_gp(RegisterId reg, RegisterValue value); // Write general-purpose register
+    RegisterValue read_gp(RegisterId reg) const;        // Read general-purpose
+                                                        // register
+    void write_gp(RegisterId reg, RegisterValue value); // Write general-purpose
+                                                        // register
     RegisterValue read_hi_lo(bool hi) const; // true - read HI / false - read LO
     void write_hi_lo(bool hi, RegisterValue value);
 
-    bool operator ==(const Registers &c) const;
-    bool operator !=(const Registers &c) const;
+    bool operator==(const Registers& c) const;
+    bool operator!=(const Registers& c) const;
 
     void reset(); // Reset all values to zero (except pc)
 
@@ -116,7 +121,7 @@ private:
     RegisterValue hi, lo;
     Address pc; // program counter
 };
-}
+} // namespace machine
 
 Q_DECLARE_METATYPE(machine::Registers)
 

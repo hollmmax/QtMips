@@ -33,69 +33,111 @@
  *
  ******************************************************************************/
 
-#include <QCoreApplication>
+#include "../qtmips_asm/simpleasm.h"
+#include "../qtmips_machine/machineconfig.h"
+#include "msgreport.h"
+#include "reporter.h"
+#include "tracer.h"
+
 #include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QFile>
 #include <QTextStream>
 #include <cctype>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <utility>
-#include "tracer.h"
-#include "reporter.h"
-#include "msgreport.h"
-#include "../qtmips_asm/simpleasm.h"
-#include "../qtmips_machine/machineconfig.h"
 
 using namespace machine;
 using namespace std;
 
-void create_parser(QCommandLineParser &p) {
+void create_parser(QCommandLineParser& p) {
     p.setApplicationDescription("QtMips CLI machine simulator");
     p.addHelpOption();
     p.addVersionOption();
 
-    p.addPositionalArgument("FILE", "Input ELF executable file or assembler source");
+    p.addPositionalArgument(
+        "FILE", "Input ELF executable file or assembler source");
 
     // p.addOptions({}); available only from Qt 5.4+
-    p.addOption({"asm", "Treat provided file argument as assembler source."});
-    p.addOption({"pipelined", "Configure CPU to use five stage pipeline."});
-    p.addOption({"no-delay-slot", "Disable jump delay slot."});
-    p.addOption({"hazard-unit", "Specify hazard unit imeplementation [none|stall|forward].", "HUKIND"});
-    p.addOption({{"trace-fetch", "tr-fetch"}, "Trace fetched instruction (for both pipelined and not core)."});
-    p.addOption({{"trace-decode", "tr-decode"}, "Trace instruction in decode stage. (only for pipelined core)"});
-    p.addOption({{"trace-execute", "tr-execute"}, "Trace instruction in execute stage. (only for pipelined core)"});
-    p.addOption({{"trace-memory", "tr-memory"}, "Trace instruction in memory stage. (only for pipelined core)"});
-    p.addOption({{"trace-writeback", "tr-writeback"}, "Trace instruction in write back stage. (only for pipelined core)"});
-    p.addOption({{"trace-pc", "tr-pc"}, "Print program counter register changes."});
-    p.addOption({{"trace-gp", "tr-gp"}, "Print general purpose register changes. You can use * for all registers.", "REG"});
-    p.addOption({{"trace-lo", "tr-lo"}, "Print LO register changes."});
-    p.addOption({{"trace-hi", "tr-hi"}, "Print HI register changes."});
-    p.addOption({{"dump-registers", "d-regs"}, "Dump registers state at program exit."});
-    p.addOption({"dump-cache-stats", "Dump cache statistics at program exit."});
-    p.addOption({"dump-cycles", "Dump number of CPU cycles till program end."});
-    p.addOption({"dump-range", "Dump memory range.", "START,LENGTH,FNAME"});
-    p.addOption({"load-range", "Load memory range.", "START,FNAME"});
-    p.addOption({"expect-fail", "Expect that program causes CPU trap and fail if it doesn't."});
-    p.addOption({"fail-match", "Program should exit with exactly this CPU TRAP. Possible values are I(unsupported Instruction), A(Unsupported ALU operation), O(Overflow/underflow) and J(Unaligned Jump). You can freely combine them. Using this implies expect-fail option.", "TRAP"});
-    p.addOption({"d-cache", "Data cache. Format policy,sets,words_in_blocks,associativity where policy is random/lru/lfu", "DCACHE"});
-    p.addOption({"i-cache", "Instruction cache. Format policy,sets,words_in_blocks,associativity where policy is random/lru/lfu", "ICACHE"});
-    p.addOption({"read-time", "Memory read access time (cycles).", "RTIME"});
-    p.addOption({"write-time", "Memory read access time (cycles).", "WTIME"});
-    p.addOption({"burst-time", "Memory read access time (cycles).", "BTIME"});
+    p.addOption({ "asm", "Treat provided file argument as assembler source." });
+    p.addOption({ "pipelined", "Configure CPU to use five stage pipeline." });
+    p.addOption({ "no-delay-slot", "Disable jump delay slot." });
+    p.addOption({ "hazard-unit",
+                  "Specify hazard unit imeplementation [none|stall|forward].",
+                  "HUKIND" });
+    p.addOption(
+        { { "trace-fetch", "tr-fetch" },
+          "Trace fetched instruction (for both pipelined and not core)." });
+    p.addOption(
+        { { "trace-decode", "tr-decode" },
+          "Trace instruction in decode stage. (only for pipelined core)" });
+    p.addOption(
+        { { "trace-execute", "tr-execute" },
+          "Trace instruction in execute stage. (only for pipelined core)" });
+    p.addOption(
+        { { "trace-memory", "tr-memory" },
+          "Trace instruction in memory stage. (only for pipelined core)" });
+    p.addOption(
+        { { "trace-writeback", "tr-writeback" },
+          "Trace instruction in write back stage. (only for pipelined core)" });
+    p.addOption(
+        { { "trace-pc", "tr-pc" }, "Print program counter register changes." });
+    p.addOption({ { "trace-gp", "tr-gp" },
+                  "Print general purpose register changes. You can use * for "
+                  "all registers.",
+                  "REG" });
+    p.addOption({ { "trace-lo", "tr-lo" }, "Print LO register changes." });
+    p.addOption({ { "trace-hi", "tr-hi" }, "Print HI register changes." });
+    p.addOption({ { "dump-registers", "d-regs" },
+                  "Dump registers state at program exit." });
+    p.addOption(
+        { "dump-cache-stats", "Dump cache statistics at program exit." });
+    p.addOption(
+        { "dump-cycles", "Dump number of CPU cycles till program end." });
+    p.addOption({ "dump-range", "Dump memory range.", "START,LENGTH,FNAME" });
+    p.addOption({ "load-range", "Load memory range.", "START,FNAME" });
+    p.addOption(
+        { "expect-fail",
+          "Expect that program causes CPU trap and fail if it doesn't." });
+    p.addOption(
+        { "fail-match",
+          "Program should exit with exactly this CPU TRAP. Possible values are "
+          "I(unsupported Instruction), A(Unsupported ALU operation), "
+          "O(Overflow/underflow) and J(Unaligned Jump). You can freely combine "
+          "them. Using this implies expect-fail option.",
+          "TRAP" });
+    p.addOption(
+        { "d-cache",
+          "Data cache. Format policy,sets,words_in_blocks,associativity where "
+          "policy is random/lru/lfu",
+          "DCACHE" });
+    p.addOption(
+        { "i-cache",
+          "Instruction cache. Format policy,sets,words_in_blocks,associativity "
+          "where policy is random/lru/lfu",
+          "ICACHE" });
+    p.addOption({ "read-time", "Memory read access time (cycles).", "RTIME" });
+    p.addOption({ "write-time", "Memory read access time (cycles).", "WTIME" });
+    p.addOption({ "burst-time", "Memory read access time (cycles).", "BTIME" });
 }
 
-void configure_cache(CacheConfig &cacheconf, QStringList cachearg, QString which) {
+void configure_cache(
+    CacheConfig& cacheconf,
+    QStringList cachearg,
+    QString which) {
     if (cachearg.size() < 1)
         return;
     cacheconf.set_enabled(true);
     QStringList pieces = cachearg.at(cachearg.size() - 1).split(",");
     if (pieces.size() < 3) {
-        std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache incorrect (correct lru,4,2,2,wb)." << std::endl;
+        std::cerr << "Parameters for " << which.toLocal8Bit().data()
+                  << " cache incorrect (correct lru,4,2,2,wb)." << std::endl;
         exit(1);
     }
     if (pieces.at(0).size() < 1) {
-        std::cerr << "Policy for " << which.toLocal8Bit().data() << " cache is incorrect." << std::endl;
+        std::cerr << "Policy for " << which.toLocal8Bit().data()
+                  << " cache is incorrect." << std::endl;
         exit(1);
     }
     if (!pieces.at(0).at(0).isDigit()) {
@@ -106,20 +148,24 @@ void configure_cache(CacheConfig &cacheconf, QStringList cachearg, QString which
         else if (pieces.at(0).toLower() == "lfu")
             cacheconf.set_replacement_policy(CacheConfig::RP_LFU);
         else {
-            std::cerr << "Policy for " << which.toLocal8Bit().data() << " cache is incorrect." << std::endl;
+            std::cerr << "Policy for " << which.toLocal8Bit().data()
+                      << " cache is incorrect." << std::endl;
             exit(1);
         }
         pieces.removeFirst();
     }
     if (pieces.size() < 3) {
-        std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache incorrect (correct lru,4,2,2,wb)." << std::endl;
+        std::cerr << "Parameters for " << which.toLocal8Bit().data()
+                  << " cache incorrect (correct lru,4,2,2,wb)." << std::endl;
         exit(1);
     }
     cacheconf.set_set_count(pieces.at(0).toLong());
     cacheconf.set_block_size(pieces.at(1).toLong());
     cacheconf.set_associativity(pieces.at(2).toLong());
-    if (cacheconf.set_count() == 0 || cacheconf.block_size() == 0 || cacheconf.associativity() == 0) {
-        std::cerr << "Parameters for " << which.toLocal8Bit().data() << " cache cannot have zero component." << std::endl;
+    if (cacheconf.set_count() == 0 || cacheconf.block_size() == 0
+        || cacheconf.associativity() == 0) {
+        std::cerr << "Parameters for " << which.toLocal8Bit().data()
+                  << " cache cannot have zero component." << std::endl;
         exit(1);
     }
     if (pieces.size() > 3) {
@@ -130,13 +176,15 @@ void configure_cache(CacheConfig &cacheconf, QStringList cachearg, QString which
         else if (pieces.at(3).toLower() == "wta")
             cacheconf.set_write_policy(CacheConfig::WP_THROUGH_ALLOC);
         else {
-            std::cerr << "Write policy for " << which.toLocal8Bit().data() << " cache is incorrect (correct wb/wt/wtna/wta)." << std::endl;
+            std::cerr << "Write policy for " << which.toLocal8Bit().data()
+                      << " cache is incorrect (correct wb/wt/wtna/wta)."
+                      << std::endl;
             exit(1);
         }
     }
 }
 
-void configure_machine(QCommandLineParser &p, MachineConfig &cc) {
+void configure_machine(QCommandLineParser& p, MachineConfig& cc) {
     QStringList pa = p.positionalArguments();
     int siz;
     if (pa.size() != 1) {
@@ -159,19 +207,23 @@ void configure_machine(QCommandLineParser &p, MachineConfig &cc) {
 
     siz = p.values("read-time").size();
     if (siz >= 1)
-        cc.set_memory_access_time_read(p.values("read-time").at(siz - 1).toLong());
+        cc.set_memory_access_time_read(
+            p.values("read-time").at(siz - 1).toLong());
     siz = p.values("write-time").size();
     if (siz >= 1)
-        cc.set_memory_access_time_write(p.values("write-time").at(siz - 1).toLong());
+        cc.set_memory_access_time_write(
+            p.values("write-time").at(siz - 1).toLong());
     siz = p.values("burst-time").size();
     if (siz >= 1)
-        cc.set_memory_access_time_burst(p.values("burst-time").at(siz - 1).toLong());
+        cc.set_memory_access_time_burst(
+            p.values("burst-time").at(siz - 1).toLong());
 
     configure_cache(*cc.access_cache_data(), p.values("d-cache"), "data");
-    configure_cache(*cc.access_cache_program(), p.values("i-cache"), "instruction");
+    configure_cache(
+        *cc.access_cache_program(), p.values("i-cache"), "instruction");
 }
 
-void configure_tracer(QCommandLineParser &p, Tracer &tr) {
+void configure_tracer(QCommandLineParser& p, Tracer& tr) {
     if (p.isSet("trace-fetch"))
         tr.fetch();
     if (p.isSet("pipelined")) { // Following are added only if we have stages
@@ -199,7 +251,8 @@ void configure_tracer(QCommandLineParser &p, Tracer &tr) {
             if (res && num <= 32) {
                 tr.reg_gp(num);
             } else {
-                cout << "Unknown register number given for trace-gp: " << gps[i].toStdString() << endl;
+                cout << "Unknown register number given for trace-gp: "
+                     << gps[i].toStdString() << endl;
                 exit(1);
             }
         }
@@ -213,34 +266,32 @@ void configure_tracer(QCommandLineParser &p, Tracer &tr) {
     // TODO
 }
 
-void configure_reporter(QCommandLineParser &p, Reporter &r, const SymbolTable *symtab) {
-    if (p.isSet("dump-registers"))
+void configure_reporter(
+    QCommandLineParser& p,
+    Reporter& r,
+    const SymbolTable* symtab) {
+    if (p.isSet("dump-registers")) {
         r.regs();
-    if (p.isSet("dump-cache-stats"))
+    }
+    if (p.isSet("dump-cache-stats")) {
         r.cache_stats();
     }
     if (p.isSet("dump-cycles")) {
         r.cycles();
+    }
 
     QStringList fail = p.values("fail-match");
     for (int i = 0; i < fail.size(); i++) {
         for (int y = 0; y < fail[i].length(); y++) {
             enum Reporter::FailReason reason;
             switch (tolower(fail[i].toStdString()[y])) {
-            case 'i':
-                reason = Reporter::FR_I;
-                break;
-            case 'a':
-                reason = Reporter::FR_A;
-                break;
-            case 'o':
-                reason = Reporter::FR_O;
-                break;
-            case 'j':
-                reason = Reporter::FR_J;
-                break;
+            case 'i': reason = Reporter::FR_I; break;
+            case 'a': reason = Reporter::FR_A; break;
+            case 'o': reason = Reporter::FR_O; break;
+            case 'j': reason = Reporter::FR_J; break;
             default:
-                cout << "Unknown fail condition: " << fail[i].toStdString()[y] << endl;
+                cout << "Unknown fail condition: " << fail[i].toStdString()[y]
+                     << endl;
                 exit(1);
             }
             r.expect_fail(reason);
@@ -287,7 +338,7 @@ void configure_reporter(QCommandLineParser &p, Reporter &r, const SymbolTable *s
     // TODO
 }
 
-void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
+void load_ranges(QtMipsMachine& machine, const QStringList& ranges) {
     foreach (QString range_arg, ranges) {
         std::uint32_t start;
         bool ok = true;
@@ -298,7 +349,8 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
             exit(1);
         }
         str = range_arg.mid(0, comma1);
-        if (str.size() >= 1 && !str.at(0).isDigit() && machine.symbol_table() != nullptr) {
+        if (str.size() >= 1 && !str.at(0).isDigit()
+            && machine.symbol_table() != nullptr) {
             ok = machine.symbol_table()->name_to_value(start, str);
         } else {
             start = str.toULong(&ok, 0);
@@ -312,8 +364,7 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
         std::uint32_t addr = start;
         in.open(range_arg.mid(comma1 + 1).toLocal8Bit().data(), ios::in);
         start = start & ~3;
-        for (std::string line; getline(in, line); )
-        {
+        for (std::string line; getline(in, line);) {
             size_t endpos = line.find_last_not_of(" \t\n");
             size_t startpos = line.find_first_not_of(" \t\n");
             size_t idx;
@@ -327,7 +378,7 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
                 exit(1);
             }
             machine.memory_rw()->write(
-                &val, addr, sizeof(val),
+                addr, &val, sizeof(val),
                 WriteOptions()); // TODO: Is this really the right offset
             addr += 4;
         }
@@ -335,16 +386,17 @@ void load_ranges(QtMipsMachine &machine, const QStringList &ranges) {
     }
 }
 
-bool assemble(QtMipsMachine &machine, MsgReport &msgrep, QString filename) {
+bool assemble(QtMipsMachine& machine, MsgReport& msgrep, QString filename) {
     SymbolTableDb symtab(machine.symbol_table_rw(true));
-    machine::FrontendMemory *mem = machine.physical_address_space_rw();
+    machine::FrontendMemory* mem = machine.physical_address_space_rw();
     if (mem == nullptr) {
         return false;
     }
     machine.cache_sync();
     SimpleAsm sasm;
 
-    sasm.connect(&sasm, &SimpleAsm::report_message, &msgrep, &MsgReport::report_message);
+    sasm.connect(
+        &sasm, &SimpleAsm::report_message, &msgrep, &MsgReport::report_message);
 
     sasm.setup(mem, &symtab, 0x80020000_addr);
 
@@ -354,7 +406,7 @@ bool assemble(QtMipsMachine &machine, MsgReport &msgrep, QString filename) {
     return sasm.finish();
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QCoreApplication app(argc, argv);
     app.setApplicationName("qtmips_cli");
     app.setApplicationVersion("0.7.4");

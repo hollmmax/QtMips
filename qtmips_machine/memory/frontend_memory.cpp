@@ -34,71 +34,45 @@
  ******************************************************************************/
 
 #include "frontend_memory.h"
-#include "../register_value.h"
 
 using namespace machine;
 
-bool FrontendMemory::write_u8(
-    Address address,
-    uint8_t value)
-{
+bool FrontendMemory::write_u8(Address address, uint8_t value) {
     return write_generic<typeof(value)>(address, value);
 }
 
-bool FrontendMemory::write_u16(
-    Address address,
-    uint16_t value)
-{
+bool FrontendMemory::write_u16(Address address, uint16_t value) {
     return write_generic<typeof(value)>(address, value);
 }
 
-bool FrontendMemory::write_u32(
-    Address address,
-    std::uint32_t value)
-{
+bool FrontendMemory::write_u32(Address address, uint32_t value) {
     return write_generic<typeof(value)>(address, value);
 }
 
-bool FrontendMemory::write_u64(
-    Address address,
-    uint64_t value)
-{
+bool FrontendMemory::write_u64(Address address, uint64_t value) {
     return write_generic<typeof(value)>(address, value);
 }
 
-uint8_t FrontendMemory::read_u8(
-    Address address,
-    bool debug_access) const
-{
+uint8_t FrontendMemory::read_u8(Address address, bool debug_access) const {
     return read_generic<uint8_t>(address, debug_access);
 }
 
-uint16_t FrontendMemory::read_u16(
-    Address address,
-    bool debug_access) const
-{
+uint16_t FrontendMemory::read_u16(Address address, bool debug_access) const {
     return read_generic<uint16_t>(address, debug_access);
 }
 
-uint32_t FrontendMemory::read_u32(
-    Address address,
-    bool debug_access) const
-{
+uint32_t FrontendMemory::read_u32(Address address, bool debug_access) const {
     return read_generic<uint32_t>(address, debug_access);
 }
 
-uint64_t FrontendMemory::read_u64(
-    Address address,
-    bool debug_access) const
-{
+uint64_t FrontendMemory::read_u64(Address address, bool debug_access) const {
     return read_generic<uint64_t>(address, debug_access);
 }
 
 void FrontendMemory::write_ctl(
     enum AccessControl ctl,
     Address offset,
-    RegisterValue value)
-{
+    RegisterValue value) {
     switch (ctl) {
     case AC_NONE: {
         break;
@@ -118,10 +92,8 @@ void FrontendMemory::write_ctl(
         break;
     }
     default: {
-
         throw QTMIPS_EXCEPTION(
-            UnknownMemoryControl,
-            "Trying to write to memory with unknown ctl",
+            UnknownMemoryControl, "Trying to write to memory with unknown ctl",
             QString::number(ctl));
     }
     }
@@ -139,26 +111,21 @@ FrontendMemory::read_ctl(enum AccessControl ctl, Address address) const {
     case AC_U16: return read_u16(address);
     default: {
         throw QTMIPS_EXCEPTION(
-            UnknownMemoryControl,
-            "Trying to read from memory with unknown ctl",
+            UnknownMemoryControl, "Trying to read from memory with unknown ctl",
             QString::number(ctl));
     }
     }
 }
 
-void FrontendMemory::sync() { }
+void FrontendMemory::sync() {}
 
-enum LocationStatus FrontendMemory::location_status(Address address) const
-{
+enum LocationStatus FrontendMemory::location_status(Address address) const {
     (void)address;
     return LOCSTAT_NONE;
 }
 
-template <typename T>
-T FrontendMemory::read_generic(
-    Address address,
-    bool debug_read) const
-{
+template<typename T>
+T FrontendMemory::read_generic(Address address, bool debug_read) const {
     T value;
     read(address, &value, sizeof(T), { .debug = debug_read });
     return byteswap(value);

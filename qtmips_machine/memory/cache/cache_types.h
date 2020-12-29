@@ -67,6 +67,6 @@ struct CacheLine {
  */
 enum AccessType { READ, WRITE };
 
-}
+} // namespace machine
 
 #endif // QTMIPS_CACHE_TYPES_H

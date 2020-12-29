@@ -36,32 +36,32 @@
 #ifndef MACHINECONFIG_H
 #define MACHINECONFIG_H
 
-#include <QString>
 #include <QSettings>
+#include <QString>
 
 namespace machine {
 
 enum ConfigPresets {
-    CP_SINGLE, // No pipeline cpu without cache
-    CP_SINGLE_CACHE, // No pipeline cpu with cache
+    CP_SINGLE,         // No pipeline cpu without cache
+    CP_SINGLE_CACHE,   // No pipeline cpu with cache
     CP_PIPE_NO_HAZARD, // Pipelined cpu without hazard unit and without cache
-    CP_PIPE // Full pipelined cpu
+    CP_PIPE            // Full pipelined cpu
 };
 
 class CacheConfig {
 public:
     CacheConfig();
-    CacheConfig(const CacheConfig *cc);
-    CacheConfig(const QSettings*, const QString &prefix = "");
+    CacheConfig(const CacheConfig* cc);
+    CacheConfig(const QSettings*, const QString& prefix = "");
 
-    void store(QSettings*, const QString &prefix = "");
+    void store(QSettings*, const QString& prefix = "") const;
 
     void preset(enum ConfigPresets);
 
     enum ReplacementPolicy {
         RP_RAND, // Random
-        RP_LRU, // Least recently used
-        RP_LFU // Least frequently used
+        RP_LRU,  // Least recently used
+        RP_LFU   // Least frequently used
     };
 
     enum WritePolicy {
@@ -85,8 +85,8 @@ public:
     enum ReplacementPolicy replacement_policy() const;
     enum WritePolicy write_policy() const;
 
-    bool operator ==(const CacheConfig &c) const;
-    bool operator !=(const CacheConfig &c) const;
+    bool operator==(const CacheConfig& c) const;
+    bool operator!=(const CacheConfig& c) const;
 
 private:
     bool en;
@@ -98,29 +98,27 @@ private:
 class MachineConfig {
 public:
     MachineConfig();
-    MachineConfig(const MachineConfig *cc);
-    MachineConfig(const QSettings*, const QString &prefix = "");
+    MachineConfig(const MachineConfig* cc);
+    MachineConfig(const QSettings*, const QString& prefix = "");
 
-    void store(QSettings*, const QString &prefix = "");
+    void store(QSettings*, const QString& prefix = "");
 
     void preset(enum ConfigPresets);
 
-    enum HazardUnit {
-        HU_NONE,
-        HU_STALL,
-        HU_STALL_FORWARD
-    };
+    enum HazardUnit { HU_NONE, HU_STALL, HU_STALL_FORWARD };
 
     // Configure if CPU is pipelined
     // In default disabled.
     void set_pipelined(bool);
     // Configure if cpu should simulate delay slot in non-pipelined core
-    // In default enabled. When disabled it also automatically disables pipelining.
+    // In default enabled. When disabled it also automatically disables
+    // pipelining.
     void set_delay_slot(bool);
     // Hazard unit
     void set_hazard_unit(enum HazardUnit);
-    bool set_hazard_unit(QString hukind);
-    // Protect data memory from execution. Only program sections can be executed.
+    bool set_hazard_unit(const QString& hukind);
+    // Protect data memory from execution. Only program sections can be
+    // executed.
     void set_memory_execute_protection(bool);
     // Protect program memory from accidental writes.
     void set_memory_write_protection(bool);
@@ -137,7 +135,8 @@ public:
     void set_osemu_fs_root(QString v);
     // reset machine befor internal compile/reload after external make
     void set_reset_at_compile(bool);
-    // Set path to source elf file. This has to be set before core is initialized.
+    // Set path to source elf file. This has to be set before core is
+    // initialized.
     void set_elf(QString path);
     // Configure cache
     void set_cache_program(const CacheConfig&);
@@ -159,14 +158,14 @@ public:
     QString osemu_fs_root() const;
     bool reset_at_compile() const;
     QString elf() const;
-    const CacheConfig &cache_program() const;
-    const CacheConfig &cache_data() const;
+    const CacheConfig& cache_program() const;
+    const CacheConfig& cache_data() const;
 
-    CacheConfig *access_cache_program();
-    CacheConfig *access_cache_data();
+    CacheConfig* access_cache_program();
+    CacheConfig* access_cache_data();
 
-    bool operator ==(const MachineConfig &c) const;
-    bool operator !=(const MachineConfig &c) const;
+    bool operator==(const MachineConfig& c) const;
+    bool operator!=(const MachineConfig& c) const;
 
 private:
     bool pipeline, delayslot;
@@ -177,11 +176,11 @@ private:
     bool osem_interrupt_stop, osem_exception_stop;
     bool res_at_compile;
     QString osem_fs_root;
-    QString            elf_path;
+    QString elf_path;
     CacheConfig cch_program, cch_data;
 };
 
-}
+} // namespace machine
 
 Q_DECLARE_METATYPE(machine::CacheConfig)
 

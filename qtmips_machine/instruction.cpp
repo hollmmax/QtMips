@@ -34,15 +34,11 @@
  ******************************************************************************/
 
 #include <QMultiMap>
-#include <QVector>
 #include <QStringList>
 #include <QChar>
-#include <iostream>
 #include <cctype>
 #include <cstring>
 #include "instruction.h"
-#include "alu.h"
-#include "memory/frontend_memory.h"
 #include "utils.h"
 #include "qtmipsexception.h"
 
@@ -77,7 +73,13 @@ bool Instruction::symbolic_registers_fl = false;
 #define FIELD_IGNORE    0
 
 struct ArgumentDesc {
-    inline ArgumentDesc(char name, char kind, std::uint32_t loc, std::int64_t min, std::int64_t max, unsigned shift) {
+    inline ArgumentDesc(
+        char name,
+        char kind,
+        uint32_t loc,
+        std::int64_t min,
+        std::int64_t max,
+        unsigned shift) {
         this->name = name;
         this->kind = kind;
         this->loc = loc;
@@ -87,8 +89,8 @@ struct ArgumentDesc {
     }
     char name;
     char kind;
-    std::uint32_t loc;
-    std::int64_t  min;
+    uint32_t loc;
+    std::int64_t min;
     std::int64_t  max;
     unsigned      shift;
 };
@@ -130,8 +132,9 @@ static const ArgumentDesc *argdesbycode[(int)('z' + 1)];
 
 static bool fill_argdesbycode() {
     uint i;
-    for (i = 0; i < sizeof(argdeslist)/sizeof(*argdeslist); i++)
+    for (i = 0; i < sizeof(argdeslist) / sizeof(*argdeslist); i++) {
         argdesbycode[(uint)argdeslist[i].name] = &argdeslist[i];
+    }
     return true;
 }
 
@@ -209,14 +212,15 @@ const RegisterDesc regbycode[REGISTER_CODES] = {
 #define IM_UNKNOWN {"UNKNOWN", Instruction::T_UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0}
 
 struct InstructionMap {
-    const char *name;
+    const char* name;
     enum Instruction::Type type;
     enum AluOp alu;
     enum AccessControl mem_ctl;
-    const struct InstructionMap *subclass; // when subclass is used then flags has special meaning
+    const struct InstructionMap* subclass; // when subclass is used then flags
+                                           // has special meaning
     const QStringList args;
-    std::uint32_t code;
-    std::uint32_t mask;
+    uint32_t code;
+    uint32_t mask;
     unsigned int flags;
 };
 
@@ -932,9 +936,9 @@ static const struct InstructionMap instruction_map[] = {
 
 #undef IM_UNKNOWN
 
-static inline const struct InstructionMap &InstructionMapFind(std::uint32_t code) {
-    const struct InstructionMap *im = instruction_map;
-    std::uint32_t flags = instruction_map_opcode_field;
+static inline const struct InstructionMap& InstructionMapFind(uint32_t code) {
+    const struct InstructionMap* im = instruction_map;
+    uint32_t flags = instruction_map_opcode_field;
     do {
         unsigned int bits = IMF_SUB_GET_BITS(flags);
         unsigned int shift = IMF_SUB_GET_SHIFT(flags);
@@ -950,11 +954,15 @@ Instruction::Instruction() {
     this->dt = 0;
 }
 
-Instruction::Instruction(std::uint32_t inst) {
-    this->dt = inst;
-}
+Instruction::Instruction(uint32_t inst) { this->dt = inst; }
 
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint8_t rd, std::uint8_t shamt, std::uint8_t funct) {
+Instruction::Instruction(
+    uint8_t opcode,
+    uint8_t rs,
+    uint8_t rt,
+    uint8_t rd,
+    uint8_t shamt,
+    uint8_t funct) {
     this->dt = 0;
     this->dt |= opcode << 26;
     this->dt |= rs << 21;
@@ -964,7 +972,11 @@ Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, 
     this->dt |= funct;
 }
 
-Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, std::uint16_t immediate) {
+Instruction::Instruction(
+    uint8_t opcode,
+    uint8_t rs,
+    uint8_t rt,
+    uint16_t immediate) {
     this->dt = 0;
     this->dt |= opcode << 26;
     this->dt |= rs << 21;
@@ -972,7 +984,7 @@ Instruction::Instruction(std::uint8_t opcode, std::uint8_t rs, std::uint8_t rt, 
     this->dt |= immediate;
 }
 
-Instruction::Instruction(std::uint8_t opcode, Address address) {
+Instruction::Instruction(uint8_t opcode, Address address) {
     this->dt = 0;
     this->dt |= opcode << 26;
     this->dt |= address.get_raw();
@@ -984,46 +996,27 @@ Instruction::Instruction(const Instruction &i) {
 
 #define MASK(LEN,OFF) ((this->dt >> (OFF)) & ((1 << (LEN)) - 1))
 
-std::uint8_t Instruction::opcode() const {
-    return (std::uint8_t) MASK(6, 26);
-}
+uint8_t Instruction::opcode() const { return (uint8_t)MASK(6, 26); }
 
-std::uint8_t Instruction::rs() const {
-    return (std::uint8_t) MASK(5, RS_SHIFT);
-}
+uint8_t Instruction::rs() const { return (uint8_t)MASK(5, RS_SHIFT); }
 
-std::uint8_t Instruction::rt() const {
-    return (std::uint8_t) MASK(5, RT_SHIFT);
-}
+uint8_t Instruction::rt() const { return (uint8_t)MASK(5, RT_SHIFT); }
 
-std::uint8_t Instruction::rd() const {
-    return (std::uint8_t) MASK(5, RD_SHIFT);
-}
+uint8_t Instruction::rd() const { return (uint8_t)MASK(5, RD_SHIFT); }
 
-std::uint8_t Instruction::shamt() const {
-    return (std::uint8_t) MASK(5, SHAMT_SHIFT);
+uint8_t Instruction::shamt() const { return (uint8_t)MASK(5, SHAMT_SHIFT); }
 
-}
+uint8_t Instruction::funct() const { return (uint8_t)MASK(6, 0); }
 
-std::uint8_t Instruction::funct() const {
-    return (std::uint8_t) MASK(6, 0);
-}
+uint8_t Instruction::cop0sel() const { return (uint8_t)MASK(3, 0); }
 
-std::uint8_t Instruction::cop0sel() const {
-    return (std::uint8_t) MASK(3, 0);
-}
-
-std::uint16_t Instruction::immediate() const {
-    return (std::uint16_t) MASK(16, 0);
-}
+uint16_t Instruction::immediate() const { return (uint16_t)MASK(16, 0); }
 
 Address Instruction::address() const {
     return Address(MASK(26, 0));
 }
 
-std::uint32_t Instruction::data() const {
-    return this->dt;
-}
+uint32_t Instruction::data() const { return this->dt; }
 
 enum Instruction::Type Instruction::type() const {
     const struct InstructionMap &im = InstructionMapFind(dt);
@@ -1115,7 +1108,7 @@ QString Instruction::to_str(Address inst_addr) const {
             }
             uint bits = IMF_SUB_GET_BITS(adesc->loc);
             uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
-            std::uint32_t field = MASK(bits, shift);
+            uint32_t field = MASK(bits, shift);
             if ((adesc->min < 0) && (field & (1 << (bits - 1))))
                 field -= 1 << bits;
 
@@ -1136,7 +1129,7 @@ QString Instruction::to_str(Address inst_addr) const {
                 break;
             case 'p':
                 field += (inst_addr + 4).get_raw();
-                res += "0x" + QString::number((std::uint32_t)field, 16).toUpper();
+                res += "0x" + QString::number((uint32_t)field, 16).toUpper();
                 break;
             case 'a':
                 Address target = (inst_addr & 0xF0000000) | (address() << 2).get_raw();
@@ -1148,11 +1141,13 @@ QString Instruction::to_str(Address inst_addr) const {
     return res;
 }
 
-QMultiMap<QString, std::uint32_t> str_to_instruction_code_map;
+QMultiMap<QString, uint32_t> str_to_instruction_code_map;
 
-void instruction_from_string_build_base(const InstructionMap *im = nullptr,
-                    unsigned int flags = 0, std::uint32_t base_code = 0) {
-    std::uint32_t code;
+void instruction_from_string_build_base(
+    const InstructionMap* im = nullptr,
+    unsigned int flags = 0,
+    uint32_t base_code = 0) {
+    uint32_t code;
 
     if (im == nullptr) {
         im = instruction_map;
@@ -1257,17 +1252,24 @@ static void reloc_append(RelocExpressionList *reloc, QString fl, Address inst_ad
 
 #define CFS_OPTION_SILENT_MASK 0x100
 
-ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
-                                      QString inst_base, QStringList &inst_fields, QString &error,
-                                      Address inst_addr, RelocExpressionList *reloc,
-                                      QString filename, int line, bool pseudo_opt, int options)
-{
-    const char *err = "unknown instruction";
+ssize_t Instruction::code_from_string(
+    uint32_t* code,
+    size_t buffsize,
+    QString inst_base,
+    QStringList& inst_fields,
+    QString& error,
+    Address inst_addr,
+    RelocExpressionList* reloc,
+    QString filename,
+    int line,
+    bool pseudo_opt,
+    int options) {
+    const char* err = "unknown instruction";
     if (str_to_instruction_code_map.isEmpty())
         instruction_from_string_build_base();
 
     int field = 0;
-    std::uint32_t inst_code = 0;
+    uint32_t inst_code = 0;
     auto i = str_to_instruction_code_map.lowerBound(inst_base);
     for (; ; i++) {
         if (i == str_to_instruction_code_map.end())
@@ -1311,7 +1313,7 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                 uint bits = IMF_SUB_GET_BITS(adesc->loc);
                 uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
                 int shift_right = adesc->shift;
-                std::uint64_t val = 0;
+                uint64_t val = 0;
                 uint chars_taken = 0;
 
                 // if ((adesc->min < 0) && (field & (1 << bits - 1)))
@@ -1329,7 +1331,7 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                 case 'n':
                     shift_right += options & 0xff;
                     if(fl.at(0).isDigit() || (reloc == nullptr)) {
-                        std::uint64_t num_val;
+                        uint64_t num_val;
                         int i;
                         // Qt functions are limited, toLongLong would be usable
                         // but does not return information how many characters
@@ -1363,7 +1365,7 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                     shift_right += options & 0xff;
                     val -= ((inst_addr + 4) & ~(std::int64_t)0x0fffffff).get_raw();
                     if(fl.at(0).isDigit() || (reloc == nullptr)) {
-                        std::uint64_t num_val;
+                        uint64_t num_val;
                         int i;
                         char cstr[fl.count() + 1];
                         for (i = 0; i < fl.count(); i++)
@@ -1401,7 +1403,7 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                 if (adesc->min >= 0)
                    val = (val >> shift_right) ;
                 else
-                    val = (std::uint64_t)((std::int64_t)val >> shift_right) ;
+                    val = (uint64_t)((std::int64_t)val >> shift_right);
                 if (!(options & CFS_OPTION_SILENT_MASK)) {
                     if (adesc->min < 0) {
                         if (((std::int64_t)val < adesc->min) ||
@@ -1411,8 +1413,8 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
                             break;
                         }
                     } else {
-                        if ((val < (std::uint64_t)adesc->min) ||
-                            (val > (std::uint64_t)adesc->max)) {
+                        if ((val < (uint64_t)adesc->min)
+                            || (val > (uint64_t)adesc->max)) {
                             err = "argument range exceed";
                             field = -1;
                             break;
@@ -1470,11 +1472,17 @@ ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
     return ret;
 }
 
-ssize_t Instruction::code_from_string(std::uint32_t *code, size_t buffsize,
-                                      QString str, QString &error, Address inst_addr,
-                                      RelocExpressionList *reloc, QString filename, int line,
-                                      bool pseudo_opt, int options)
-{
+ssize_t Instruction::code_from_string(
+    uint32_t* code,
+    size_t buffsize,
+    QString str,
+    QString& error,
+    Address inst_addr,
+    RelocExpressionList* reloc,
+    QString filename,
+    int line,
+    bool pseudo_opt,
+    int options) {
     int k = 0, l;
     while (k < str.count()) {
         if (!str.at(k).isSpace())
@@ -1514,7 +1522,7 @@ bool Instruction::update(std::int64_t val, RelocExpression *relocexp) {
     if (relocexp->min >= 0)
         val = (val >> shift_right) ;
     else
-        val = (std::uint64_t)((std::int64_t)val >> shift_right);
+        val = (uint64_t)((std::int64_t)val >> shift_right);
     if (!(relocexp->options & CFS_OPTION_SILENT_MASK)) {
         if (relocexp->min < 0) {
             if (((std::int64_t)val < relocexp->min) ||
@@ -1524,8 +1532,8 @@ bool Instruction::update(std::int64_t val, RelocExpression *relocexp) {
                     return false;
             }
         } else {
-            if (((std::uint64_t)val < (std::uint64_t)relocexp->min) ||
-                ((std::uint64_t)val > (std::uint64_t)relocexp->max)) {
+            if (((uint64_t)val < (uint64_t)relocexp->min)
+                || ((uint64_t)val > (uint64_t)relocexp->max)) {
                 return false;
             }
         }

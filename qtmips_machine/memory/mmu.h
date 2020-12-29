@@ -40,6 +40,7 @@
 #include "../qtmipsexception.h"
 #include "backend/backend_memory.h"
 #include "frontend_memory.h"
+
 #include <QMap>
 #include <QObject>
 #include <cstdint>
@@ -50,8 +51,8 @@ namespace machine {
  * Memory management unit emulation
  *
  * Can be used as direct frontend memory or as backing memory for cache.
- * Maps guest virtual address (type Address) into internal addressing (type Offset)
- *  of the backing backend memory or periphery.
+ * Maps guest virtual address (type Address) into internal addressing (type
+ * Offset) of the backing backend memory or periphery.
  */
 class MMU : public FrontendMemory {
     Q_OBJECT
@@ -73,7 +74,11 @@ public:
 
     uint32_t get_change_counter() const override;
 
-    bool insert_range(BackendMemory* mem_access, Address start_addr, Address last_addr, bool move_ownership);
+    bool insert_range(
+        BackendMemory* mem_access,
+        Address start_addr,
+        Address last_addr,
+        bool move_ownership);
 
     bool remove_range(BackendMemory* mem_access);
 
@@ -82,7 +87,11 @@ public:
     enum LocationStatus location_status(Address address) const override;
 
 private slots:
-    void range_backend_external_change(const BackendMemory* mem_access, Offset start_offset, Offset last_offset, bool external);
+    void range_backend_external_change(
+        const BackendMemory* mem_access,
+        Offset start_offset,
+        Offset last_offset,
+        bool external);
 
 private:
     class RangeDesc {

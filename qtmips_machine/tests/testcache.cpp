@@ -76,17 +76,17 @@ void MachineTests::cache() {
     memory_write_u32(&m, 0x21c, 0x12);
     memory_write_u32(&m, 0x300, 0x32);
     for (int i = 0; i < 2; i++) {
-        QCOMPARE(cch.read_u32(0x200_addr), (std::uint32_t)0x24);
-        QCOMPARE(cch.read_u32(0x204_addr), (std::uint32_t)0x66);
-        QCOMPARE(cch.read_u32(0x21c_addr), (std::uint32_t)0x12);
-        QCOMPARE(cch.read_u32(0x300_addr), (std::uint32_t)0x32);
+        QCOMPARE(cch.read_u32(0x200_addr), (uint32_t)0x24);
+        QCOMPARE(cch.read_u32(0x204_addr), (uint32_t)0x66);
+        QCOMPARE(cch.read_u32(0x21c_addr), (uint32_t)0x12);
+        QCOMPARE(cch.read_u32(0x300_addr), (uint32_t)0x32);
     }
 
     // Test writes //
     cch.write_u32(0x700_addr, 0x24);
-    QCOMPARE(memory_read_u32(&m, 0x700), (std::uint32_t)0x24);
+    QCOMPARE(memory_read_u32(&m, 0x700), (uint32_t)0x24);
     cch.write_u32(0x700_addr, 0x23);
-    QCOMPARE(memory_read_u32(&m, 0x700), (std::uint32_t)0x23);
+    QCOMPARE(memory_read_u32(&m, 0x700), (uint32_t)0x23);
 
     // Verify counts
     QCOMPARE(cch.get_hit_count(), hit);
