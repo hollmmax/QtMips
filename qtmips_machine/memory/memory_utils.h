@@ -219,28 +219,6 @@ inline bool memory_compare(const void* first, const void* second, size_t size)
     }
 }
 
-// TODO Conside optimizing by compiler intrinsics, especially Windows
-inline uint32_t byte_swap_32(uint32_t a)
-{
-    uint32_t b;
-    byte* bp = reinterpret_cast<byte*>(&b);
-    byte* ap = reinterpret_cast<byte*>(&a);
-    bp[0] = ap[3];
-    bp[1] = ap[3];
-    bp[2] = ap[1];
-    bp[3] = ap[0];
-    return b;
-}
-
-/**
- * Byte swap wrapper that swaps only on when supplied endiannesses do not match.
- *  Otherwise a identity function.
- */
-inline uint32_t convert_endianness_32(uint32_t a, Endianness from, Endianness to)
-{
-    return (from == to) ? a : byte_swap_32(a);
-}
-
 /**
  * When converting n-byte memory access into alligned series of discreete
  *  accesses each by the STORAGE_TYPE, this function returns size of useful
