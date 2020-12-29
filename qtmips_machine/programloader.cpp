@@ -112,9 +112,8 @@ void ProgramLoader::to_memory(Memory *mem) { // TODO Why are you writing to raw 
         size_t phdrs_i = this->map[i];
         for (unsigned y = 0; y < this->phdrs[phdrs_i].p_filesz; y++) {
             const auto buffer = (uint8_t)f[this->phdrs[phdrs_i].p_offset + y];
-            mem->write(
-                &buffer, base_address + y, 1,
-                WriteOptions()); // TODO Why not by words
+            memory_write_u8(mem, base_address + y, buffer);
+            // TODO Why not by words
         }
     }
 }
