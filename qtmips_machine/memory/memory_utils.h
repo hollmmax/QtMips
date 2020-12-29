@@ -76,7 +76,7 @@ struct ReadResult {
      * May be lower than requested size in case partial success
      *  like page fault.
      */
-    size_t n_bytes;
+    size_t n_bytes = 0;
 
     inline ReadResult operator+(const ReadResult& other) const
     {
