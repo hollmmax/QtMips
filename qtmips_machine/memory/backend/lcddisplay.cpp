@@ -52,24 +52,25 @@ LcdDisplay::LcdDisplay()
 LcdDisplay::~LcdDisplay() = default;
 
 WriteResult LcdDisplay::write(
-    const void* source,
     Offset destination,
+    const void* source,
     size_t size,
-    WriteOptions options)
-{
+    WriteOptions options) {
+    UNUSED(options)
     return write_by_u32(
-        source, destination, size, [&](Offset src) { return read_reg(src); },
+        destination, source, size, [&](Offset src) { return read_reg(src); },
         [&](Offset src, uint32_t value) { return write_reg(src, value); });
 }
 
 ReadResult LcdDisplay::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
     ReadOptions options) const
 {
+    UNUSED(options)
     return read_by_u32(
-        source, destination, size, [&](Offset src) { return read_reg(src); });
+        destination, source, size, [&](Offset src) { return read_reg(src); });
 }
 
 uint32_t LcdDisplay::read_reg(Offset source) const

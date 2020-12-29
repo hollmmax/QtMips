@@ -51,8 +51,7 @@
 
 using namespace machine;
 
-SerialPort::SerialPort()
-{
+SerialPort::SerialPort() {
     rx_st_reg = 0;
     rx_data_reg = 0;
     tx_st_reg = 0;
@@ -64,8 +63,7 @@ SerialPort::SerialPort()
 
 SerialPort::~SerialPort() = default;
 
-void SerialPort::pool_rx_byte() const
-{
+void SerialPort::pool_rx_byte() const {
     unsigned int byte = 0;
     bool available = false;
 
@@ -81,30 +79,28 @@ void SerialPort::pool_rx_byte() const
 }
 
 WriteResult SerialPort::write(
-    const void* source,
     Offset destination,
+    const void* source,
     size_t size,
-    WriteOptions options)
-{
+    WriteOptions options) {
+    UNUSED(options)
     return write_by_u32(
-        source, destination, size,
+        destination, source, size,
         [&](Offset src) { return read_reg(src, true); },
         [&](Offset src, uint32_t value) { return write_reg(src, value); });
 }
 
 ReadResult SerialPort::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
-    ReadOptions options) const
-{
-    return read_by_u32(source, destination, size, [&](Offset src) {
+    ReadOptions options) const {
+    return read_by_u32(destination, source, size, [&](Offset src) {
         return read_reg(src, options.debug);
     });
 }
 
-void SerialPort::update_rx_irq() const
-{
+void SerialPort::update_rx_irq() const {
     bool active = (rx_st_reg & SERP_RX_ST_REG_IE_m) != 0;
     active &= (rx_st_reg & SERP_RX_ST_REG_READY_m) != 0;
     if (active != rx_irq_active) {
@@ -113,23 +109,20 @@ void SerialPort::update_rx_irq() const
     }
 }
 
-void SerialPort::rx_queue_check_internal() const
-{
+void SerialPort::rx_queue_check_internal() const {
     if (rx_st_reg & SERP_RX_ST_REG_IE_m) {
         pool_rx_byte();
     }
     update_rx_irq();
 }
 
-void SerialPort::rx_queue_check() const
-{
+void SerialPort::rx_queue_check() const {
     rx_queue_check_internal();
     emit external_backend_change_notify(
         this, SERP_RX_ST_REG_o, SERP_RX_DATA_REG_o + 3, true);
 }
 
-void SerialPort::update_tx_irq() const
-{
+void SerialPort::update_tx_irq() const {
     bool active = (tx_st_reg & SERP_TX_ST_REG_IE_m) != 0;
     active &= (tx_st_reg & SERP_TX_ST_REG_READY_m) != 0;
     if (active != tx_irq_active) {
@@ -138,8 +131,7 @@ void SerialPort::update_tx_irq() const
     }
 }
 
-uint32_t SerialPort::read_reg(Offset source, bool debug) const
-{
+uint32_t SerialPort::read_reg(Offset source, bool debug) const {
     Q_ASSERT((source & 3U) == 0); // uint32_t alligned
 
     uint32_t value = 0;
@@ -173,8 +165,7 @@ uint32_t SerialPort::read_reg(Offset source, bool debug) const
     return value;
 }
 
-bool SerialPort::write_reg(Offset destination, uint32_t value)
-{
+bool SerialPort::write_reg(Offset destination, uint32_t value) {
     Q_ASSERT((destination & 3U) == 0); // uint32_t alligned
 
     bool changed = [&]() {

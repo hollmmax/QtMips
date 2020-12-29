@@ -52,17 +52,17 @@ MemorySection::MemorySection(const MemorySection& other)
 }
 
 WriteResult MemorySection::write(
+    Offset destination,
     const void* source,
-    Offset offset,
     size_t size,
     WriteOptions options)
 {
     UNUSED(options)
 
-    if (offset >= this->length()) {
+    if (destination >= this->length()) {
         throw QTMIPS_EXCEPTION(
             OutOfMemoryAccess, "Trying to write outside of the memory section",
-            QString("Accessing using offset: ") + QString::number(offset));
+            QString("Accessing using offset: ") + QString::number(destination));
     }
 
     // Size the can be read from this section
@@ -80,8 +80,8 @@ WriteResult MemorySection::write(
 }
 
 ReadResult MemorySection::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
     ReadOptions options) const
 {
@@ -183,26 +183,24 @@ void Memory::reset(const Memory& m)
     this->mt_root = copy_section_tree(m.get_memorytree_root(), 0);
 }
 
-MemorySection* Memory::get_section(std::uint32_t address, bool create) const
-{
+MemorySection* Memory::get_section(size_t offset, bool create) const {
     union MemoryTree* w = this->mt_root;
     size_t row_num;
     // Walk memory tree branch from root to leaf and create new nodes when
     // needed and requested (`create` flag).
     for (size_t i = 0; i < (MEMORY_TREE_DEPTH - 1); i++) {
-        row_num = get_tree_row(address, i);
-        if (w[row_num].subtree == nullptr) { // We don't have this tree so
-                                             // allocate
-                                             // it
-            if (!create) { // If we shouldn't be creating it than just return
-                // null
+        row_num = get_tree_row(offset, i);
+        if (w[row_num].subtree == nullptr) {
+            // We don't have this tree so allocate it.
+            if (!create) {
+                // If we shouldn't be creating it than just return null.
                 return nullptr;
             }
             w[row_num].subtree = allocate_section_tree();
         }
         w = w[row_num].subtree;
     }
-    row_num = get_tree_row(address, MEMORY_TREE_DEPTH - 1);
+    row_num = get_tree_row(offset, MEMORY_TREE_DEPTH - 1);
     if (w[row_num].sec == nullptr) {
         if (!create) {
             return nullptr;
@@ -218,8 +216,8 @@ size_t get_section_offset_mask(size_t addr)
 }
 
 WriteResult Memory::write(
+    Offset destination,
     const void* source,
-    Offset offset,
     size_t size,
     WriteOptions options) {
     return repeat_access_until_completed<WriteResult>(
@@ -234,8 +232,8 @@ WriteResult Memory::write(
 }
 
 ReadResult Memory::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
     ReadOptions options) const {
     return repeat_access_until_completed<ReadResult>(

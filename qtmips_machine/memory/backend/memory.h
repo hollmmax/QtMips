@@ -51,14 +51,14 @@ public:
     ~MemorySection() override = default;
 
     WriteResult write(
-        const void* source,
         Offset destination,
-        size_t size,
+        const void* source,
+        size_t total_size,
         WriteOptions options) override;
 
     ReadResult read(
-        Offset source,
         void* destination,
+        Offset source,
         size_t size,
         ReadOptions options) const override;
 
@@ -102,20 +102,21 @@ public:
                   // new one)
     void reset(const Memory&);
 
-    MemorySection*
-    get_section(std::uint32_t address, bool create) const; // returns section
-                                                           // containing given
-                                                           // address
+    MemorySection* get_section(size_t offset, bool create) const; // returns
+                                                                  // section
+                                                                  // containing
+                                                                  // given
+                                                                  // address
 
     WriteResult write(
+        Offset destination,
         const void* source,
-        Offset offset,
         size_t size,
         WriteOptions options) override;
 
     ReadResult read(
-        Offset source,
         void* destination,
+        Offset source,
         size_t size,
         ReadOptions options) const override;
 

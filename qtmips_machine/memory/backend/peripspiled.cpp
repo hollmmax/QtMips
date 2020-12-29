@@ -52,24 +52,25 @@ PeripSpiLed::PeripSpiLed() = default;
 PeripSpiLed::~PeripSpiLed() = default;
 
 WriteResult PeripSpiLed::write(
-    const void* source,
     Offset destination,
+    const void* source,
     size_t size,
-    WriteOptions options)
-{
+    WriteOptions options) {
+    UNUSED(options)
     return write_by_u32(
-        source, destination, size, [&](Offset src) { return read_reg(src); },
+        destination, source, size, [&](Offset src) { return read_reg(src); },
         [&](Offset src, uint32_t value) { return write_reg(src, value); });
 }
 
 ReadResult PeripSpiLed::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
     ReadOptions options) const
 {
+    UNUSED(options)
     return read_by_u32(
-        source, destination, size, [&](Offset src) { return read_reg(src); });
+        destination, source, size, [&](Offset src) { return read_reg(src); });
 }
 
 uint32_t PeripSpiLed::read_reg(Offset source) const

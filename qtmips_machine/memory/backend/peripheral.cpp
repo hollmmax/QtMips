@@ -44,23 +44,23 @@ SimplePeripheral::SimplePeripheral() = default;
 SimplePeripheral::~SimplePeripheral() = default;
 
 WriteResult SimplePeripheral::write(
+    Offset destination,
     const void* source,
-    Offset offset,
     size_t size,
-    WriteOptions options)
-{
+    WriteOptions options) {
     UNUSED(source)
+    UNUSED(options)
 
     // Write to dummy periphery is nop
 
-    emit write_notification(offset, size);
+    emit write_notification(destination, size);
 
     return { size, false };
 }
 
 ReadResult SimplePeripheral::read(
-    Offset source,
     void* destination,
+    Offset source,
     size_t size,
     ReadOptions options) const
 {

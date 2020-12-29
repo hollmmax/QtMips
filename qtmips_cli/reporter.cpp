@@ -34,6 +34,7 @@
  ******************************************************************************/
 
 #include "reporter.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -42,9 +43,7 @@
 using namespace machine;
 using namespace std;
 
-Reporter::Reporter(QCoreApplication* app, QtMipsMachine* machine)
-    : QObject()
-{
+Reporter::Reporter(QCoreApplication* app, QtMipsMachine* machine) : QObject() {
     this->app = app;
     this->machine = machine;
 
@@ -68,8 +67,7 @@ void Reporter::cache_stats() { e_cache_stats = true; }
 
 void Reporter::cycles() { e_cycles = true; }
 
-void Reporter::expect_fail(enum FailReason reason)
-{
+void Reporter::expect_fail(enum FailReason reason) {
     e_fail = (enum FailReason)(e_fail | reason);
 }
 
@@ -81,8 +79,7 @@ void Reporter::add_dump_range(
     dump_ranges.append({ start, len, fname });
 }
 
-void Reporter::machine_exit()
-{
+void Reporter::machine_exit() {
     report();
     if (e_fail != 0) {
         cout << "Machine was expected to fail but it didn't." << endl;
@@ -91,8 +88,7 @@ void Reporter::machine_exit()
         app->exit();
 }
 
-void Reporter::machine_exception_reached()
-{
+void Reporter::machine_exception_reached() {
     ExceptionCause excause;
     excause = machine->get_exception_cause();
     switch (excause) {
@@ -126,15 +122,13 @@ void Reporter::machine_exception_reached()
     case EXCAUSE_HWBREAK:
         cout << "Machine stopped on HWBREAK exception." << endl;
         break;
-    default:
-        break;
+    default: break;
     }
     report();
     QCoreApplication::exit();
 }
 
-void Reporter::machine_trap(QtMipsException& e)
-{
+void Reporter::machine_trap(QtMipsException& e) {
     report();
 
     bool expected = false;
@@ -152,8 +146,7 @@ void Reporter::machine_trap(QtMipsException& e)
     QCoreApplication::exit(expected ? 0 : 1);
 }
 
-static void out_hex(ostream& out, std::uint64_t val, int digits)
-{
+static void out_hex(ostream& out, std::uint64_t val, int digits) {
     std::ios_base::fmtflags saveflg(out.flags());
     char prevfill = out.fill('0');
     out.setf(ios::hex, ios::basefield);
@@ -162,8 +155,7 @@ static void out_hex(ostream& out, std::uint64_t val, int digits)
     out.flags(saveflg);
 }
 
-void Reporter::report()
-{
+void Reporter::report() {
     cout << dec;
     if (e_regs) {
         cout << "Machine state report:" << endl;
@@ -194,23 +186,38 @@ void Reporter::report()
     }
     if (e_cache_stats) {
         cout << "Cache statistics report:" << endl;
-        cout << "i-cache:reads:" << machine->cache_program()->get_read_count() << endl;
-        cout << "i-cache:hit:" << machine->cache_program()->get_hit_count() << endl;
-        cout << "i-cache:miss:" << machine->cache_program()->get_miss_count() << endl;
-        cout << "i-cache:hit-rate:" << machine->cache_program()->get_hit_rate() << endl;
-        cout << "i-cache:stalled-get_cycle_count:" << machine->cache_program()->get_stall_count() << endl;
-        cout << "i-cache:improved-speed:" << machine->cache_program()->get_speed_improvement() << endl;
-        cout << "d-cache:reads:" << machine->cache_data()->get_read_count() << endl;
-        cout << "d-cache:writes:" << machine->cache_data()->get_write_count() << endl;
-        cout << "d-cache:hit:" << machine->cache_data()->get_hit_count() << endl;
-        cout << "d-cache:miss:" << machine->cache_data()->get_miss_count() << endl;
-        cout << "d-cache:hit-rate:" << machine->cache_data()->get_hit_rate() << endl;
-        cout << "d-cache:stalled-get_cycle_count:" << machine->cache_data()->get_stall_count() << endl;
-        cout << "d-cache:improved-speed:" << machine->cache_data()->get_speed_improvement() << endl;
+        cout << "i-cache:reads:" << machine->cache_program()->get_read_count()
+             << endl;
+        cout << "i-cache:hit:" << machine->cache_program()->get_hit_count()
+             << endl;
+        cout << "i-cache:miss:" << machine->cache_program()->get_miss_count()
+             << endl;
+        cout << "i-cache:hit-rate:" << machine->cache_program()->get_hit_rate()
+             << endl;
+        cout << "i-cache:stalled-get_cycle_count:"
+             << machine->cache_program()->get_stall_count() << endl;
+        cout << "i-cache:improved-speed:"
+             << machine->cache_program()->get_speed_improvement() << endl;
+        cout << "d-cache:reads:" << machine->cache_data()->get_read_count()
+             << endl;
+        cout << "d-cache:writes:" << machine->cache_data()->get_write_count()
+             << endl;
+        cout << "d-cache:hit:" << machine->cache_data()->get_hit_count()
+             << endl;
+        cout << "d-cache:miss:" << machine->cache_data()->get_miss_count()
+             << endl;
+        cout << "d-cache:hit-rate:" << machine->cache_data()->get_hit_rate()
+             << endl;
+        cout << "d-cache:stalled-get_cycle_count:"
+             << machine->cache_data()->get_stall_count() << endl;
+        cout << "d-cache:improved-speed:"
+             << machine->cache_data()->get_speed_improvement() << endl;
     }
     if (e_cycles) {
-        cout << "get_cycle_count:" << machine->core()->get_cycle_count() << endl;
-        cout << "get_stall_count:" << machine->core()->get_stall_count() << endl;
+        cout << "get_cycle_count:" << machine->core()->get_cycle_count()
+             << endl;
+        cout << "get_stall_count:" << machine->core()->get_stall_count()
+             << endl;
     }
     foreach (DumpRange range, dump_ranges) {
         ofstream out;

@@ -72,14 +72,14 @@ public slots:
 
 public:
     WriteResult write(
-        const void* source,
         Offset destination,
+        const void* source,
         size_t size,
         WriteOptions options) override;
 
     ReadResult read(
-        Offset source,
         void* destination,
+        Offset source,
         size_t size,
         ReadOptions options) const override;
 

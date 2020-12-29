@@ -64,12 +64,12 @@ public:
      *
      * @param source        pointer to array of bytes to be copied
      * @param destination   relative index of destination to write to
-     * @param size         number of bytes to be written
+     * @param size         	number of bytes to be written
      * @return              true when memory before and after write differs
      */
     virtual WriteResult write(
-        const void* source,
         Offset destination,
+        const void* source,
         size_t size,
         WriteOptions options)
         = 0;
@@ -84,8 +84,8 @@ public:
      * definition
      */
     virtual ReadResult read(
-        Offset source,
         void* destination,
+        Offset source,
         size_t size,
         ReadOptions options) const = 0;
 

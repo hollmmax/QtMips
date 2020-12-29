@@ -78,7 +78,8 @@ public:
     virtual WriteResult write(
         Address destination,
         const void* source,
-        size_t size)
+        size_t size,
+        WriteOptions options)
         = 0;
 
     /**
@@ -139,7 +140,5 @@ private:
 
 }
 
-Q_DECLARE_METATYPE(machine::AccessControl)
-Q_DECLARE_METATYPE(machine::LocationStatus)
 
 #endif // MEMORY_H

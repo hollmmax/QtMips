@@ -271,10 +271,9 @@ inline size_t partial_access_size(uintptr_t ptr)
  * @param size              n bytes
  * @param data_getter       function object which return u32 data for given
  */
-template <typename FUNC>
+template<typename FUNC>
 inline ReadResult
-read_by_u32(size_t src, void* dst, size_t size, FUNC data_getter)
-{
+read_by_u32(void* dst, size_t src, size_t size, FUNC data_getter) {
     size_t current_src = src;
     byte* current_dst = static_cast<byte*>(dst);
     size_t remaining_size = size;
@@ -308,14 +307,13 @@ read_by_u32(size_t src, void* dst, size_t size, FUNC data_getter)
  * @param data_setter       function object which writes an u32 to givem offset
  * @return                  true if write caused a change
  */
-template <typename FUNC1, typename FUNC2>
+template<typename FUNC1, typename FUNC2>
 inline WriteResult write_by_u32(
-    const void* src,
     size_t dst,
+    const void* src,
     size_t size,
     FUNC1 data_getter,
-    FUNC2 data_setter)
-{
+    FUNC2 data_setter) {
     const byte* current_src = static_cast<const byte*>(src);
     size_t current_dst = dst;
     size_t remaining_size = size;
@@ -429,5 +427,27 @@ void memory_write(MEM_T* mem, ADDR_T address, T value) {
     const T swapped_value = byteswap(value);
     mem->write(address, &swapped_value, sizeof(T), {});
 }
+
+template<typename MEM_T, typename ADDR_T>
+void memory_write_u8(MEM_T* mem, ADDR_T address, uint8_t value) {
+    memory_write(mem, address, value);
+}
+
+template<typename MEM_T, typename ADDR_T>
+void memory_write_u16(MEM_T* mem, ADDR_T address, uint16_t value) {
+    memory_write(mem, address, value);
+}
+
+template<typename MEM_T, typename ADDR_T>
+void memory_write_u32(MEM_T* mem, ADDR_T address, uint32_t value) {
+    memory_write(mem, address, value);
+}
+
+template<typename MEM_T, typename ADDR_T>
+void memory_write_u64(MEM_T* mem, ADDR_T address, uint64_t value) {
+    memory_write(mem, address, value);
+}
+
+} // namespace machine
 
 #endif // QTMIPS_MEMORY_UTILS_H

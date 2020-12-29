@@ -34,6 +34,7 @@
  ******************************************************************************/
 
 #include "core.h"
+
 #include "programloader.h"
 #include "utils.h"
 
@@ -42,8 +43,7 @@ using namespace machine;
 Core::Core(Registers* regs, FrontendMemory* mem_program, FrontendMemory* mem_data,
     unsigned int min_cache_row_size, Cop0State* cop0state)
     : ex_handlers()
-    , hw_breaks()
-{
+    , hw_breaks() {
     cycle_c = 0;
     stall_c = 0;
     this->regs = regs;
@@ -67,15 +67,13 @@ Core::~Core()
     delete ex_default_handler;
 }
 
-void Core::step(bool skip_break)
-{
+void Core::step(bool skip_break) {
     cycle_c++;
     emit cycle_c_value(cycle_c);
     do_step(skip_break);
 }
 
-void Core::reset()
-{
+void Core::reset() {
     cycle_c = 0;
     stall_c = 0;
     do_reset();
@@ -111,48 +109,39 @@ FrontendMemory* Core::get_mem_program()
     return mem_program;
 }
 
-Core::hwBreak::hwBreak(Address addr)
-    : addr(addr)
-{
+Core::hwBreak::hwBreak(Address addr) : addr(addr) {
     flags = 0;
     count = 0;
 }
 
-void Core::insert_hwbreak(Address address)
-{
+void Core::insert_hwbreak(Address address) {
     hw_breaks.insert(address, new hwBreak(address));
 }
 
-void Core::remove_hwbreak(Address address)
-{
+void Core::remove_hwbreak(Address address) {
     hwBreak* hwbrk = hw_breaks.take(address);
     if (hwbrk != nullptr)
         delete hwbrk;
 }
 
-bool Core::is_hwbreak(Address address)
-{
+bool Core::is_hwbreak(Address address) {
     hwBreak* hwbrk = hw_breaks.value(address);
     return hwbrk != nullptr;
 }
 
-void Core::set_stop_on_exception(enum ExceptionCause excause, bool value)
-{
+void Core::set_stop_on_exception(enum ExceptionCause excause, bool value) {
     stop_on_exception[excause] = value;
 }
 
-bool Core::get_stop_on_exception(enum ExceptionCause excause) const
-{
+bool Core::get_stop_on_exception(enum ExceptionCause excause) const {
     return stop_on_exception[excause];
 }
 
-void Core::set_step_over_exception(enum ExceptionCause excause, bool value)
-{
+void Core::set_step_over_exception(enum ExceptionCause excause, bool value) {
     step_over_exception[excause] = value;
 }
 
-bool Core::get_step_over_exception(enum ExceptionCause excause) const
-{
+bool Core::get_step_over_exception(enum ExceptionCause excause) const {
     return step_over_exception[excause];
 }
 
@@ -209,8 +198,8 @@ bool Core::handle_exception(Core* core, Registers* regs, ExceptionCause excause,
     return ret;
 }
 
-void Core::set_c0_userlocal(std::uint32_t address)
-{ // TODO I dont understand semantic meaning
+void Core::set_c0_userlocal(std::uint32_t address) { // TODO I dont understand
+                                                     // semantic meaning
     hwr_userlocal = address;
     if (cop0state != nullptr) {
         if (address != cop0state->read_cop0reg(Cop0State::UserLocal))
@@ -285,8 +274,7 @@ enum ExceptionCause Core::memory_special(
     return EXCAUSE_NONE;
 }
 
-struct Core::dtFetch Core::fetch(bool skip_break)
-{
+struct Core::dtFetch Core::fetch(bool skip_break) {
     enum ExceptionCause excause = EXCAUSE_NONE;
     Address inst_addr = Address(regs->read_pc());
     Instruction inst(mem_program->read_u32(inst_addr));
@@ -314,8 +302,7 @@ struct Core::dtFetch Core::fetch(bool skip_break)
     };
 }
 
-struct Core::dtDecode Core::decode(const struct dtFetch& dt)
-{
+struct Core::dtDecode Core::decode(const struct dtFetch& dt) {
     uint8_t rwrite;
     enum InstructionFlags flags;
     enum AluOp alu_op;
@@ -415,8 +402,7 @@ struct Core::dtDecode Core::decode(const struct dtFetch& dt)
     };
 }
 
-struct Core::dtExecute Core::execute(const struct dtDecode& dt)
-{
+struct Core::dtExecute Core::execute(const struct dtDecode& dt) {
     bool discard;
     enum ExceptionCause excause = dt.excause;
     RegisterValue alu_val = 0;
@@ -528,8 +514,7 @@ struct Core::dtExecute Core::execute(const struct dtDecode& dt)
     };
 }
 
-struct Core::dtMemory Core::memory(const struct dtExecute& dt)
-{
+struct Core::dtMemory Core::memory(const struct dtExecute& dt) {
     RegisterValue towrite_val = dt.alu_val;
     Address mem_addr = Address(dt.alu_val.as_u32());
     enum ExceptionCause excause = dt.excause;
@@ -582,8 +567,7 @@ struct Core::dtMemory Core::memory(const struct dtExecute& dt)
     };
 }
 
-void Core::writeback(const struct dtMemory& dt)
-{
+void Core::writeback(const struct dtMemory& dt) {
     emit writeback_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);
     emit instruction_writeback(dt.inst, dt.inst_addr, dt.excause, dt.is_valid);
     emit writeback_value(dt.towrite_val.as_u32());
@@ -594,8 +578,7 @@ void Core::writeback(const struct dtMemory& dt)
         regs->write_gp(dt.rwrite, dt.towrite_val);
 }
 
-bool Core::handle_pc(const struct dtDecode& dt)
-{
+bool Core::handle_pc(const struct dtDecode& dt) {
     bool branch = false;
     emit instruction_program_counter(dt.inst, dt.inst_addr, EXCAUSE_NONE, dt.is_valid);
 
@@ -641,16 +624,14 @@ bool Core::handle_pc(const struct dtDecode& dt)
     return branch;
 }
 
-void Core::dtFetchInit(struct dtFetch& dt)
-{
+void Core::dtFetchInit(struct dtFetch& dt) {
     dt.inst = Instruction(0x00);
     dt.excause = EXCAUSE_NONE;
     dt.in_delay_slot = false;
     dt.is_valid = false;
 }
 
-void Core::dtDecodeInit(struct dtDecode& dt)
-{
+void Core::dtDecodeInit(struct dtDecode& dt) {
     dt.inst = Instruction(0x00);
     dt.memread = false;
     dt.memwrite = false;
@@ -683,8 +664,7 @@ void Core::dtDecodeInit(struct dtDecode& dt)
     dt.is_valid = false;
 }
 
-void Core::dtExecuteInit(struct dtExecute& dt)
-{
+void Core::dtExecuteInit(struct dtExecute& dt) {
     dt.inst = Instruction(0x00);
     dt.memread = false;
     dt.memwrite = false;
@@ -699,8 +679,7 @@ void Core::dtExecuteInit(struct dtExecute& dt)
     dt.is_valid = false;
 }
 
-void Core::dtMemoryInit(struct dtMemory& dt)
-{
+void Core::dtMemoryInit(struct dtMemory& dt) {
     dt.inst = Instruction(0x00);
     dt.memtoreg = false;
     dt.regwrite = false;
@@ -729,8 +708,7 @@ CoreSingle::~CoreSingle()
     delete dt_f;
 }
 
-void CoreSingle::do_step(bool skip_break)
-{
+void CoreSingle::do_step(bool skip_break) {
     bool branch_taken = false;
 
     struct dtFetch f = fetch(skip_break);
@@ -773,8 +751,7 @@ void CoreSingle::do_step(bool skip_break)
     prev_inst_addr = m.inst_addr;
 }
 
-void CoreSingle::do_reset()
-{
+void CoreSingle::do_reset() {
     if (dt_f != nullptr) {
         Core::dtFetchInit(*dt_f);
         dt_f->inst_addr = Address::null();
@@ -791,8 +768,7 @@ CorePipelined::CorePipelined(Registers* regs, FrontendMemory* mem_program, Front
     reset();
 }
 
-void CorePipelined::do_step(bool skip_break)
-{
+void CorePipelined::do_step(bool skip_break) {
     bool stall = false;
     bool branch_stall = false;
     bool excpt_in_progress = false;
@@ -949,8 +925,7 @@ void CorePipelined::do_step(bool skip_break)
     }
 }
 
-void CorePipelined::do_reset()
-{
+void CorePipelined::do_reset() {
     dtFetchInit(dt_f);
     dt_f.inst_addr = 0x0_addr;
     dtDecodeInit(dt_d);
