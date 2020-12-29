@@ -337,6 +337,97 @@ inline WriteResult write_by_u32(
     return { .n_bytes = size, .changed = changed };
 }
 
+/**
+ * In case that underlying memory representation is fragmented, multiple
+ * invocations of the same code might be needed. This is a common case with the
+ * n-byte memory access API and therefore this function has been introduce to
+ * minimize code duplication.
+ *
+ * @tparam FUNC         function with same signature as read or write
+ * @tparam SRC_TYPE     corresponding type in read or write
+ * @tparam DST_TYPE     corresponding type in read or write
+ * @tparam OPTIONS_TYPE ReadOptions or WriteOptions
+ * @tparam RESULT_TYPE  ReadResult or WriteResult
+ * @param src           same arg as in read/write
+ * @param dst           same arg as in read/write
+ * @param size          same arg as in read/write
+ * @param options       same arg as in read/write
+ * @param function      lambda to perform individual accesses
+ * @return number of bytes obtained, == size if fully successful
+ */
+template<
+    typename RESULT_TYPE,
+    typename FUNC,
+    typename SRC_TYPE,
+    typename DST_TYPE,
+    typename OPTIONS_TYPE>
+inline RESULT_TYPE repeat_access_until_completed(
+    DST_TYPE dst,
+    SRC_TYPE src,
+    size_t size,
+    OPTIONS_TYPE options,
+    FUNC function) {
+    size_t remaining_size = size;
+    const byte* current_src = reinterpret_cast<const byte*>(src);
+    byte* current_dst = reinterpret_cast<byte*>(dst);
+    RESULT_TYPE total_result;
+
+    // do-while is preffered, because this loop is most likely to be executed
+    // only once
+    do {
+        RESULT_TYPE result = function(
+            reinterpret_cast<DST_TYPE>(current_dst),
+            reinterpret_cast<SRC_TYPE>(current_src), remaining_size, options);
+        total_result += result;
+        current_src += result.n_bytes;
+        current_dst += result.n_bytes;
+        remaining_size -= result.n_bytes;
+    } while (remaining_size > 0);
+
+    return total_result;
+}
+
+/**
+ * Helper function for memories, that do not support function like read_u32.
+ * It is used in tests.
+ * This is a generic version followed by named instantiations.
+ */
+template<typename T, typename MEM_T, typename ADDR_T>
+T memory_read(MEM_T* mem, ADDR_T address) {
+    T buffer;
+    mem->read(&buffer, address, sizeof(T), {});
+    return byteswap(buffer);
+}
+
+template<typename MEM_T, typename ADDR_T>
+uint8_t memory_read_u8(MEM_T* mem, ADDR_T address) {
+    return memory_read<uint8_t>(mem, address);
+}
+
+template<typename MEM_T, typename ADDR_T>
+uint16_t memory_read_u16(MEM_T* mem, ADDR_T address) {
+    return memory_read<uint16_t>(mem, address);
+}
+
+template<typename MEM_T, typename ADDR_T>
+uint32_t memory_read_u32(MEM_T* mem, ADDR_T address) {
+    return memory_read<uint32_t>(mem, address);
+}
+
+template<typename MEM_T, typename ADDR_T>
+uint64_t memory_read_u64(MEM_T* mem, ADDR_T address) {
+    return memory_read<uint64_t>(mem, address);
+}
+
+/**
+ * Helper function for memories, that do not support function like read_u32.
+ * It is used in tests.
+ * This is a generic version followed by named instantiations.
+ */
+template<typename T, typename MEM_T, typename ADDR_T>
+void memory_write(MEM_T* mem, ADDR_T address, T value) {
+    const T swapped_value = byteswap(value);
+    mem->write(address, &swapped_value, sizeof(T), {});
 }
 
 #endif // QTMIPS_MEMORY_UTILS_H
