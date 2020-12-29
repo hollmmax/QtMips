@@ -62,7 +62,8 @@ public:
     WriteResult write(
         Address destination,
         const void* source,
-        size_t size) override;
+        size_t size,
+        WriteOptions options) override;
 
     ReadResult read(
         Address source,

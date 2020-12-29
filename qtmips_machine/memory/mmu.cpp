@@ -59,67 +59,53 @@ MMU::~MMU()
 WriteResult MMU::write(
     Address destination,
     const void* source,
-    size_t size)
-{
-    RangeDesc* p_range = find_range(destination);
-    if (p_range == nullptr) {
-        return { .n_bytes = 0, .changed = false };
-    }
-    int64_t overlap = p_range->last_addr - destination + size * 8;
-    Offset dest_offset = destination - p_range->start_addr;
-
-    WriteResult result {};
-    if (overlap <= 0) {
-        result = p_range->backend_memory->write(
-            source, dest_offset, size, WriteOptions());
-        if (result.changed) {
-            change_counter++;
-        }
-    } else {
-        size_t size1 = size - overlap; // Size that fits into this range.
-        result = p_range->backend_memory->write(
-            source, dest_offset, size1, WriteOptions());
-        if (result.changed) {
-            change_counter++;
-        }
-        result += this->write(
-            destination + size1, (byte*)source + size1, overlap);
-    }
-
-    return result;
+    size_t size,
+    WriteOptions options) {
+    return repeat_access_until_completed<WriteResult>(
+        destination.get_raw(), source, size, options,
+        [this](
+            Offset _destination, const void* _source, size_t _size,
+            WriteOptions _options) {
+            // `Address` does not allow casting, so it has to be passed to the
+            // repeat mechanism as usize. That does reduce typesafety as
+            // this is interface between memories using `Address` and `Offset`.
+            RangeDesc* p_range = find_range(Address(_destination));
+            if (p_range == nullptr) {
+                return (WriteResult) { .n_bytes = 0, .changed = false };
+            }
+            WriteResult result = p_range->backend_memory->write(
+                _destination - p_range->start_addr.get_raw(), _source, _size,
+                _options);
+            if (result.changed) {
+                change_counter++;
+            }
+            return result;
+        });
 }
 
 ReadResult MMU::read(
     Address source,
     void* destination,
     size_t size,
-    ReadOptions options) const
-{
-    const RangeDesc* p_range = find_range(source);
-    if (p_range == nullptr) {
-        memory_set(destination, 0, size);
-        return { size };
-    }
+    ReadOptions options) const {
+    return repeat_access_until_completed<ReadResult>(
+        destination, source.get_raw(), size, options,
+        [this](
+            void* _destination, Offset _source, size_t _size,
+            ReadOptions _options) {
+            // `Address` does not allow casting, so it has to be passed to the
+            // repeat mechanism as usize. That does reduce typesafety as
+            // this is interface between memories using `Address` and `Offset`.
+            const RangeDesc* p_range = find_range(Address(_source));
+            if (p_range == nullptr) {
+                memory_set(_destination, 0, _size);
+                return (ReadResult) { _size };
+            }
 
-    int64_t overlap = p_range->last_addr - source + size * 8;
-
-    if (overlap <= 0) {
-        /* Read fits into single range */
-        p_range->backend_memory->read(
-            source - p_range->start_addr,
-            destination, size, options);
-    } else {
-        /* Read needs to be split */
-        p_range->backend_memory->read(
-            source - p_range->start_addr,
-            destination, size - overlap, options);
-
-        this->read(
-            source + size - overlap,
-            (byte*)destination + size - overlap,
-            overlap, options);
-    }
-    return {};
+            return p_range->backend_memory->read(
+                _destination, _source - p_range->start_addr.get_raw(), _size,
+                _options);
+        });
 }
 
 std::uint32_t MMU::get_change_counter() const
