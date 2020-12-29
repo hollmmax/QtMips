@@ -79,7 +79,7 @@ public:
 
     void clean_range(Address start_addr, Address last_addr);
 
-    enum LocationStatus location_status(Address offset) const override;
+    enum LocationStatus location_status(Address address) const override;
 
 private slots:
     void range_backend_external_change(const BackendMemory* mem_access, Offset start_offset, Offset last_offset, bool external);
