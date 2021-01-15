@@ -45,6 +45,8 @@
 #include "qtmips_machine/qtmipsexception.h"
 #include "qtmips_machine/registers.h"
 
+#include <QFile>
+#include <QIODevice>
 #include <QObject>
 #include <QString>
 #include <QVector>
@@ -127,9 +129,11 @@ private:
     QString filepath_to_host(QString path);
 
     QVector<int> fd_mapping;
-    uint32_t brk_limit;
-    uint32_t anonymous_base;
-    uint32_t anonymous_last;
+    QMap<int, QFileDevice*> file_objects;
+    int last_mapped = 2;
+    std::uint32_t brk_limit;
+    std::uint32_t anonymous_base;
+    std::uint32_t anonymous_last;
     bool known_syscall_stop;
     bool unknown_syscall_stop;
     QString fs_root;
