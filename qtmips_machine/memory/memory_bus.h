@@ -52,7 +52,7 @@ namespace machine {
  * Memory bus serves as last level of frontend memory and interconnects it with
  * backend memory devices, that are subscribed to given address range.
  *
- * Simulated machine always has exactly one bus. This is necessary to access it
+ * Simulated core always has exactly one bus. This is necessary to access it
  * (e.g. from syscall) to map new devices. Backend memory device simulation
  * classes are implemented in `memory/backend`. For testing purposes,
  * `TrivialBus` is provided to wrap backend memory device into a minimal
@@ -68,7 +68,11 @@ class MemoryDataBus : public FrontendMemory {
     Q_OBJECT
 
 public:
-    explicit MemoryDataBus();
+    /**
+     * @param simulated_endian  endian of the simulated CPU/memory system
+     */
+    explicit MemoryDataBus(Endian simulated_endian);
+
     ~MemoryDataBus() override;
 
     /**
@@ -144,14 +148,12 @@ public:
 private slots:
     /**
      * Receive external changes in underlying memory devices.
-     *
-     * TODO what does external parameter do?
      */
     void range_backend_external_change(
         const BackendMemory *device,
         Offset start_offset,
         Offset last_offset,
-        bool external);
+        AccessEffects type);
 
 private:
     class RangeDesc; // See declaration bellow;
