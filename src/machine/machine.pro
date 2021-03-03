@@ -37,7 +37,8 @@ SOURCES += \
     memory/backend/memory.cpp \
     memory/backend/peripspiled.cpp \
     memory/backend/serialport.cpp \
-    memory/backend/lcddisplay.cpp
+    memory/backend/lcddisplay.cpp \
+    memory/backend/mmap_memory.cpp
 
 HEADERS += \
     machine.h \
@@ -65,4 +66,5 @@ HEADERS += \
     memory/backend/lcddisplay.h \
     memory/backend/peripheral.h \
     memory/backend/serialport.h \
-    memory/backend/backend_memory.h
+    memory/backend/backend_memory.h \
+    memory/backend/mmap_memory.h
