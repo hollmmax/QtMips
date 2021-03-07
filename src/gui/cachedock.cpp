@@ -16,11 +16,11 @@ CacheDock::CacheDock(QWidget *parent, const QString &type)
     l_miss = new QLabel("0", top_form);
     layout_top_form->addRow("Miss:", l_miss);
     l_m_reads = new QLabel("0", top_form);
-    layout_top_form->addRow("Memory reads:", l_m_reads);
+    layout_top_form->addRow("BasicMemory reads:", l_m_reads);
     l_m_writes = new QLabel("0", top_form);
-    layout_top_form->addRow("Memory writes:", l_m_writes);
+    layout_top_form->addRow("BasicMemory writes:", l_m_writes);
     l_stalled = new QLabel("0", top_form);
-    layout_top_form->addRow("Memory stall cycles:", l_stalled);
+    layout_top_form->addRow("BasicMemory stall cycles:", l_stalled);
     l_hit_rate = new QLabel("0.000%", top_form);
     layout_top_form->addRow("Hit rate:", l_hit_rate);
     l_speed = new QLabel("100%", top_form);

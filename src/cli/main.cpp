@@ -86,9 +86,9 @@ void create_parser(QCommandLineParser &p) {
           "Instruction cache. Format policy,sets,words_in_blocks,associativity "
           "where policy is random/lru/lfu",
           "ICACHE" });
-    p.addOption({ "read-time", "Memory read access time (cycles).", "RTIME" });
-    p.addOption({ "write-time", "Memory read access time (cycles).", "WTIME" });
-    p.addOption({ "burst-time", "Memory read access time (cycles).", "BTIME" });
+    p.addOption({ "read-time", "BasicMemory read access time (cycles).", "RTIME" });
+    p.addOption({ "write-time", "BasicMemory read access time (cycles).", "WTIME" });
+    p.addOption({ "burst-time", "BasicMemory read access time (cycles).", "BTIME" });
     p.addOption({ { "serial-in", "serin" },
                   "File connected to the serial port input.",
                   "FNAME" });

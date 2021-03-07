@@ -34,7 +34,7 @@ SOURCES += \
     memory/cache/cache_policy.cpp \
     memory/memory_bus.cpp \
     memory/frontend_memory.cpp \
-    memory/backend/memory.cpp \
+    memory/backend/basic_memory.cpp \
     memory/backend/peripspiled.cpp \
     memory/backend/serialport.cpp \
     memory/backend/lcddisplay.cpp \
@@ -54,7 +54,7 @@ HEADERS += \
     programloader.h \
     symboltable.h \
     cop0state.h \
-    memory/backend/memory.h \
+    memory/backend/basic_memory.h \
     memory/cache/cache.h \
     memory/cache/cache_policy.h \
     memory/cache/cache_types.h \

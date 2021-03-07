@@ -1,5 +1,5 @@
 #include "machine/machinedefs.h"
-#include "machine/memory/backend/memory.h"
+#include "machine/memory/backend/basic_memory.h"
 #include "machine/memory/memory_bus.h"
 #include "machine/memory/memory_utils.h"
 #include "tests/utils/integer_decomposition.h"
@@ -108,7 +108,7 @@ void MachineTests::memory() {
     QFETCH(IntegerDecomposition, value);
     QFETCH(IntegerDecomposition, result);
 
-    Memory m(endian);
+    BasicMemory m(endian);
 
     // Uninitialized memory should read as zero
     QCOMPARE(memory_read_u8(&m, address + stride), (uint8_t)0);
@@ -168,7 +168,7 @@ void MachineTests::memory_section() {
     QFETCH(IntegerDecomposition, value);
     QFETCH(IntegerDecomposition, result);
 
-    Memory m(endian);
+    BasicMemory m(endian);
 
     // First section shouldn't exists
     QCOMPARE(m.get_section(address, false), (MemorySection *)nullptr);
@@ -233,7 +233,7 @@ void MachineTests::memory_compare_data() {
 void MachineTests::memory_compare() {
     QFETCH(Endian, endian);
 
-    Memory m1(endian), m2(endian);
+    BasicMemory m1(endian), m2(endian);
     QCOMPARE(m1, m2);
     memory_write_u8(&m1, 0x20, 0x0);
     QVERIFY(m1 != m2); // This should not be equal as this identifies also
@@ -251,7 +251,7 @@ void MachineTests::memory_compare() {
     memory_write_u8(&m2, 0xFFFF20, 0x24);
     QCOMPARE(m1, m2);
     // And also check memory copy
-    Memory m3(m1);
+    BasicMemory m3(m1);
     QCOMPARE(m1, m3);
     memory_write_u8(&m3, 0x18, 0x22);
     QVERIFY(m1 != m3);
@@ -259,10 +259,10 @@ void MachineTests::memory_compare() {
 
 void MachineTests::memory_write_ctl_data() {
     QTest::addColumn<AccessControl>("ctl");
-    QTest::addColumn<Memory>("result");
+    QTest::addColumn<BasicMemory>("result");
 
     for (auto endian : default_endians) {
-        Memory mem(endian);
+        BasicMemory mem(endian);
 
         QTest::addRow("AC_NONE, endian=%s", to_string(endian))
             << AC_NONE << mem;
@@ -283,12 +283,12 @@ void MachineTests::memory_write_ctl_data() {
 
 void MachineTests::memory_write_ctl() {
     QFETCH(AccessControl, ctl);
-    QFETCH(Memory, result);
+    QFETCH(BasicMemory, result);
 
-    // Memory is not supposed to be read directly as it does not implement
-    // frontend memory. TrivialBus was introduced to wrap Memory into the most
+    // BasicMemory is not supposed to be read directly as it does not implement
+    // frontend memory. TrivialBus was introduced to wrap BasicMemory into the most
     // simple FrontendMemory with no additional functionality.
-    Memory mem(result.simulated_machine_endian);
+    BasicMemory mem(result.simulated_machine_endian);
     TrivialBus bus(&mem);
     bus.write_ctl(ctl, 0x20_addr, (uint64_t)0x2324252627282930ULL);
     QCOMPARE(mem, result);
@@ -307,7 +307,7 @@ void MachineTests::memory_read_ctl() {
     QFETCH(IntegerDecomposition, result);
 
     Address frontend_address(address);
-    Memory mem(endian);
+    BasicMemory mem(endian);
     TrivialBus bus(&mem);
 
     bus.write_u64(frontend_address, value.u64);

@@ -101,7 +101,7 @@ ProgramLoader::~ProgramLoader() {
     elf_file.close();
 }
 
-void ProgramLoader::to_memory(Memory *mem) {
+void ProgramLoader::to_memory(BasicMemory *mem) {
     // Load program to memory (just dump it byte by byte)
     for (size_t phdrs_i : this->map) {
         uint32_t base_address = this->phdrs[phdrs_i].p_vaddr;

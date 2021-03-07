@@ -315,7 +315,7 @@ void NewDialog::config_gui() {
         config->hazard_unit() == machine::MachineConfig::HU_STALL);
     ui->hazard_stall_forward->setChecked(
         config->hazard_unit() == machine::MachineConfig::HU_STALL_FORWARD);
-    // Memory
+    // BasicMemory
     ui->mem_protec_exec->setChecked(config->memory_execute_protection());
     ui->mem_protec_write->setChecked(config->memory_write_protection());
     ui->mem_time_read->setValue(config->memory_access_time_read());

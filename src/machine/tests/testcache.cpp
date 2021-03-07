@@ -1,4 +1,4 @@
-#include "machine/memory/backend/memory.h"
+#include "machine/memory/backend/basic_memory.h"
 #include "machine/memory/cache/cache.h"
 #include "machine/memory/cache/cache_policy.h"
 #include "machine/memory/memory_bus.h"
@@ -108,7 +108,7 @@ void MachineTests::cache() {
     QFETCH(unsigned, hit);
     QFETCH(unsigned, miss);
 
-    Memory m(BIG);
+    BasicMemory m(BIG);
     TrivialBus m_frontend(&m);
     Cache cache(&m_frontend, &cache_c);
 
@@ -188,7 +188,7 @@ void MachineTests::cache_correctness() {
     QFETCH(size_t, case_number);
 
     // Prepare memory hierarchy
-    Memory mem(endian);
+    BasicMemory mem(endian);
     MemoryDataBus bus(endian);
     bus.insert_device_to_range(&mem, 0_addr, 0xffffffff_addr, false);
     Cache cache(&bus, &cache_config);

@@ -3,7 +3,7 @@
 
 #include "machinedefs.h"
 #include "memory/backend/backend_memory.h"
-#include "memory/backend/memory.h"
+#include "memory/backend/basic_memory.h"
 #include "memory/memory_utils.h"
 #include "simulator_exception.h"
 

@@ -15,7 +15,7 @@ Machine::Machine(MachineConfig config, bool load_symtab, bool load_executable)
     if (load_executable) {
         ProgramLoader program(machine_config.elf());
         this->machine_config.set_simulated_endian(program.get_endian());
-        mem_program_only = new Memory(machine_config.get_simulated_endian());
+        mem_program_only = new BasicMemory(machine_config.get_simulated_endian());
         program.to_memory(mem_program_only);
 
         if (load_symtab) {
@@ -25,9 +25,9 @@ Machine::Machine(MachineConfig config, bool load_symtab, bool load_executable)
         if (program.get_executable_entry() != 0x0_addr) {
             regs->pc_abs_jmp(program.get_executable_entry());
         }
-        mem = new Memory(*mem_program_only);
+        mem = new BasicMemory(*mem_program_only);
     } else {
-        mem = new Memory(machine_config.get_simulated_endian());
+        mem = new BasicMemory(machine_config.get_simulated_endian());
     }
 
     data_bus = new MemoryDataBus(machine_config.get_simulated_endian());
@@ -149,11 +149,11 @@ const Cop0State *Machine::cop0state() {
     return cop0st;
 }
 
-const Memory *Machine::memory() {
+const BasicMemory *Machine::memory() {
     return mem;
 }
 
-Memory *Machine::memory_rw() {
+BasicMemory *Machine::memory_rw() {
     return mem;
 }
 

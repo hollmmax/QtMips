@@ -107,7 +107,7 @@ void Tracer::instruction_memory(
     Address inst_addr,
     ExceptionCause excause,
     bool valid) {
-    cout << "Memory: " << (excause != EXCAUSE_NONE ? "!" : "")
+    cout << "BasicMemory: " << (excause != EXCAUSE_NONE ? "!" : "")
          << (valid ? inst.to_str(inst_addr).toStdString() : "Idle") << endl;
 }
 

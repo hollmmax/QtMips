@@ -14,7 +14,7 @@
 namespace machine {
 
 /**
- * Memory bus serves as last level of frontend memory and interconnects it with
+ * BasicMemory bus serves as last level of frontend memory and interconnects it with
  * backend memory devices, that are subscribed to given address range.
  *
  * Simulated core always has exactly one bus. This is necessary to access it

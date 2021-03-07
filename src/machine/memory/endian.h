@@ -13,7 +13,7 @@
 
 namespace machine {
 /**
- * Memory endian type (used for bot simulator and host machine).
+ * BasicMemory endian type (used for bot simulator and host machine).
  * Standard enum is not available until c++20.
  */
 enum Endian { LITTLE, BIG };

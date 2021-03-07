@@ -440,7 +440,7 @@ Limitations of the Implementation
   Only RDHWR, SYNCI, CACHE and some coprocessor 0 registers implemented. TLB and
   virtual memory and complete exception model are not implemented.
 * Coprocessors (so no floating point unit and only limited coprocessor 0)
-* Memory access stall (stalling execution because of cache miss would be pretty
+* BasicMemory access stall (stalling execution because of cache miss would be pretty
   annoying for users so difference between cache and memory is just in collected
   statistics)
 * Only limited support for interrupts and exceptions. When `syscall` or `break`

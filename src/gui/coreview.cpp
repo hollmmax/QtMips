@@ -97,7 +97,7 @@ CoreViewScene::CoreViewScene(machine::Machine *machine) : QGraphicsScene() {
     NEW(Junction, ex.j_mux, 450, 303);
     NEW_MUX(ex.mux_imm, 470, 292, execute_alusrc_value, 2, true);
     NEW_MUX(ex.mux_regdest, 480, 370, execute_regdest_value, 2, true);
-    // Memory
+    // BasicMemory
     NEW(Junction, mm.j_addr, 570, mem_data->connector_address()->y(), true, 8);
     static QMap<uint32_t, QString> excause_map
         = { { machine::EXCAUSE_NONE, "NONE" },
@@ -177,7 +177,7 @@ CoreViewScene::CoreViewScene(machine::Machine *machine) : QGraphicsScene() {
     // Execute stage
     new_bus(ex.j_mux->new_connector(CON_AX_X), ex.mux_imm->connector_in(0));
     new_bus(ex.mux_imm->connector_out(), alu->connector_in_b());
-    // Memory stage
+    // BasicMemory stage
     new_bus(mm.j_addr->new_connector(CON_AX_X), mem_data->connector_address());
     // From write back stage to decode stage
     con = new_bus(
@@ -226,10 +226,10 @@ CoreViewScene::CoreViewScene(machine::Machine *machine) : QGraphicsScene() {
     NEW_V(470, 127, execute_memread_value, false, 1);
     NEW_V(485, 345, execute_regdest_value, false, 1);
     NEW_V(475, 280, execute_alusrc_value, false, 1);
-    // Memory stage
+    // BasicMemory stage
     NEW_V(560, 260, memory_alu_value, true); // Alu output
     NEW_V(560, 345, memory_rt_value, true);  // rt
-    NEW_V(650, 290, memory_mem_value, true); // Memory output
+    NEW_V(650, 290, memory_mem_value, true); // BasicMemory output
     NEW_V(570, 113, memory_memtoreg_value, false, 1);
     NEW_V(630, 220, memory_memwrite_value, false, 1);
     NEW_V(620, 220, memory_memread_value, false, 1);
@@ -390,7 +390,7 @@ CoreViewSceneSimple::CoreViewSceneSimple(machine::Machine *machine)
     con = new_bus(
         ex.j_mux->new_connector(CON_AX_Y), mem_data->connector_data_in());
     con->setAxes({ CON_AXIS_X(360), CON_AXIS_Y(560) });
-    // Memory
+    // BasicMemory
     con = new_bus(
         mm.j_addr->new_connector(CON_AX_Y), wb.mem_or_reg->connector_in(0));
     con->setAxes({ CON_AXIS_X(250), CON_AXIS_Y(678) });
@@ -588,7 +588,7 @@ CoreViewScenePipelined::CoreViewScenePipelined(machine::Machine *machine)
         = latch_ex_mem->new_connector(
             ctl_rgw_de.out->point().y() - latch_ex_mem->y());
     new_signal(ctl_rgw_de.out, ctl_rgw_ex.in);
-    // Memory
+    // BasicMemory
     new_bus(lp_ex_alu.out, mm.j_addr->new_connector(CON_AX_X));
     con = new_bus(lp_ex_dt.out, mem_data->connector_data_in());
     con->setAxes({ CON_AXIS_Y(560) });

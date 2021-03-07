@@ -38,7 +38,7 @@ typedef uint64_t Offset;
  * ### Examples of internal endian values
  * - LED diode will have `NATIVE_ENDIAN` as the rgb value needs to be valid for
  *   GUI.
- * - Memory mapped source will have runtime set endian, based on the file
+ * - BasicMemory mapped source will have runtime set endian, based on the file
  *   endian.
  * - LCD has fixed `BIG` endian, as required by the hardware.
  */

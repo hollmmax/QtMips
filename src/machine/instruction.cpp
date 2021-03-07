@@ -1,6 +1,6 @@
 #include "instruction.h"
 
-#include "memory/backend/memory.h"
+#include "memory/backend/basic_memory.h"
 #include "simulator_exception.h"
 #include "utils.h"
 

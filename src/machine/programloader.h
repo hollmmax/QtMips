@@ -1,7 +1,7 @@
 #ifndef PROGRAM_H
 #define PROGRAM_H
 
-#include "memory/backend/memory.h"
+#include "memory/backend/basic_memory.h"
 #include "symboltable.h"
 
 #include <QFile>
@@ -20,7 +20,7 @@ public:
     explicit ProgramLoader(const QString &file);
     ~ProgramLoader();
 
-    void to_memory(Memory *mem); // Writes all loaded sections to memory TODO:
+    void to_memory(BasicMemory *mem); // Writes all loaded sections to memory TODO:
                                  // really to memory ???
     Address end(); // Return address after which there is no more code for
                    // sure

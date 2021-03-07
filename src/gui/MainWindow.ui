@@ -413,7 +413,7 @@
   </action>
   <action name="actionMemory">
    <property name="text">
-    <string>Memory</string>
+    <string>BasicMemory</string>
    </property>
    <property name="toolTip">
     <string>Data memory view</string>

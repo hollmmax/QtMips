@@ -52,7 +52,7 @@ CPU No Instructions
 * [ ] NOP
 * [ ] SSNOP
 
-CPU Load, Store and Memory Control Instructions
+CPU Load, Store and BasicMemory Control Instructions
 -----------------------------------------------
 * [x] LB
 * [x] LBU

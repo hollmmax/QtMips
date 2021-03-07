@@ -71,17 +71,17 @@ union MemoryTree {
  * NOTE: Internal endian of memory must be the same as endian of the whole
  * simulated machine. Therefore it does not have internal_endian field.
  */
-class Memory final : public BackendMemory {
+class BasicMemory final : public BackendMemory {
     Q_OBJECT
 public:
     // This is dummy constructor for qt internal uses only.
-    Memory();
-    explicit Memory(Endian simulated_machine_endian);
-    Memory(const Memory &);
-    ~Memory() override;
+    BasicMemory();
+    explicit BasicMemory(Endian simulated_machine_endian);
+    BasicMemory(const BasicMemory &);
+    ~BasicMemory() override;
     void reset(); // Reset whole content of memory (removes old tree and creates
                   // new one)
-    void reset(const Memory &);
+    void reset(const BasicMemory &);
 
     // returns section containing given address
     MemorySection *get_section(size_t offset, bool create) const;
@@ -100,8 +100,8 @@ public:
 
     LocationStatus location_status(Offset offset) const override;
 
-    bool operator==(const Memory &) const;
-    bool operator!=(const Memory &) const;
+    bool operator==(const BasicMemory &) const;
+    bool operator!=(const BasicMemory &) const;
 
     const union MemoryTree *get_memory_tree_root() const;
 
@@ -120,6 +120,6 @@ private:
 };
 } // namespace machine
 
-Q_DECLARE_METATYPE(machine::Memory);
+Q_DECLARE_METATYPE(machine::BasicMemory);
 
 #endif // MEMORY_H

@@ -33,8 +33,8 @@ public:
 
     const Registers *registers();
     const Cop0State *cop0state();
-    const Memory *memory();
-    Memory *memory_rw();
+    const BasicMemory *memory();
+    BasicMemory *memory_rw();
     const Cache *cache_program();
     const Cache *cache_data();
     Cache *cache_data_rw();
@@ -107,13 +107,13 @@ private:
     MachineConfig machine_config;
 
     Registers *regs = nullptr;
-    Memory *mem = nullptr;
+    BasicMemory *mem = nullptr;
     /**
-     * Memory with loaded program only.
+     * BasicMemory with loaded program only.
      * It is not used for execution, only for quick
      * simulation reset without repeated ELF file loading.
      */
-    Memory *mem_program_only = nullptr;
+    BasicMemory *mem_program_only = nullptr;
     MemoryDataBus *data_bus = nullptr;
     SerialPort *ser_port = nullptr;
     PeripSpiLed *perip_spi_led = nullptr;

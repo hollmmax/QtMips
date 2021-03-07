@@ -1,7 +1,7 @@
 #include "machine/instruction.h"
 #include "machine/memory/memory_utils.h"
 #include "machine/programloader.h"
-#include "memory/backend/memory.h"
+#include "memory/backend/basic_memory.h"
 #include "tst_machine.h"
 
 using namespace machine;
@@ -11,7 +11,7 @@ using namespace machine;
 
 void MachineTests::program_loader() {
     ProgramLoader pl("data");
-    Memory m(BIG);
+    BasicMemory m(BIG);
     pl.to_memory(&m);
 
     // 	addi $1, $0, 6

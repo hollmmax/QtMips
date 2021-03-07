@@ -16,7 +16,7 @@ using namespace coreview;
 
 Memory::Memory(bool cache_used, const machine::Cache *cch)
     : QGraphicsObject(nullptr)
-    , name("Memory", this)
+    , name("BasicMemory", this)
     , type(this)
     , cache_t("Cache", this)
     , cache_hit_t("Hit: 0", this)

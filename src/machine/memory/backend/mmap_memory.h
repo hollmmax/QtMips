@@ -3,7 +3,7 @@
 #ifndef MEMORY_MMAP_H
 #define MEMORY_MMAP_H
 
-#include "memory/backend/memory.h"
+#include "memory/backend/basic_memory.h"
 
 namespace machine {
 

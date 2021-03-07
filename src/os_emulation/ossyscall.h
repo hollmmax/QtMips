@@ -5,7 +5,7 @@
 #include "machine/core.h"
 #include "machine/instruction.h"
 #include "machine/machineconfig.h"
-#include "machine/memory/backend/memory.h"
+#include "machine/memory/backend/basic_memory.h"
 #include "machine/memory/frontend_memory.h"
 #include "machine/registers.h"
 #include "machine/simulator_exception.h"

@@ -44,7 +44,7 @@ public:
      * @param memory_access_penalty_b   cycles to perform burst access (stats
      *                                  only)
      *
-     * NOTE: Memory access penalties apply only to statistics and are not taken
+     * NOTE: BasicMemory access penalties apply only to statistics and are not taken
      * into account during simulation itself. There is no point in doing so
      * without superscalar execution.
      */

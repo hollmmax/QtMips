@@ -12,8 +12,8 @@
 #include <QWidget>
 
 MemoryDock::MemoryDock(QWidget *parent, QSettings *settings) : Super(parent) {
-    setObjectName("Memory");
-    setWindowTitle("Memory");
+    setObjectName("BasicMemory");
+    setWindowTitle("BasicMemory");
 
     QWidget *content = new QWidget();
 

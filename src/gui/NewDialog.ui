@@ -201,7 +201,7 @@
      </widget>
      <widget class="QWidget" name="tab_memory">
       <attribute name="title">
-       <string>Memory</string>
+       <string>BasicMemory</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
