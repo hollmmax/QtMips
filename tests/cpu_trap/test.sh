@@ -1,8 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env bash
 TEST_NAME="cpu_trap"
 
 # Load common test shell functions
-. "$(dirname "$0")/../test.sh"
+. "$(dirname "$0")/../test_lib.sh"
 
 # Build cli binary
 qtmips_make sub-qtmips_cli
