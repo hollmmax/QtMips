@@ -39,6 +39,9 @@
 
 #include "memory/endian.h"
 
+using ae = machine::AccessEffects; // For enum values, type is obvious from
+                                   // context.
+
 namespace machine {
 
 constexpr Offset SERP_RX_ST_REG_o = 0x00u;
@@ -152,7 +155,7 @@ uint32_t SerialPort::read_reg(Offset source, AccessEffects type) const {
         pool_rx_byte();
         if (rx_st_reg & SERP_RX_ST_REG_READY_m) {
             value = rx_data_reg;
-            if (type == REGULAR) {
+            if (type == ae::REGULAR) {
                 rx_st_reg &= ~SERP_RX_ST_REG_READY_m;
                 update_rx_irq();
                 emit external_backend_change_notify(

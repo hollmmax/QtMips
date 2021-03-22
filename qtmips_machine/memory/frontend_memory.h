@@ -86,18 +86,19 @@ public:
      */
     explicit FrontendMemory(Endian simulated_endian);
 
-    bool write_u8(Address address, uint8_t value, AccessEffects type = REGULAR);
     bool
-    write_u16(Address address, uint16_t value, AccessEffects type = REGULAR);
+    write_u8(Address address, uint8_t value, AccessEffects type = ae::REGULAR);
     bool
-    write_u32(Address address, uint32_t value, AccessEffects type = REGULAR);
+    write_u16(Address address, uint16_t value, AccessEffects type = ae::REGULAR);
     bool
-    write_u64(Address address, uint64_t value, AccessEffects type = REGULAR);
+    write_u32(Address address, uint32_t value, AccessEffects type = ae::REGULAR);
+    bool
+    write_u64(Address address, uint64_t value, AccessEffects type = ae::REGULAR);
 
-    uint8_t read_u8(Address address, AccessEffects type = REGULAR) const;
-    uint16_t read_u16(Address address, AccessEffects type = REGULAR) const;
-    uint32_t read_u32(Address address, AccessEffects type = REGULAR) const;
-    uint64_t read_u64(Address address, AccessEffects type = REGULAR) const;
+    uint8_t read_u8(Address address, AccessEffects type = ae::REGULAR) const;
+    uint16_t read_u16(Address address, AccessEffects type = ae::REGULAR) const;
+    uint32_t read_u32(Address address, AccessEffects type = ae::REGULAR) const;
+    uint64_t read_u64(Address address, AccessEffects type = ae::REGULAR) const;
 
     /**
      * Store with size specified by the CPU control unit.
@@ -184,7 +185,7 @@ private:
      *
      * @tparam T            type value should be read as
      * @param address       emulated address to read from
-     * @param type          read by visualization etc (type   INTERNAL). should
+     * @param type          read by visualization etc (type ae::INTERNAL) should
      *                      not cause certain effects (counter increments...)
      * @return              requested data with type T
      */
@@ -201,8 +202,8 @@ private:
      * @tparam T            type of value to be written
      * @param address       emulated address to write to
      * @param value         value of type T to be written
-     * @param type          read by visualization etc (type INTERNAL). should
-     *                      not cause certain effects (counter increments...)
+     * @param type          read by visualization etc (type ae::INTERNAL).
+     * should not cause certain effects (counter increments...)
      * @return              true when memory before and after write differs
      */
     template<typename T>

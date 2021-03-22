@@ -79,10 +79,10 @@ void Reporter::expect_fail(enum FailReason reason) {
 }
 
 void Reporter::add_dump_range(
-    uint32_t start,
-    uint32_t len,
-    const QString &fname) {
-    dump_ranges.append({ start, len, std::move(fname) });
+    Address start,
+    size_t len,
+    const QString &path_to_write) {
+    dump_ranges.append({ start, len, path_to_write });
 }
 
 void Reporter::machine_exit() {
@@ -241,18 +241,18 @@ void Reporter::report() {
     }
     foreach (DumpRange range, dump_ranges) {
         ofstream out;
-        out.open(range.fname.toLocal8Bit().data(), ios::out | ios::trunc);
-        int32_t start = range.start & ~3;
-        int32_t end = range.start + range.len;
+        out.open(
+            range.path_to_write.toLocal8Bit().data(), ios::out | ios::trunc);
+        Address start = range.start & ~3;
+        Address end = range.start + range.len;
         if (end < start) {
-            end = 0xffffffff;
+            end = 0xffffffff_addr;
         }
-        for (int32_t addr = start; addr < end; addr += 4) {
+        const MemoryDataBus *mem = machine->memory_data_bus();
+        for (Address addr = start; addr < end; addr += 4) {
             out << "0x";
             out_hex(
-                out,
-                mem->read_u32(Address(addr), machine::AccessEffects::INTERNAL),
-                8);
+                out, mem->read_u32(addr, machine::AccessEffects::INTERNAL), 8);
             out << endl;
         }
         out.close();

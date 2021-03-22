@@ -38,7 +38,8 @@
 #include <QBrush>
 #include <QtGui/qbrush.h>
 
-constexpr auto INTERNAL = machine::AccessEffects::INTERNAL;
+using ae = machine::AccessEffects; // For enum values, type is obvious from
+                                   // context.
 
 ProgramModel::ProgramModel(QObject *parent)
     : Super(parent)
@@ -305,7 +306,7 @@ bool ProgramModel::setData(
             if (!ok) {
                 return false;
             }
-            mem->write_u32(address, data, INTERNAL);
+            mem->write_u32(address, data, ae::INTERNAL);
             break;
         case 3:
             if (machine::Instruction::code_from_string(
@@ -316,7 +317,7 @@ bool ProgramModel::setData(
 
                 return false;
             }
-            mem->write_u32(address, data, INTERNAL);
+            mem->write_u32(address, data, ae::INTERNAL);
             break;
         default: return false;
         }
