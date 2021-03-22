@@ -140,13 +140,13 @@ signals:
      * @param mem_access    this
      * @param start_addr    affected area start
      * @param last_addr     affected area end
-     * @param external      TODO
+     * @param type          allowed side effects, see type declaration
      */
     void external_backend_change_notify(
         const BackendMemory *mem_access,
         uint32_t start_addr,
         uint32_t last_addr,
-        bool external) const;
+        AccessEffects type) const;
 };
 
 inline BackendMemory::BackendMemory(Endian simulated_machine_endian)

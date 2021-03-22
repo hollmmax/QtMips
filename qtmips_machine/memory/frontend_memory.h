@@ -86,15 +86,18 @@ public:
      */
     explicit FrontendMemory(Endian simulated_endian);
 
-    bool write_u8(Address address, uint8_t value);
-    bool write_u16(Address address, uint16_t value);
-    bool write_u32(Address address, uint32_t value);
-    bool write_u64(Address address, uint64_t value);
+    bool write_u8(Address address, uint8_t value, AccessEffects type = REGULAR);
+    bool
+    write_u16(Address address, uint16_t value, AccessEffects type = REGULAR);
+    bool
+    write_u32(Address address, uint32_t value, AccessEffects type = REGULAR);
+    bool
+    write_u64(Address address, uint64_t value, AccessEffects type = REGULAR);
 
-    uint8_t read_u8(Address address, bool debug_access = false) const;
-    uint16_t read_u16(Address address, bool debug_access = false) const;
-    uint32_t read_u32(Address address, bool debug_access = false) const;
-    uint64_t read_u64(Address address, bool debug_access = false) const;
+    uint8_t read_u8(Address address, AccessEffects type = REGULAR) const;
+    uint16_t read_u16(Address address, AccessEffects type = REGULAR) const;
+    uint32_t read_u32(Address address, AccessEffects type = REGULAR) const;
+    uint64_t read_u64(Address address, AccessEffects type = REGULAR) const;
 
     /**
      * Store with size specified by the CPU control unit.
@@ -181,11 +184,12 @@ private:
      *
      * @tparam T            type value should be read as
      * @param address       emulated address to read from
-     * @param debug_read    TODO
+     * @param type          read by visualization etc (type   INTERNAL). should
+     *                      not cause certain effects (counter increments...)
      * @return              requested data with type T
      */
     template<typename T>
-    T read_generic(Address address, bool debug_read) const;
+    T read_generic(Address address, AccessEffects type) const;
 
     /**
      * Write to any type from memory
@@ -196,11 +200,13 @@ private:
      *
      * @tparam T            type of value to be written
      * @param address       emulated address to write to
-     * @param value         value of type T to be writtem
+     * @param value         value of type T to be written
+     * @param type          read by visualization etc (type INTERNAL). should
+     *                      not cause certain effects (counter increments...)
      * @return              true when memory before and after write differs
      */
     template<typename T>
-    bool write_generic(Address address, T value);
+    bool write_generic(Address address, T value, AccessEffects type);
 };
 
 } // namespace machine

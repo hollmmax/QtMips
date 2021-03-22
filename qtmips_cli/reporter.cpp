@@ -249,10 +249,10 @@ void Reporter::report() {
         }
         for (int32_t addr = start; addr < end; addr += 4) {
             out << "0x";
-            // TODO not nice
-            uint32_t buffer;
-            machine->memory()->read(&buffer, addr, sizeof(buffer), { false });
-            out_hex(out, buffer, 8);
+            out_hex(
+                out,
+                mem->read_u32(Address(addr), machine::AccessEffects::INTERNAL),
+                8);
             out << endl;
         }
         out.close();

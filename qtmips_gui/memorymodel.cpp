@@ -37,6 +37,8 @@
 
 #include <QBrush>
 
+constexpr auto INTERNAL = machine::AccessEffects::INTERNAL;
+
 MemoryModel::MemoryModel(QObject *parent)
     : Super(parent)
     , data_font("Monospace") {
@@ -132,10 +134,10 @@ QVariant MemoryModel::data(const QModelIndex &index, int role) const {
             return QString("");
         }
         switch (cell_size) {
-        case CELLSIZE_BYTE: data = mem->read_u8(address, true); break;
-        case CELLSIZE_HWORD: data = mem->read_u16(address, true); break;
+        case CELLSIZE_BYTE: data = mem->read_u8(address, INTERNAL); break;
+        case CELLSIZE_HWORD: data = mem->read_u16(address, INTERNAL); break;
         default:
-        case CELLSIZE_WORD: data = mem->read_u32(address, true); break;
+        case CELLSIZE_WORD: data = mem->read_u32(address, INTERNAL); break;
         }
 
         t = QString::number(data, 16);
@@ -304,10 +306,10 @@ bool MemoryModel::setData(
         }
         address += cellSizeBytes() * (index.column() - 1);
         switch (cell_size) {
-        case CELLSIZE_BYTE: mem->write_u8(address, data); break;
-        case CELLSIZE_HWORD: mem->write_u16(address, data); break;
+        case CELLSIZE_BYTE: mem->write_u8(address, data, INTERNAL); break;
+        case CELLSIZE_HWORD: mem->write_u16(address, data, INTERNAL); break;
         default:
-        case CELLSIZE_WORD: mem->write_u32(address, data); break;
+        case CELLSIZE_WORD: mem->write_u32(address, data, INTERNAL); break;
         }
     }
     return true;
