@@ -441,6 +441,18 @@ void MainWindow::print_action() {
         corescene->render(
             &painter, target_rect, scene_rect, Qt::KeepAspectRatio);
     }
+#else
+    QMessageBox msgBox;
+    msgBox.setText("Printing is not supported.");
+    msgBox.setInformativeText(
+        "The simulator was compiled without printing support.\n"
+        "If you compiled the simulator yourself, make sure that the Qt "
+        "print support library is present.\n"
+        "Otherwise report this to the executable provider (probably your "
+        "teacher).");
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.exec();
 #endif // WITH_PRINTING
 }
 
