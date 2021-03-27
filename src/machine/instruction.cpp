@@ -1776,39 +1776,39 @@ Instruction::Instruction(uint32_t inst) {
     this->dt = inst;
 }
 
-Instruction::Instruction(
-    uint8_t opcode,
-    uint8_t rs,
-    uint8_t rt,
-    uint8_t rd,
-    uint8_t shamt,
-    uint8_t funct) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= rd << 11;
-    this->dt |= shamt << 6;
-    this->dt |= funct;
-}
+// Instruction::Instruction(
+//     uint8_t opcode,
+//     uint8_t rs,
+//     uint8_t rt,
+//     uint8_t rd,
+//     uint8_t shamt,
+//     uint8_t funct) {
+//     this->dt = 0;
+//     this->dt |= opcode << 26;
+//     this->dt |= rs << 21;
+//     this->dt |= rt << 16;
+//     this->dt |= rd << 11;
+//     this->dt |= shamt << 6;
+//     this->dt |= funct;
+// }
 
-Instruction::Instruction(
-    uint8_t opcode,
-    uint8_t rs,
-    uint8_t rt,
-    uint16_t immediate) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= rs << 21;
-    this->dt |= rt << 16;
-    this->dt |= immediate;
-}
+// Instruction::Instruction(
+//     uint8_t opcode,
+//     uint8_t rs,
+//     uint8_t rt,
+//     uint16_t immediate) {
+//     this->dt = 0;
+//     this->dt |= opcode << 26;
+//     this->dt |= rs << 21;
+//     this->dt |= rt << 16;
+//     this->dt |= immediate;
+// }
 
-Instruction::Instruction(uint8_t opcode, Address address) {
-    this->dt = 0;
-    this->dt |= opcode << 26;
-    this->dt |= address.get_raw();
-}
+// Instruction::Instruction(uint8_t opcode, Address address) {
+//     this->dt = 0;
+//     this->dt |= opcode << 26;
+//     this->dt |= address.get_raw();
+// }
 
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
@@ -1817,35 +1817,50 @@ Instruction::Instruction(const Instruction &i) {
 #define MASK(LEN, OFF) ((this->dt >> (OFF)) & ((1 << (LEN)) - 1))
 
 uint8_t Instruction::opcode() const {
-    return (uint8_t)MASK(6, 26);
+    return (uint8_t)MASK(7, 0); // Does include the 2 bits marking it's not a 16b instruction
 }
 
 uint8_t Instruction::rs() const {
-    return (uint8_t)MASK(5, RS_SHIFT);
+    return (uint8_t)MASK(5, 15);
 }
 
 uint8_t Instruction::rt() const {
-    return (uint8_t)MASK(5, RT_SHIFT);
+    return (uint8_t)MASK(5, 20);
 }
 
 uint8_t Instruction::rd() const {
-    return (uint8_t)MASK(5, RD_SHIFT);
+    return (uint8_t)MASK(5, 7);
 }
 
 uint8_t Instruction::shamt() const {
-    return (uint8_t)MASK(5, SHAMT_SHIFT);
+    return this->rt();
 }
 
-uint8_t Instruction::funct() const {
-    return (uint8_t)MASK(6, 0);
+uint16_t Instruction::funct() const {
+    return uint16_t(MASK(7, 25) << 3 | MASK(3, 12));
 }
 
 uint8_t Instruction::cop0sel() const {
     return (uint8_t)MASK(3, 0);
 }
 
-uint16_t Instruction::immediate() const {
-    return (uint16_t)MASK(16, 0);
+uint32_t Instruction::immediate() const {
+    uint32_t ret = 0;
+    switch (this->type()) {
+        case R:
+            break;
+        case I:
+            ret = extend(MASK(12, 20), 12); break;
+        case S:
+            ret = extend(MASK(7, 25) << 5 | MASK(5, 7), 12); break;
+        case B:
+            ret = extend(MASK(4, 8) << 1 | MASK(6, 25) << 5 | MASK(1, 7) << 11) | MASK(1, 31) << 12, 12); break;
+        case U:
+            ret = this->dt & ~((1 << 7) - 1); break;
+        case J:
+            ret = extend(MASK(10, 21) << 1 | MASK(1, 20) << 11 | MASK(8, 12) << 12 | MASK(1, 31) << 20, 21); break;
+    }
+    return ret;
 }
 
 Address Instruction::address() const {
@@ -1854,6 +1869,10 @@ Address Instruction::address() const {
 
 uint32_t Instruction::data() const {
     return this->dt;
+}
+
+bool imm_sign() const {
+    return this->dt >> 31;
 }
 
 enum Instruction::Type Instruction::type() const {
@@ -2448,6 +2467,10 @@ void Instruction::append_recognized_instructions(QStringList &list) {
 
 void Instruction::set_symbolic_registers(bool enable) {
     symbolic_registers_fl = enable;
+}
+
+inline uint32_t Instruction::extend(uint32_t value, uint32_t used_bits) {
+    return value | this->imm_sign() * ~((1 << used_bits) - 1);
 }
 
 void Instruction::append_recognized_registers(QStringList &list) {

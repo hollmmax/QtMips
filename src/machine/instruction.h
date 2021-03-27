@@ -96,19 +96,19 @@ class Instruction {
 public:
     Instruction();
     explicit Instruction(uint32_t inst);
-    Instruction(
-        uint8_t opcode,
-        uint8_t rs,
-        uint8_t rt,
-        uint8_t rd,
-        uint8_t shamt,
-        uint8_t funct); // Type R
-    Instruction(
-        uint8_t opcode,
-        uint8_t rs,
-        uint8_t rt,
-        uint16_t immediate);                      // Type I
-    Instruction(uint8_t opcode, Address address); // Type J
+    // Instruction(
+    //     uint8_t opcode,
+    //     uint8_t rs,
+    //     uint8_t rt,
+    //     uint8_t rd,
+    //     uint8_t shamt,
+    //     uint8_t funct); // Type R
+    // Instruction(
+    //     uint8_t opcode,
+    //     uint8_t rs,
+    //     uint8_t rt,
+    //     uint16_t immediate);                      // Type I
+    // Instruction(uint8_t opcode, Address address); // Type J
     Instruction(const Instruction &);
 
     enum Type { T_R, T_I, T_J, T_UNKNOWN };
@@ -123,11 +123,13 @@ public:
     uint16_t immediate() const;
     Address address() const;
     uint32_t data() const;
+    bool imm_sign() const;
     enum Type type() const;
     enum InstructionFlags flags() const;
     enum AluOp alu_op() const;
     enum AccessControl mem_ctl() const;
     enum ExceptionCause encoded_exception() const;
+    static inline uint32_t extend(uint32_t amount) const;
 
     void flags_alu_op_mem_ctl(
         enum InstructionFlags &flags,
