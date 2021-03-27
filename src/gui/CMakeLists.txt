@@ -124,8 +124,9 @@ set(gui_RESOURCES
         samples.qrc
         )
 
-if ("${CMAKE_SYSTEM_NAME}" MATCHES "Emscripten")
-    message("gui :: Including WASM only files.")
+
+if ("${WASM}")
+    message(STATUS "gui :: Including WASM only files.")
     list(APPEND gui_SOURCES qhtml5file_html5.cpp)
     list(APPEND gui_HEADERS qhtml5file.h)
 endif ()
