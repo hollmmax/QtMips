@@ -414,6 +414,17 @@ void MainWindow::print_action() {
     printer.setColorMode(QPrinter::Color);
     QPrintDialog print_dialog(&printer, this);
     if (print_dialog.exec() == QDialog::Accepted) {
+        // This vector pre-drawing step is required because Qt fallbacks to
+        // bitmap and produces extremely large and slow to render files.
+        // (https://forum.qt.io/topic/21330/printing-widgets-not-as-bitmap-but-in-a-vector-based-format/3)
+        QPicture scene_as_vector;
+        {
+            QPainter painter(&scene_as_vector);
+            corescene->render(&painter);
+            painter.end();
+        }
+
+        // Prepare printer for PDF printing with appropriate resize.
         QRectF scene_rect = corescene->sceneRect();
         if (printer.outputFormat() == QPrinter::PdfFormat
             && (scene_rect.height() != 0)) {
@@ -437,9 +448,8 @@ void MainWindow::print_action() {
             printer.setPageLayout(layout);
         }
         QPainter painter(&printer);
-        QRectF target_rect = painter.viewport();
-        corescene->render(
-            &painter, target_rect, scene_rect, Qt::KeepAspectRatio);
+        painter.drawPicture(0, 0, scene_as_vector);
+        painter.end();
     }
 #else
     QMessageBox msgBox;
