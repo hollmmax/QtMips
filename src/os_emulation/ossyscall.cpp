@@ -1,9 +1,7 @@
 #include "ossyscall.h"
 
-#include "errno.h"
 #include "machine/core.h"
 #include "machine/utils.h"
-#include "syscall_nr.h"
 #include "target_errno.h"
 
 #include <cerrno>
@@ -12,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <utility>
 
 using namespace machine;
 using namespace osemu;
@@ -495,19 +494,22 @@ static const QMap<int, int> errno_map = {
 };
 
 uint32_t result_errno_if_error(uint32_t result) {
-    if (result < (uint32_t)-4096)
+    if (result < (uint32_t)-4096) {
         return result;
+    }
     result = (uint32_t)-errno_map.value(errno);
-    if (!result)
+    if (!result) {
         result = (uint32_t)-1;
+    }
     return result;
 }
 
 int status_from_result(uint32_t result) {
-    if (result < (uint32_t)-4096)
+    if (result < (uint32_t)-4096) {
         return 0;
-    else
+    } else {
         return -result;
+    }
 }
 
 typedef int (OsSyscallExceptionHandler::*syscall_handler_t)(
@@ -1030,7 +1032,7 @@ OsSyscallExceptionHandler::OsSyscallExceptionHandler(
     anonymous_last = anonymous_base;
     this->known_syscall_stop = known_syscall_stop;
     this->unknown_syscall_stop = unknown_syscall_stop;
-    this->fs_root = fs_root;
+    this->fs_root = std::move(fs_root);
 }
 
 bool OsSyscallExceptionHandler::handle_exception(
@@ -1128,8 +1130,9 @@ int32_t OsSyscallExceptionHandler::write_mem(
     Address addr,
     const QVector<uint8_t> &data,
     uint32_t count) {
-    if ((uint32_t)data.size() < count)
+    if ((uint32_t)data.size() < count) {
         count = data.size();
+    }
 
     for (uint32_t i = 0; i < count; i++) {
         mem->write_u8(addr, data[i]);
@@ -1639,8 +1642,9 @@ int OsSyscallExceptionHandler::do_sys_open(
     while (true) {
         ch = mem->read_u8(pathname_ptr);
         pathname_ptr += 1;
-        if (ch == 0)
+        if (ch == 0) {
             break;
+        }
         fname.append(QChar(ch));
     }
 
@@ -1881,8 +1885,9 @@ int OsSyscallExceptionHandler::do_spim_print_string(
         uint8_t ch;
         ch = mem->read_u8(str_ptr);
         str_ptr += 1;
-        if (ch == 0)
+        if (ch == 0) {
             break;
+        }
         data.append(ch);
     }
     write_io(1, data, data.size());
