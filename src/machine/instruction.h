@@ -129,7 +129,6 @@ public:
     enum AluOp alu_op() const;
     enum AccessControl mem_ctl() const;
     enum ExceptionCause encoded_exception() const;
-    static inline uint32_t extend(uint32_t amount) const;
 
     void flags_alu_op_mem_ctl(
         enum InstructionFlags &flags,
@@ -178,6 +177,7 @@ public:
 private:
     uint32_t dt;
     static bool symbolic_registers_fl;
+    inline uint32_t extend(uint32_t value, uint32_t used_bits) const;
 };
 
 } // namespace machine
