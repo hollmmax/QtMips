@@ -309,11 +309,12 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
     // requires rt for beq, bne
     bool bjr_req_rt = flags & IMF_BJR_REQ_RT;
 
-    if (flags & IMF_ZERO_EXTEND) {
-        immediate_val = dt.inst.immediate();
-    } else {
-        immediate_val = sign_extend(dt.inst.immediate());
-    }
+    // if (flags & IMF_ZERO_EXTEND) {
+    //     immediate_val = dt.inst.immediate();
+    // } else {
+    //     immediate_val = sign_extend(dt.inst.immediate());
+    // }
+    immediate_val = dt.inst.immediate();
 
     if ((flags & IMF_EXCEPTION) && (excause == EXCAUSE_NONE)) {
         excause = dt.inst.encoded_exception();
