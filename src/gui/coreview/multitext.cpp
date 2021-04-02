@@ -16,15 +16,16 @@ using namespace coreview;
 #define PENW 1
 //////////////////////
 
-MultiText::MultiText(QMap<uint32_t, QString> value_map, bool nonzero_red)
+MultiText::MultiText(
+    const std::vector<QString> &texts_table,
+    bool show_nonzero_red)
     : QGraphicsObject(nullptr)
-    , text(this) {
+    , text(this)
+    , texts_table(texts_table)
+    , show_nonzero_red(show_nonzero_red) {
     QFont f;
     f.setPointSize(FontSize::SIZE6);
     text.setFont(f);
-
-    this->value_map = std::move(value_map);
-    this->nonzero_red = nonzero_red;
 
     multitext_update(0);
 }
@@ -35,10 +36,13 @@ QRectF MultiText::boundingRect() const {
 
 void MultiText::paint(
     QPainter *painter,
-    const QStyleOptionGraphicsItem *option __attribute__((unused)),
-    QWidget *widget __attribute__((unused))) {
+    const QStyleOptionGraphicsItem *option,
+    QWidget *widget) {
+    Q_UNUSED(option)
+    Q_UNUSED(widget)
+
     painter->setPen(QPen(QColor(240, 240, 240)));
-    if (value != 0 && nonzero_red) {
+    if (value != 0 && show_nonzero_red) {
         painter->setBrush(QBrush(QColor(255, 100, 100)));
     } else {
         painter->setBrush(QBrush(QColor(240, 240, 240)));
@@ -47,11 +51,10 @@ void MultiText::paint(
     painter->drawRoundedRect(-WIDTH / 2, 0, WIDTH, HEIGHT, ROUND, ROUND);
 }
 
-void MultiText::multitext_update(uint32_t value) {
+void MultiText::multitext_update(size_t new_value) {
     QRectF prev_box = boundingRect();
-    this->value = value;
-    QString str = value_map.value(value);
-    text.setText(str);
+    this->value = new_value;
+    text.setText(texts_table.at(new_value));
     QRectF box = text.boundingRect();
     text.setPos(-box.width() / 2, GAP);
     update(prev_box.united(boundingRect()));
