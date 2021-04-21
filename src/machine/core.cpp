@@ -2,7 +2,7 @@
 
 #include "programloader.h"
 #include "utils.h"
-//#include "execute/alu.h"
+#include "execute/alu.h"
 
 using namespace machine;
 
@@ -397,71 +397,70 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
     }
 
     if (excause == EXCAUSE_NONE) {
-//        alu_val = alu_operate(
-//            dt.aluop, dt.val_rs, alu_sec, dt.inst.shamt(), dt.num_rd, regs,
-//            discard, excause);
-//        if (discard) {
-//            regwrite = false;
-//        }
+        alu_val = alu_combined_operate({.alu_op = dt.aluop}, AluComponent::ALU, true, false, dt.val_rs, alu_sec);
+        discard = dt.num_rd == 0;
+        if (discard) {
+            regwrite = false;
+        }
 
         switch (dt.aluop) {
-        case ALU_OP_RDHWR:
-            switch (dt.num_rd) {
-            case 0: // CPUNum
-                alu_val = 0;
-                break;
-            case 1: // SYNCI_Step
-                alu_val = min_cache_row_size;
-                break;
-            case 2: // CC
-                alu_val = cycle_c;
-                break;
-            case 3: // CCRes
-                alu_val = 1;
-                break;
-            case 29: // UserLocal
-                alu_val = hwr_userlocal;
-                break;
-            default: alu_val = 0;
-            }
-            break;
-        case ALU_OP_MTC0:
-            if (cop0state == nullptr) {
-                throw SIMULATOR_EXCEPTION(
-                    UnsupportedInstruction, "Cop0 not supported",
-                    "setup Cop0State");
-            }
-            cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt);
-            break;
-        case ALU_OP_MFC0:
-            if (cop0state == nullptr) {
-                throw SIMULATOR_EXCEPTION(
-                    UnsupportedInstruction, "Cop0 not supported",
-                    "setup Cop0State");
-            }
-            alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
-            break;
-        case ALU_OP_MFMC0:
-            if (cop0state == nullptr) {
-                throw SIMULATOR_EXCEPTION(
-                    UnsupportedInstruction, "Cop0 not supported",
-                    "setup Cop0State");
-            }
-            alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
-            if (dt.inst.funct() & 0x20) {
-                cop0state->write_cop0reg(
-                    dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() | 1);
-            } else {
-                cop0state->write_cop0reg(
-                    dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() & ~1U);
-            }
-            break;
-        case ALU_OP_ERET:
-            regs->pc_abs_jmp(Address(cop0state->read_cop0reg(Cop0State::EPC)));
-            if (cop0state != nullptr) {
-                cop0state->set_status_exl(false);
-            }
-            break;
+        // case ALU_OP_RDHWR:
+        //     switch (dt.num_rd) {
+        //     case 0: // CPUNum
+        //         alu_val = 0;
+        //         break;
+        //     case 1: // SYNCI_Step
+        //         alu_val = min_cache_row_size;
+        //         break;
+        //     case 2: // CC
+        //         alu_val = cycle_c;
+        //         break;
+        //     case 3: // CCRes
+        //         alu_val = 1;
+        //         break;
+        //     case 29: // UserLocal
+        //         alu_val = hwr_userlocal;
+        //         break;
+        //     default: alu_val = 0;
+        //     }
+        //     break;
+        // case ALU_OP_MTC0:
+        //     if (cop0state == nullptr) {
+        //         throw SIMULATOR_EXCEPTION(
+        //             UnsupportedInstruction, "Cop0 not supported",
+        //             "setup Cop0State");
+        //     }
+        //     cop0state->write_cop0reg(dt.num_rd, dt.inst.cop0sel(), dt.val_rt);
+        //     break;
+        // case ALU_OP_MFC0:
+        //     if (cop0state == nullptr) {
+        //         throw SIMULATOR_EXCEPTION(
+        //             UnsupportedInstruction, "Cop0 not supported",
+        //             "setup Cop0State");
+        //     }
+        //     alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
+        //     break;
+        // case ALU_OP_MFMC0:
+        //     if (cop0state == nullptr) {
+        //         throw SIMULATOR_EXCEPTION(
+        //             UnsupportedInstruction, "Cop0 not supported",
+        //             "setup Cop0State");
+        //     }
+        //     alu_val = cop0state->read_cop0reg(dt.num_rd, dt.inst.cop0sel());
+        //     if (dt.inst.funct() & 0x20) {
+        //         cop0state->write_cop0reg(
+        //             dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() | 1);
+        //     } else {
+        //         cop0state->write_cop0reg(
+        //             dt.num_rd, dt.inst.cop0sel(), dt.val_rt.as_u32() & ~1U);
+        //     }
+        //     break;
+        // case ALU_OP_ERET:
+        //     regs->pc_abs_jmp(Address(cop0state->read_cop0reg(Cop0State::EPC)));
+        //     if (cop0state != nullptr) {
+        //         cop0state->set_status_exl(false);
+        //     }
+        //     break;
         default: break;
         }
     }
@@ -652,7 +651,8 @@ void Core::dtDecodeInit(struct dtDecode &dt) {
     dt.nb_skip_ds = false;
     dt.forward_m_d_rs = false;
     dt.forward_m_d_rt = false;
-    dt.aluop = ALU_OP_SLL;
+    // dt.aluop = ALU_OP_SLL;
+    dt.aluop = AluOp::ADD;
     dt.memctl = AC_NONE;
     dt.num_rs = 0;
     dt.num_rt = 0;

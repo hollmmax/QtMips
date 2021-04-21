@@ -2,6 +2,7 @@
 #define INSTRUCTION_H
 
 #include "machinedefs.h"
+#include "execute/alu.h"
 
 #include <QObject>
 #include <QString>
@@ -111,16 +112,16 @@ public:
     // Instruction(uint8_t opcode, Address address); // Type J
     Instruction(const Instruction &);
 
-    enum Type { T_R, T_I, T_J, T_UNKNOWN };
+    enum Type { R, I, S, B, U, J, UNKNOWN };
 
     uint8_t opcode() const;
     uint8_t rs() const;
     uint8_t rt() const;
     uint8_t rd() const;
     uint8_t shamt() const;
-    uint8_t funct() const;
+    uint16_t funct() const;
     uint8_t cop0sel() const;
-    uint16_t immediate() const;
+    uint32_t immediate() const;
     Address address() const;
     uint32_t data() const;
     bool imm_sign() const;
