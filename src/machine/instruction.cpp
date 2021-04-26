@@ -683,14 +683,19 @@ const int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(6, 26);
 // };
 
 static const struct InstructionMap OP_IMM_map[] = {
-    {"ADDI", IT_I, AluOp::ADD, NOMEM, nullptr, {}, 0b111000001111111, 0b10011, .flags = FLAGS_ALU_I}, // ADDI
+    {"ADDI", IT_I, AluOp::ADD, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b00000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
     IM_UNKNOWN, // ?
-    IM_UNKNOWN, // SLTI
-    IM_UNKNOWN, // STLIU
-    IM_UNKNOWN, // XORI
+    // IM_UNKNOWN, // SLTI
+    {"SLTI", IT_I, AluOp::SLT, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b10000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
+    // IM_UNKNOWN, // STLIU
+    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b11000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
+    // IM_UNKNOWN, // XORI
+    {"XORI", IT_I, AluOp::XOR, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b100000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
     IM_UNKNOWN, // ?
-    IM_UNKNOWN, // ORI
-    IM_UNKNOWN, // ANDI
+    // IM_UNKNOWN, // ORI
+    {"ORI", IT_I, AluOp::OR, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b110000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
+    // IM_UNKNOWN, // ANDI
+    {"ANDI", IT_I, AluOp::AND, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b111000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
 };
 
 static const struct InstructionMap I_inst_map[] = {
