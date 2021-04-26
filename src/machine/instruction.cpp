@@ -229,7 +229,7 @@ struct InstructionMap {
 #define IT_J Instruction::J
 #define IT_UNKNOWN Instruction::UNKNOWN
 
-const int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(6, 26);
+// const int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(6, 26);
 
 // // This table is indexed by opcode
 // static const struct InstructionMap instruction_map[] = {
@@ -741,6 +741,8 @@ static const struct InstructionMap C_inst_map[] = {
 };
 
 #undef IM_UNKNOWN
+
+const int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(2, 0);
 
 static inline const struct InstructionMap &InstructionMapFind(uint32_t code) {
     // const struct InstructionMap *im = instruction_map;
