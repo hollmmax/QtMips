@@ -50,6 +50,7 @@ enum InstructionFlags {
     IMF_EXCEPTION = 1L << 22,  /**< Instruction causes synchronous exception */
     IMF_STOP_IF = 1L << 23,    /**< Stop instruction fetch until instruction
                                   processed */
+    IMF_ALU_MOD = 1L << 24, /**< ADD and right-shift modifier */
 };
 
 struct RelocExpression {

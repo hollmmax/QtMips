@@ -175,6 +175,13 @@ const RegisterDesc regbycode[REGISTER_CODES] = {
     [30] = { 0, 30, "s8" }, [31] = { 0, 31, "ra" },
 };
 
+const std::string Rv_regnames[32] = {
+    "zero", "ra", "sp",  "gp",  "tp", "t0", "t1", "t2",
+    "s0",   "s1", "a0",  "a1",  "a2", "a3", "a4", "a5",
+    "a6",   "a7", "s2",  "s3",  "s4", "s5", "s6", "s7",
+    "s8",   "s9", "s10", "s11", "t3", "t4", "t5", "t6",
+};
+
 #define FLAGS_ALU_I_NO_RS (IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE)
 #define FLAGS_ALU_I (IMF_SUPPORTED | IMF_ALUSRC | IMF_REGWRITE | IMF_ALU_REQ_RS)
 #define FLAGS_ALU_I_ZE (FLAGS_ALU_I | IMF_ZERO_EXTEND)
@@ -682,36 +689,70 @@ struct InstructionMap {
 //     { "C0", IT_I, NOALU, NOMEM, cop0_func_instruction_map, { "C" }, 0x42000000, 0xfe000000, .flags = IMF_SUB_ENCODE(6, 0) },
 // };
 
+static const struct InstructionMap LOAD_map[] = {
+    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_LOAD}, // LB
+    IM_UNKNOWN, // LH
+    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_LOAD}, // LW
+    IM_UNKNOWN, // LD
+    IM_UNKNOWN, // LBU
+    IM_UNKNOWN, // LHU
+    IM_UNKNOWN, // LWU
+    IM_UNKNOWN,
+};
+
 static const struct InstructionMap OP_IMM_map[] = {
-    {"ADDI", IT_I, AluOp::ADD, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b00000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
-    IM_UNKNOWN, // ?
-    // IM_UNKNOWN, // SLTI
-    {"SLTI", IT_I, AluOp::SLT, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b10000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
-    // IM_UNKNOWN, // STLIU
-    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b11000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
-    // IM_UNKNOWN, // XORI
-    {"XORI", IT_I, AluOp::XOR, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b100000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
-    IM_UNKNOWN, // ?
-    // IM_UNKNOWN, // ORI
-    {"ORI", IT_I, AluOp::OR, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b110000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
-    // IM_UNKNOWN, // ANDI
-    {"ANDI", IT_I, AluOp::AND, NOMEM, nullptr, {"t", "r", "j"}, 0b111000001111111, 0b111000000010011, .flags = FLAGS_ALU_I | IMF_REGD}, // ADDI
+    {"ADDI",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00000013, .flags = FLAGS_ALU_I}, // ADDI
+    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "j"}, 0xfe00707f, 0x00001013, .flags = FLAGS_ALU_I}, // SLLI
+    {"SLTI",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00002013, .flags = FLAGS_ALU_I}, // SLTI
+    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00003013, .flags = FLAGS_ALU_I}, // SLTIU
+    {"XORI",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00004013, .flags = FLAGS_ALU_I}, // XORI
+    IM_UNKNOWN, // SRLI, SRAI
+    {"ORI",   IT_I, AluOp::OR,   NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00006013, .flags = FLAGS_ALU_I}, // ORI
+    {"ANDI",  IT_I, AluOp::AND,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00007013, .flags = FLAGS_ALU_I}, // ANDI
+};
+
+static const struct InstructionMap STORE_map[] = {
+    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_STORE}, // SB
+    IM_UNKNOWN, // SH
+    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_STORE}, // SW
+    IM_UNKNOWN, // LD
+    IM_UNKNOWN, // LBU
+    IM_UNKNOWN, // LHU
+    IM_UNKNOWN, // LWU
+    IM_UNKNOWN,
+};
+
+static const struct InstructionMap ADD_map[] = {
+    {"ADD", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00000033, .flags = FLAGS_ALU_T_R_STD},
+    {"SUB", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00000033, .flags = FLAGS_ALU_T_R_STD | IMF_ALU_MOD},
+};
+
+// TODO: subtrees are ugly, maybe a union would help?
+static const struct InstructionMap OP_map[] = {
+    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0xbe00707f, 0x00000033, .flags = IMF_SUB_ENCODE(1, 30)},
+    {"SLL",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00001033, .flags = FLAGS_ALU_T_R_STD}, // SLL
+    {"SLT",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00002033, .flags = FLAGS_ALU_T_R_STD}, // SLT
+    {"SLTU", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00003033, .flags = FLAGS_ALU_T_R_STD}, // SLTU
+    {"XOR",  IT_R, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00004033, .flags = FLAGS_ALU_T_R_STD}, // XOR
+    IM_UNKNOWN, // SRL, SRA
+    {"OR",   IT_R, AluOp::OR,   NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00006033, .flags = FLAGS_ALU_T_R_STD}, // OR
+    {"AND",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00007033, .flags = FLAGS_ALU_T_R_STD}, // AND
 };
 
 static const struct InstructionMap I_inst_map[] = {
-    IM_UNKNOWN, // LOAD
+    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
-    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 11)}, // OP-IMM
+    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // OP-IMM
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    IM_UNKNOWN, // STORE
+    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
-    IM_UNKNOWN, // OP
+    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // OP
     IM_UNKNOWN, // LUI
     IM_UNKNOWN, // OP-32
     IM_UNKNOWN, // 64b
