@@ -298,7 +298,8 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
     RegisterValue val_rt = regs->read_gp(num_rt);
     uint32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
-    bool regd = flags & IMF_REGD;
+    // bool regd = flags & IMF_REGD;
+    bool regd = true; // Rv always writes to rd
     bool regd31 = flags & IMF_PC_TO_R31;
 
     // requires rs for beq, bne, blez, bgtz, jr nad jalr
@@ -326,12 +327,12 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
     emit decode_reg1_value(val_rs.as_u32());
     emit decode_reg2_value(val_rt.as_u32());
     emit decode_immediate_value(immediate_val);
-    emit decode_regw_value((bool)(flags & IMF_REGWRITE));
+    emit decode_regw_value(regwrite);
     emit decode_memtoreg_value((bool)(flags & IMF_MEMREAD));
     emit decode_memwrite_value((bool)(flags & IMF_MEMWRITE));
     emit decode_memread_value((bool)(flags & IMF_MEMREAD));
     emit decode_alusrc_value((bool)(flags & IMF_ALUSRC));
-    emit decode_regdest_value((bool)(flags & IMF_REGD));
+    emit decode_regdest_value(regd);
     emit decode_rs_num_value(num_rs);
     emit decode_rt_num_value(num_rt);
     emit decode_rd_num_value(num_rd);
@@ -379,6 +380,7 @@ struct Core::dtDecode Core::decode(const struct dtFetch &dt) {
         .stall = false,
         .stop_if = !!(flags & IMF_STOP_IF),
         .is_valid = dt.is_valid,
+        .alu_mod = bool(flags & IMF_ALU_MOD),
     };
 }
 
@@ -397,13 +399,13 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
     }
 
     if (excause == EXCAUSE_NONE) {
-        alu_val = alu_combined_operate({.alu_op = dt.aluop}, AluComponent::ALU, true, false, dt.val_rs, alu_sec);
+        alu_val = alu_combined_operate({.alu_op = dt.aluop}, AluComponent::ALU, true, dt.alu_mod, dt.val_rs, alu_sec);
         discard = dt.num_rd == 0;
         if (discard) {
             regwrite = false;
         }
 
-        switch (dt.aluop) {
+        // switch (dt.aluop) {
         // case ALU_OP_RDHWR:
         //     switch (dt.num_rd) {
         //     case 0: // CPUNum
@@ -461,8 +463,8 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
         //         cop0state->set_status_exl(false);
         //     }
         //     break;
-        default: break;
-        }
+        // default: break;
+        // }
     }
 
     emit execute_inst_addr_value(dt.is_valid ? dt.inst_addr : STAGEADDR_NONE);

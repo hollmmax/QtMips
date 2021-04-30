@@ -249,6 +249,7 @@ protected:
         bool stall;
         bool stop_if;
         bool is_valid;
+        bool alu_mod; // alternative versions of ADD and right-shift
     };
     struct dtExecute {
         Instruction inst;
