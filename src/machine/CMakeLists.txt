@@ -53,12 +53,13 @@ set(machine_HEADERS
         symboltable.h
         utils.h
         machine_global.h
+        execute/alu_op.h
+        execute/mul_op.h
         )
 set(machine_TESTS
         tests/data/cache_test_performance_data.h
         tests/tst_machine.h
         tests/utils/integer_decomposition.h
-        tests/testalu.cpp
         tests/testcache.cpp
         tests/testcore.cpp
         tests/testinstruction.cpp
@@ -84,6 +85,16 @@ if (NOT ${WASM})
     target_link_libraries(machine_unit_tests
             PRIVATE machine Qt5::Core Qt5::Test)
 
-    add_test(NAME machine_unit_tests
-            COMMAND machine_unit_tests)
+    add_test(NAME qtmips_machine_unit_tests
+            COMMAND qtmips_machine_unit_tests)
+
+    add_executable(alu_test
+            execute/alu.test.cpp
+            execute/alu.test.h
+            execute/alu.cpp
+            execute/alu.h
+            )
+    target_link_libraries(alu_test
+            PRIVATE Qt5::Core Qt5::Test)
+    add_test(NAME alu COMMAND alu_test)
 endif ()
