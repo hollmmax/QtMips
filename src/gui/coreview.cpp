@@ -1,23 +1,47 @@
 #include "coreview.h"
 
+#include "common/logging.h"
 #include "fontsize.h"
 
 #include <QMetaMethod>
 #include <QSignalMapper>
 #include <QXmlStreamReader>
-#include <components/numeric_value.h>
 #include <svgscene/components/groupitem.h>
+#include <svgscene/components/hyperlinkitem.h>
 #include <svgscene/components/simpletextitem.h>
 #include <svgscene/svghandler.h>
 #include <unordered_map>
 
-#define LOG nCInfo("coreview")
+using svgscene::HyperlinkItem;
+using svgscene::SimpleTextItem;
+
+LOG_CATEGORY("gui.coreview");
 
 //////////////////////////////////////////////////////////////////////////////
 /// Size of visible view area
 constexpr size_t SC_WIDTH = 720;
 constexpr size_t SC_HEIGHT = 540;
 //////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Link targets available for use in the SVG.
+ *
+ * EXAMPLE:
+ * ```svg
+ *  <a xlink:href="#registers">
+ *    <text>Registers</text>
+ *  </a>
+ * ```
+ */
+const std::unordered_map<QString, void (::CoreViewScene::*)()> HYPERLINK_TARGETS {
+    { "#registers", &CoreViewScene::request_registers },
+    { "#cache_data", &CoreViewScene::request_cache_data },
+    { "#cache_program", &CoreViewScene::request_cache_program },
+    { "#data_memory", &CoreViewScene::request_data_memory },
+    { "#peripherals", &CoreViewScene::request_peripherals },
+    { "#program_memory", &CoreViewScene::request_program_memory },
+    { "#terminal", &CoreViewScene::request_terminal },
+};
 
 static const std::vector<QString> EXCEPTION_NAME_TABLE
     = { { "NONE" },      // machine::EXCAUSE_NONE
@@ -67,51 +91,25 @@ static const std::vector<QString> STALL_TEXT_TABLE
             &coreview::MultiText::multitext_update);                           \
     } while (false)
 
-uint64_t const1() {
-    return 11;
-}
-
 CoreViewScene::CoreViewScene(
     machine::Machine *machine,
     const QString &background_name)
-    : QGraphicsScene() {
+    : SvgGraphicsScene() {
     svgscene::SvgHandler h(this);
-    //    QFile f(QString(":/core/%1.svg").arg(background_name));
-    QFile f(QString(":/core/%1.svg").arg("simple"));
+    QFile f(QString(":/core/%1.svg").arg(background_name));
     f.open(QIODevice::ReadOnly);
     QXmlStreamReader xml(&f);
     h.load(&xml);
     svgscene::SvgDocument document = h.getDocument();
-    std::vector<NumericValue *> nvc;
-    for (auto &component : document.getRoot().findAll<QGraphicsItem>(
-             "data-component", "value-signal")) {
-        auto node = component.find<svgscene::SimpleTextItem>();
-        const auto src = node.getAttrValueOr("data-source");
-        auto controller = new NumericValue(node.getElement(), const1, 1, 16);
-        nvc.push_back(controller);
-    }
-    for (auto &nv : nvc) {
-        nv->update();
+
+    for (auto hyperlink_tree : document.getRoot().findAll<HyperlinkItem>()) {
+        this->register_hyperlink(hyperlink_tree.getElement());
     }
 
-    /*
-     * The Plan
-     *
-     * For each type of dynamic component, there will be a vector of pairs:
-     * pointer to item to be updated and a function to retrieve its data.
-     *
-     * Text
-     * ??? Format: dec vs hex
-     *
-     * Mux
-     *
-     * Links
-     * - have a list of possible targets by name
-     *
-     * Instructions?
-     *
-     * Multi?
-     */
+    for (auto hyperlink_tree : document.getRoot().findAll<SimpleTextItem>
+        ("data-component", "")) {
+        this->register_hyperlink(hyperlink_tree.getElement());
+    }
 
     //    NEW(ProgramMemory, mem_program, 90, 240, machine);
     //    NEW(DataMemory, mem_data, 580, 258, machine);
@@ -215,6 +213,22 @@ CoreViewScene::new_label(const QString &str, qreal x, qreal y) {
     addItem(i);
     i->setPos(x, y);
     return i;
+}
+
+auto w = &CoreViewScene::request_cache_data;
+
+void CoreViewScene::register_hyperlink(svgscene::HyperlinkItem *element) const {
+    try {
+        connect(
+            element, &svgscene::HyperlinkItem::triggered, this,
+            HYPERLINK_TARGETS.at(element->getTargetName()));
+        LOG("Registered hyperlink to target %s",
+            qPrintable(element->getTargetName()));
+    } catch (std::out_of_range &) {
+        WARN(
+            "Registering hyperlink without valid target (href: \"%s\").",
+            qPrintable(element->getTargetName()));
+    }
 }
 
 CoreViewSceneSimple::CoreViewSceneSimple(machine::Machine *machine)
