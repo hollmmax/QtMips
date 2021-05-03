@@ -32,6 +32,16 @@ CoreViewScene::CoreViewScene(
         this->install_hyperlink(hyperlink_tree.getElement());
     }
 
+    /*
+     * TODO:
+     * Components not implemented:
+     * - MUX
+     * - colored frames on special values
+     *
+     * Invert the registering process, so that the tree is traversed
+     * only once.
+     */
+
     install_values_from_document(
         document, values.bool_values, VALUE_SOURCE_NAME_MAPS.BOOL);
     install_values_from_document(
@@ -40,6 +50,11 @@ CoreViewScene::CoreViewScene(
         document, values.debug_values, VALUE_SOURCE_NAME_MAPS.DEBUG);
     install_values_from_document(
         document, values.pc_values, VALUE_SOURCE_NAME_MAPS.PC);
+    install_values_from_document(
+        document, values.multi_text_values, VALUE_SOURCE_NAME_MAPS.MULTI_TEXT);
+    install_values_from_document(
+        document, values.instruction_values,
+        VALUE_SOURCE_NAME_MAPS.INSTRUCTION);
 
     update_values();
 }
@@ -66,7 +81,7 @@ void CoreViewScene::install_hyperlink(svgscene::HyperlinkItem *element) const {
 template<typename T_handler, typename T>
 void CoreViewScene::install_value(
     vector<T_handler> &handler_list,
-    const unordered_map<QString, const T &> &value_source_name_map,
+    const unordered_map<QStringView, T> &value_source_name_map,
     SimpleTextItem *element,
     const QString &source_name) {
     try {
@@ -87,7 +102,7 @@ template<typename T_handler, typename T>
 void CoreViewScene::install_values_from_document(
     const SvgDocument &document,
     vector<T_handler> &handler_list,
-    const unordered_map<QString, T &> &value_source_name_map) {
+    const unordered_map<QStringView, T> &value_source_name_map) {
     for (SvgDomTree<QGraphicsItem> component_tree :
          document.getRoot().findAll<QGraphicsItem>(
              "data-component", T_handler::COMPONENT_NAME)) {
