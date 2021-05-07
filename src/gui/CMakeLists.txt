@@ -145,3 +145,15 @@ target_compile_definitions(gui
         ENV_CONFIG_FILE_NAME=\"${MAIN_PROJECT_NAME_UPPER}_CONFIG_FILE\")
 set_target_properties(gui PROPERTIES
         OUTPUT_NAME "${MAIN_PROJECT_NAME_LOWER}_${PROJECT_NAME}")
+
+# =============================================================================
+# Installation
+# =============================================================================
+
+# Prior to CMake version 3.13, installation must be performed in the subdirectory,
+# there the target was created. Therefore executable installation is to be found
+# in corresponding CMakeLists.txt.
+
+install(TARGETS gui
+        RUNTIME DESTINATION bin)
+
