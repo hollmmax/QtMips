@@ -34,10 +34,9 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent) {
     QString versionText;
     versionText = "Version " APP_VERSION "\n";
 
-    vl->addWidget(
-        new QLabel("<span style='font-size:x-large; font-weight:bold;"
-                   "'>" APP_NAME " "
-                   "- RISC-V Architecture Simulator</span>"));
+    vl->addWidget(new QLabel("<span style='font-size:x-large; font-weight:bold;"
+                             "'>" APP_NAME " "
+                             "- RISC-V Architecture Simulator</span>"));
     lbl = new QLabel(versionText);
     lbl->setAlignment(Qt::AlignHCenter);
     lbl->setOpenExternalLinks(true);
@@ -73,22 +72,17 @@ AboutDialog::AboutDialog(QWidget *parent) : QDialog(parent) {
 
     QString licenseText;
     licenseText
-        = "This program is free software; you can redistribute it and/or\n"
-          "modify it under the terms of the GNU General Public License\n"
-          "as published by the Free Software Foundation; either version 2\n"
-          "of the License, or (at your option) any later version.\n"
-          "<br/>\n"
-          "<br/>\n"
-          "This program is distributed in the hope that it will be useful,\n"
-          "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
-          "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
-          "GNU General Public License for more details.\n"
-          "<br/>\n"
-          "<br/>\n"
-          "You should have received a copy of the GNU General Public License\n"
-          "along with this program; if not, write to the Free Software\n"
-          "Foundation, Inc., 51 Franklin Street, Fifth Floor,\n"
-          "Boston, MA  02110-1301, USA.\n";
+        = "<p>This program is free software: you can redistribute it and/or "
+          "modify it under the terms of the GNU General Public License "
+          "as published by the Free Software Foundation, either version 3 of "
+          "the License, or (at your option) any later version.</p>"
+          "<p>This program is distributed in the hope that it will be "
+          "useful, but WITHOUT ANY WARRANTY; without even the implied "
+          "warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. "
+          "See the GNU General Public License for more details.</p>"
+          "<p>You should have received a copy of the GNU General Public "
+          "License along with this program. If not, see <a href=\"https://www"
+          ".gnu.org/licenses/\">https://www.gnu.org/licenses/</a>.</p>";
 
     QTextBrowser *licenseBrowser = new QTextBrowser;
     licenseBrowser->setOpenExternalLinks(true);
