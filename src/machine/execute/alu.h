@@ -3,6 +3,7 @@
 
 #include "execute/alu_op.h"
 #include "execute/mul_op.h"
+#include "execute/cmp_op.h"
 #include "register_value.h"
 
 #include <cstdint>
@@ -14,12 +15,14 @@ namespace machine {
  */
 enum class AluComponent {
     ALU, //> RV32/64I
-    MUL  //> RV32/64M
+    MUL, //> RV32/64M
+    CMP,
 };
 
 union AluCombinedOp {
     AluOp alu_op;
     MulOp mul_op;
+    CmpOp cmp_op;
 };
 
 /**
@@ -113,6 +116,10 @@ alu32_operate(AluOp op, bool modified, RegisterValue a, RegisterValue b);
  *            to arbitrary implementation of RegisterValue
  */
 [[gnu::const]] int32_t mul32_operate(MulOp op, RegisterValue a, RegisterValue b);
+
+
+[[gnu::const]] bool cmp64_operate(CmpOp op, RegisterValue a, RegisterValue b);
+[[gnu::const]] bool cmp32_operate(CmpOp op, RegisterValue a, RegisterValue b);
 
 } // namespace machine
 

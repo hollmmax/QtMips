@@ -9,6 +9,7 @@
 #include "register_value.h"
 #include "registers.h"
 #include "simulator_exception.h"
+#include "pipeline.h"
 
 #include <QObject>
 

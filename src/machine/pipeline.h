@@ -1,5 +1,5 @@
-#ifndef src/machine/stages_h_INCLUDED
-#define src/machine/stages_h_INCLUDED
+#ifndef STAGES_H
+#define STAGES_H
 
 #include "memory/address.h"
 #include "instruction.h"

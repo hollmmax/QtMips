@@ -18,6 +18,12 @@ RegisterValue alu_combined_operate(
     case AluComponent::MUL:
         return (w_operation) ? mul32_operate(op.mul_op, a, b)
                              : mul64_operate(op.mul_op, a, b);
+    case AluComponent::CMP:
+        return (w_operation) ? cmp32_operate(op.cmp_op, a, b)
+                             : cmp64_operate(op.cmp_op, a, b);
+    default:
+        qDebug("ERROR, unknown alu component: %hhx", uint8_t(component));
+        return 0;
     }
 }
 
@@ -45,6 +51,9 @@ alu64_operate(AluOp op, bool modified, RegisterValue a, RegisterValue b) {
         return (modified) ? (a.as_i64() >> _b) : (_a >> (_b & SHIFT_MASK));
     case AluOp::OR: return _a | _b;
     case AluOp::AND: return _a & _b;
+    default:
+        qDebug("ERROR, unknown alu operation: %hhx", uint8_t(op));
+        return 0;
     }
 }
 
@@ -66,6 +75,9 @@ alu32_operate(AluOp op, bool modified, RegisterValue a, RegisterValue b) {
                           : (_a >> (_b & SHIFT_MASK));
     case AluOp::OR: return _a | _b;
     case AluOp::AND: return _a & _b;
+    default:
+        qDebug("ERROR, unknown alu operation: %hhx", uint8_t(op));
+        return 0;
     }
 }
 
@@ -98,6 +110,9 @@ int64_t mul64_operate(MulOp op, RegisterValue a, RegisterValue b) {
         return (b.as_u64() == 0) ? a.as_u64() // Division by zero reminder
                                               // is defined.
                                  : a.as_u64() % b.as_u64();
+    default:
+        qDebug("ERROR, unknown multiplication operation: %hhx", uint8_t(op));
+        return 0;
     }
 }
 
@@ -133,6 +148,37 @@ int32_t mul32_operate(MulOp op, RegisterValue a, RegisterValue b) {
         return (b.as_u32() == 0) ? a.as_u32() // Division by zero reminder
                                               // is defined.
                                  : a.as_u32() % b.as_u32();
+    default:
+        qDebug("ERROR, unknown multiplication operation: %hhx", uint8_t(op));
+        return 0;
+    }
+}
+
+bool cmp64_operate(CmpOp op, RegisterValue a, RegisterValue b) {
+    switch (op) {
+        case CmpOp::BEQ: return a == b;
+        case CmpOp::BNE: return a != b;
+        case CmpOp::BLT: return int64_t(a) < int64_t(b);
+        case CmpOp::BLTU: return uint64_t(a) < uint64_t(b);
+        case CmpOp::BGE: return int64_t(a) >= int64_t(b);
+        case CmpOp::BGEU: return uint64_t(a) >= uint64_t(b);
+        default:
+            qDebug("ERROR, unknown compare operation: %hhx", uint8_t(op));
+            return false;
+    }
+}
+
+bool cmp32_operate(CmpOp op, RegisterValue a, RegisterValue b) {
+    switch (op) {
+        case CmpOp::BEQ: return a == b;
+        case CmpOp::BNE: return a != b;
+        case CmpOp::BLT: return int32_t(a) < int32_t(b);
+        case CmpOp::BLTU: return uint32_t(a) < uint32_t(b);
+        case CmpOp::BGE: return int32_t(a) >= int32_t(b);
+        case CmpOp::BGEU: return uint32_t(a) >= uint32_t(b);
+        default:
+            qDebug("ERROR, unknown compare operation: %hhx", uint8_t(op));
+            return false;
     }
 }
 
