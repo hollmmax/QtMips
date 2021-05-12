@@ -10,6 +10,7 @@
 #include <cctype>
 #include <cstring>
 #include <utility>
+#include <string>
 
 using namespace machine;
 
@@ -739,8 +740,20 @@ static const struct InstructionMap OP_map[] = {
     {"AND",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00007033, .flags = FLAGS_ALU_T_R_STD}, // AND
 };
 
+constexpr const int FLAGS_BRANCH = IMF_SUPPORTED | IMF_BRANCH | IMF_BJR_REQ_RS;
+static const struct InstructionMap BRANCH_map[] = {
+    {"BEQ",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH}, // BEQ
+    {"BNE",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_BJ_NOT }, // BNE
+    IM_UNKNOWN,
+    IM_UNKNOWN,
+    {"BLT",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00004063, .flags = FLAGS_ALU_T_R_STD}, // BLT
+    {"BGE",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00005063, .flags = FLAGS_ALU_T_R_STD}, // BGE
+    {"BLTU", IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00006063, .flags = FLAGS_ALU_T_R_STD}, // BLTU
+    {"BGEU", IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00007063, .flags = FLAGS_ALU_T_R_STD}, // BGEU
+};
+
 static const struct InstructionMap I_inst_map[] = {
-    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // LOAD
+    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
@@ -748,7 +761,7 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // STORE
+    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
@@ -764,10 +777,10 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-2/rv128
     IM_UNKNOWN, // 48b
-    IM_UNKNOWN, // BRANCH
+    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
-    IM_UNKNOWN, // JAL
+    {"JAL", IT_J, NOALU, NOMEM, nullptr, {}, 0x0000007f, 0x0000006f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
     IM_UNKNOWN, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
@@ -793,6 +806,7 @@ static inline const struct InstructionMap &InstructionMapFind(uint32_t code) {
         unsigned int bits = IMF_SUB_GET_BITS(flags);
         unsigned int shift = IMF_SUB_GET_SHIFT(flags);
         im = im + ((code >> shift) & ((1 << bits) - 1));
+        qDebug("%du, %s", ((code >> shift) & ((1 << bits) - 1)), im->name);
         if (im->subclass == nullptr) {
             return *im;
         }
