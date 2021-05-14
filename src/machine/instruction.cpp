@@ -742,14 +742,14 @@ static const struct InstructionMap OP_map[] = {
 
 constexpr const int FLAGS_BRANCH = IMF_SUPPORTED | IMF_BRANCH | IMF_BJR_REQ_RS;
 static const struct InstructionMap BRANCH_map[] = {
-    {"BEQ",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH}, // BEQ
-    {"BNE",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BJR_REQ_RS | IMF_BJR_REQ_RT | IMF_BRANCH | IMF_BJ_NOT }, // BNE
+    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD}, // BEQ
+    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT}, // BNE
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"BLT",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00004063, .flags = FLAGS_ALU_T_R_STD}, // BLT
-    {"BGE",  IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00005063, .flags = FLAGS_ALU_T_R_STD}, // BGE
-    {"BLTU", IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00006063, .flags = FLAGS_ALU_T_R_STD}, // BLTU
-    {"BGEU", IT_B, NOALU, NOMEM, nullptr, {}, 0x0000707f, 0x00007063, .flags = FLAGS_ALU_T_R_STD}, // BGEU
+    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {}, 0x0000707f, 0x00004063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLT
+    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {}, 0x0000707f, 0x00005063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGE
+    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {}, 0x0000707f, 0x00006063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLTU
+    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {}, 0x0000707f, 0x00007063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGEU
 };
 
 static const struct InstructionMap I_inst_map[] = {
