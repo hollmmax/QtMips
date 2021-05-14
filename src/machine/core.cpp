@@ -704,29 +704,14 @@ CoreSingle::CoreSingle(
     Registers *regs,
     FrontendMemory *mem_program,
     FrontendMemory *mem_data,
-    bool jmp_delay_slot,
     unsigned int min_cache_row_size,
     Cop0State *cop0state)
     : Core(regs, mem_program, mem_data, min_cache_row_size, cop0state) {
-    if (jmp_delay_slot) {
-        dt_f = new struct Core::dtFetch();
-    } else {
-        dt_f = nullptr;
-    }
     reset();
-}
-
-CoreSingle::~CoreSingle() {
-    delete dt_f;
 }
 
 void CoreSingle::do_step(bool skip_break) {
     struct dtFetch f = fetch(skip_break);
-    if (dt_f != nullptr) {
-        struct dtFetch f_swap = *dt_f;
-        *dt_f = f;
-        f = f_swap;
-    }
     struct dtDecode d = decode(f);
     struct dtExecute e = execute(d);
     struct dtMemory m = memory(e);
@@ -734,28 +719,11 @@ void CoreSingle::do_step(bool skip_break) {
 
     // Handle PC before instruction following jump leaves decode stage
 
-    if ((m.stop_if || (m.excause != EXCAUSE_NONE)) && dt_f != nullptr) {
-        dtFetchInit(*dt_f);
-        emit instruction_fetched(
-            dt_f->inst, dt_f->inst_addr, dt_f->excause, dt_f->is_valid);
-        emit fetch_inst_addr_value(STAGEADDR_NONE);
-    } else {
+    {
         bool branch_taken = handle_pc(d);
-        if (dt_f != nullptr) {
-            dt_f->in_delay_slot = branch_taken;
-            if (d.nb_skip_ds && !branch_taken) {
-                // Discard processing of instruction in delay slot
-                // for BEQL, BNEL, BLEZL, BGTZL, BLTZL, BGEZL, BLTZALL,
-                // BGEZALL
-                dtFetchInit(*dt_f);
-            }
-        }
     }
 
     if (m.excause != EXCAUSE_NONE) {
-        if (dt_f != nullptr) {
-            regs->pc_abs_jmp(dt_f->inst_addr);
-        }
         handle_exception(
             this, regs, m.excause, m.inst_addr, regs->read_pc(), prev_inst_addr,
             m.in_delay_slot, m.mem_addr);
@@ -765,10 +733,6 @@ void CoreSingle::do_step(bool skip_break) {
 }
 
 void CoreSingle::do_reset() {
-    if (dt_f != nullptr) {
-        Core::dtFetchInit(*dt_f);
-        dt_f->inst_addr = Address::null();
-    }
     prev_inst_addr = Address::null();
 }
 
