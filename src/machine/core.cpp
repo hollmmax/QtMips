@@ -399,7 +399,8 @@ struct Core::dtExecute Core::execute(const struct dtDecode &dt) {
     }
 
     if (excause == EXCAUSE_NONE) {
-        alu_val = alu_combined_operate({.alu_op = dt.aluop}, dt.branch ? AluComponent::CMP : AluComponent::ALU, true, dt.alu_mod, dt.val_rs, alu_sec);
+        alu_val = alu_combined_operate({.alu_op = dt.aluop}, AluComponent::ALU, true, dt.alu_mod, dt.val_rs, alu_sec);
+        if (dt.branch) alu_val = dt.bj_not ^ (alu_val == 0);
         discard = dt.num_rd == 0;
         if (discard) {
             regwrite = false;
