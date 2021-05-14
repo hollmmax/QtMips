@@ -328,17 +328,14 @@ public:
         Registers *regs,
         FrontendMemory *mem_program,
         FrontendMemory *mem_data,
-        bool jmp_delay_slot,
         unsigned int min_cache_row_size = 1,
         Cop0State *cop0state = nullptr);
-    ~CoreSingle() override;
 
 protected:
     void do_step(bool skip_break = false) override;
     void do_reset() override;
 
 private:
-    struct Core::dtFetch *dt_f;
     Address prev_inst_addr {};
 };
 
