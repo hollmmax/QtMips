@@ -68,8 +68,8 @@ jobs:
         id: cache-qt
         uses: actions/cache@v1
         with:
-          path: ../Qt
-          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-QtCache
+          path: ${{ github.workspace }}/Qt
+          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-Qt
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -77,6 +77,8 @@ jobs:
           version: ${{ matrix.config.qt_version }}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           arch: ${{ matrix.config.qt_arch }}
+          dir: ${{ github.workspace }}/Qt
+
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{ github.workspace }}/build
@@ -129,8 +131,8 @@ jobs:
         id: cache-qt
         uses: actions/cache@v1
         with:
-          path: ../Qt
-          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-QtCache
+          path: ${{ github.workspace }}/Qt
+          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-Qt
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v2
@@ -138,6 +140,7 @@ jobs:
           version: ${{ matrix.config.qt_version }}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           arch: ${{ matrix.config.qt_arch }}
+          dir: ${{ github.workspace }}/Qt
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
@@ -189,15 +192,15 @@ jobs:
         id: cache-qt
         uses: actions/cache@v2.1.5
         with:
-          path: ../Qt
-          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-wasm-QtCache
+          path: ${{ github.workspace }}/Qt
+          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-wasm-Qt
 
       - name: Setup EMSDK cache
         id: cache-system-libraries
         uses: actions/cache@v2
         with:
           path: 'emsdk-cache'
-          key: ${{ runner.os }}-${{ matrix.config.qt_version }}-emsdk-QtCache
+          key: ${{ runner.os }}-${{ matrix.config.emsdk_version }}-${{ matrix.config.qt_version }}-emsdk
 
       - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v9
@@ -211,6 +214,7 @@ jobs:
           version: ${{ matrix.config.qt_version }}
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           arch: ${{ matrix.config.qt_arch }}
+          dir: ${{ github.workspace }}/Qt
 
       - name: Create Build Environment
         run: cmake -E make_directory ${{github.workspace}}/build
