@@ -3,8 +3,6 @@
 #include "common/logging.h"
 #include "coreview/data.h"
 
-#include <QMetaMethod>
-#include <QSignalMapper>
 #include <svgscene/components/groupitem.h>
 #include <svgscene/components/hyperlinkitem.h>
 #include <svgscene/components/simpletextitem.h>
@@ -34,8 +32,8 @@ CoreViewScene::CoreViewScene(
     }
     // TODO: this is not nice
     {
-        auto program_cache_tree = document.getRoot().find<QGraphicsItem>(
-            "data-component", "program-cache");
+        auto program_cache_tree
+            = document.getRoot().find("data-component", "program-cache");
         if (machine->config().cache_program().enabled()) {
             auto texts = program_cache_tree.findAll<SimpleTextItem>();
             // Diagrams.net dow not allow me, to put there some marks. :(
@@ -47,8 +45,8 @@ CoreViewScene::CoreViewScene(
         }
     }
     {
-        auto data_cache_tree = document.getRoot().find<QGraphicsItem>(
-            "data-component", "data-cache");
+        auto data_cache_tree
+            = document.getRoot().find("data-component", "data-cache");
         if (machine->config().cache_data().enabled()) {
             auto texts = data_cache_tree.findAll<SimpleTextItem>();
             // Diagrams.net dow not allow me, to put there some marks. :(
@@ -133,8 +131,7 @@ void CoreViewScene::install_values_from_document(
     const SvgDocument &document,
     vector<T_handler> &handler_list,
     const unordered_map<QStringView, T> &value_source_name_map) {
-    for (SvgDomTree<QGraphicsItem> component_tree :
-         document.getRoot().findAll<QGraphicsItem>(
+    for (SvgDomTree<QGraphicsItem> component_tree : document.getRoot().findAll(
              "data-component", T_handler::COMPONENT_NAME)) {
         SimpleTextItem *text_element
             = component_tree.find<SimpleTextItem>().getElement();
