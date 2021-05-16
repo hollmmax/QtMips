@@ -155,7 +155,7 @@ if("${WASM}" OR "${FORCE_ELFLIB_STATIC}" OR NOT "${LibElf_FOUND}")
 endif()
 
 find_package(Qt5
-             REQUIRED COMPONENTS Core Widgets Gui Svg Test
+             REQUIRED COMPONENTS Core Widgets Gui Test
              OPTIONAL_COMPONENTS PrintSupport)
 
 message(STATUS "Qt5 version: ${Qt5Core_VERSION}")
