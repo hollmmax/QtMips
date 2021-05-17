@@ -29,5 +29,6 @@ add_executable(mulh64_test
         mulh64.test.cpp
         )
 target_link_libraries(mulh64_test PRIVATE Qt5::Test)
-add_test(NAME mulh64 COMMAND mulh64_tests)
+add_test(NAME mulh64
+         COMMAND mulh64_test)
 
