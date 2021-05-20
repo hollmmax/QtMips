@@ -4,10 +4,11 @@ project(common
 add_subdirectory(polyfills)
 
 set(common_HEADERS
-        endian.h
-        logging.h
-        logging_format_colors.h
-        )
+    endian.h
+    logging.h
+    logging_format_colors.h
+    type_utils/lens.h
+    )
 
 # =============================================================================
 # Target for usage of this header library
