@@ -15,7 +15,8 @@ PCValue::PCValue(SimpleTextItem *element, const machine::Address &data)
     , data(data) {}
 
 void PCValue::update() {
-    element->setText(QString("0x%1").arg(data.get_raw(), 8, 16, QChar('0')).toUpper());
+    element->setText(
+        QString("0x%1").arg(data.get_raw(), 8, 16, QChar('0')).toUpper());
 }
 
 RegValue::RegValue(SimpleTextItem *element, const machine::RegisterValue &data)
@@ -23,17 +24,16 @@ RegValue::RegValue(SimpleTextItem *element, const machine::RegisterValue &data)
     , data(data) {}
 
 void RegValue::update() {
-    element->setText(QString("%1").arg(data.as_u32(), 8, 16, QChar('0')).toUpper());
+    element->setText(
+        QString("%1").arg(data.as_u32(), 8, 16, QChar('0')).toUpper());
 }
 
-RegIdValue::RegIdValue(
-    svgscene::SimpleTextItem *element,
-    const machine::RegisterId &data)
+RegIdValue::RegIdValue(svgscene::SimpleTextItem *element, const uint8_t &data)
     : element(element)
     , data(data) {}
 
 void RegIdValue::update() {
-    element->setText(QString("%1").arg(data.data, 2, 10, QChar('0')));
+    element->setText(QString("%1").arg(data, 2, 10, QChar('0')));
 }
 
 DebugValue::DebugValue(SimpleTextItem *element, const unsigned int &data)
