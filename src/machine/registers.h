@@ -23,6 +23,7 @@ class RegisterId {
 public:
     // TODO: Should this constructor allow implicit conversion?
     inline RegisterId(uint8_t value);
+    inline RegisterId();
 
     uint8_t data;
 };
@@ -36,7 +37,8 @@ inline RegisterId::RegisterId(uint8_t value) : data(value) {
         data < REGISTER_COUNT,
         QString("Trying to create register id for out-of-bounds register ")
             + QString(data));
-};
+}
+inline RegisterId::RegisterId() : RegisterId(0) {}
 
 inline RegisterId operator"" _reg(unsigned long long value) {
     return { static_cast<uint8_t>(value) };

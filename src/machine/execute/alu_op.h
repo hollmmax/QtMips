@@ -2,6 +2,8 @@
 #define ALU_OP_H
 
 #include <QMetaType>
+#include <cstdint>
+using std::uint8_t;
 
 namespace machine {
 
