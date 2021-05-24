@@ -53,6 +53,38 @@ enum InstructionFlags {
     IMF_ALU_MOD = 1L << 24, /**< ADD and right-shift modifier */
 };
 
+struct BitArg {
+    struct Field {
+        size_t count;
+        size_t offset;
+    };
+    const std::vector<Field> fields;
+    size_t shift;
+
+    BitArg(const std::vector<Field> fields, size_t shift = 0) : fields(fields), shift(shift) {}
+    std::vector<Field>::const_iterator begin() const { return fields.begin(); }
+    std::vector<Field>::const_iterator end() const { return fields.end(); }
+    uint32_t decode(uint32_t ins) const {
+        uint32_t ret = 0;
+        size_t offset = 0;
+        for (Field field : *this) {
+            ret |= (ins >> field.offset & ((1 << field.count) - 1)) << offset;
+            offset += field.offset;
+        }
+        return ret << shift;
+    }
+    uint32_t encode(uint32_t imm) const {
+        uint32_t ret = 0;
+        imm >>= shift;
+        for (Field field : *this) {
+            ret |= (imm & ((1 << field.count) - 1)) << field.offset;
+            imm >>= field.count;
+        }
+        return ret;
+    }
+};
+
+
 struct RelocExpression {
     // TODO is location a address
     inline RelocExpression(
@@ -61,9 +93,7 @@ struct RelocExpression {
         int64_t offset,
         int64_t min,
         int64_t max,
-        unsigned lsb_bit,
-        unsigned bits,
-        unsigned shift,
+        const BitArg* arg,
         QString filename,
         int line,
         int options) {
@@ -72,9 +102,7 @@ struct RelocExpression {
         this->offset = offset;
         this->min = min;
         this->max = max;
-        this->lsb_bit = lsb_bit;
-        this->bits = bits;
-        this->shift = shift;
+        this-> arg = arg;
         this->filename = std::move(filename);
         this->line = line;
         this->options = options;
@@ -84,9 +112,7 @@ struct RelocExpression {
     int64_t offset;
     int64_t min;
     int64_t max;
-    unsigned lsb_bit;
-    unsigned bits;
-    unsigned shift;
+    const BitArg* arg;
     QString filename;
     int line;
     int options;
