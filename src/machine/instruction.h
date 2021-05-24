@@ -159,7 +159,7 @@ public:
     uint8_t shamt() const;
     uint16_t funct() const;
     uint8_t cop0sel() const;
-    uint32_t immediate() const;
+    int32_t immediate() const;
     Address address() const;
     uint32_t data() const;
     bool imm_sign() const;
@@ -216,7 +216,7 @@ public:
 private:
     uint32_t dt;
     static bool symbolic_registers_fl;
-    inline uint32_t extend(uint32_t value, uint32_t used_bits) const;
+    inline int32_t extend(uint32_t value, uint32_t used_bits) const;
 };
 
 } // namespace machine

@@ -284,7 +284,7 @@ DecodeState Core::decode(const FetchInterstage &dt) {
     uint8_t num_rd = dt.inst.rd();
     RegisterValue val_rs = regs->read_gp(num_rs);
     RegisterValue val_rt = regs->read_gp(num_rt);
-    uint32_t immediate_val;
+    int32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
 
     immediate_val = dt.inst.immediate();
