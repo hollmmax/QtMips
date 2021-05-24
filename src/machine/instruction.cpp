@@ -11,6 +11,7 @@
 #include <cstring>
 #include <utility>
 #include <string>
+#include <initializer_list>
 
 using namespace machine;
 
@@ -43,103 +44,26 @@ bool Instruction::symbolic_registers_fl = false;
 #define FIELD_IGNORE 0
 
 struct ArgumentDesc {
-    inline ArgumentDesc(
-        char name,
-        char kind,
-        uint32_t loc,
-        int64_t min,
-        int64_t max,
-        unsigned shift) {
-        this->name = name;
-        this->kind = kind;
-        this->loc = loc;
-        this->min = min;
-        this->max = max;
-        this->shift = shift;
-    }
+    // TODO: maybe signed?
     char name;
     char kind;
-    uint32_t loc;
     int64_t min;
     int64_t max;
-    unsigned shift;
+    BitArg arg;
+    inline ArgumentDesc(char name, char kind, int64_t min, int64_t max, BitArg arg) : name(name), kind(kind), min(min), max(max), arg(arg) {}
 };
 
 static const ArgumentDesc argdeslist[] = {
-    ArgumentDesc('1', 'n', FIELD_SHAMT, 0, 31, 0),  // 5 bit sync type
-                                                    // {OP_*_SHAMT}
-    ArgumentDesc('<', 'n', FIELD_SHAMT, 0, 31, 0),  // 5 bit shift amount
-                                                    // {OP_*_SHAMT}
-    ArgumentDesc('>', 'n', FIELD_SHAMT, 32, 63, 0), // shift amount between 32
-                                                    // and 63, stored after
-                                                    // subtracting 32
-                                                    // {OP_*_SHAMT}
-    ArgumentDesc('a', 'a', FIELD_TARGET, 0, 0x3ffffff, 2), // 26 bit target
-                                                           // address
-                                                           // {OP_*_TARGET}
-    ArgumentDesc('b', 'g', FIELD_RS, 0, 31, 0), // 5 bit base register {OP_*_RS}
-    ArgumentDesc('c', 'g', FIELD_CODE, 0, 0x3ff, 0), // 10 bit breakpoint code
-                                                     // {OP_*_CODE}
-    ArgumentDesc('d', 'g', FIELD_RD, 0, 31, 0),    // 5 bit destination register
-                                                   // specifier {OP_*_RD}
-    ArgumentDesc('h', 'h', FIELD_PREFX, 0, 31, 0), // 5 bit prefx hint
-                                                   // {OP_*_PREFX}
-    ArgumentDesc('H', 'n', FIELD_SEL, 0, 7, 0), // 3 select field of MTC0, MFC0
-    ArgumentDesc('i', 'n', FIELD_IMMEDIATE, 0, 0xffff, 0), // 16 bit unsigned
-                                                           // immediate
-                                                           // {OP_*_IMMEDIATE}
-    ArgumentDesc('j', 'n', FIELD_IMMEDIATE, -0x8000, 0x7fff, 0), // 16 bit
-                                                                 // signed
-                                                                 // immediate
-                                                                 // {OP_*_DELTA}
-    ArgumentDesc('k', 'n', FIELD_CACHE, 0, 31, 0), // 5 bit cache opcode in
-                                                   // target register position
-                                                   // {OP_*_CACHE} Also used for
-                                                   // immediate operands in
-                                                   // vr5400 vector insns.
-    ArgumentDesc('o', 'o', FIELD_DELTA, -0x8000, 0x7fff, 0), // 16 bit signed
-                                                             // offset
-                                                             // {OP_*_DELTA}
-    ArgumentDesc('p', 'p', FIELD_DELTA, -0x8000, 0x7fff, 2), // 16 bit PC
-                                                             // relative branch
-                                                             // target address
-                                                             // {OP_*_DELTA}
-    ArgumentDesc('q', 'n', FIELD_CODE2, 0, 0x3ff, 0), // 10 bit extra breakpoint
-                                                      // code {OP_*_CODE2}
-    ArgumentDesc('r', 'g', FIELD_RS, 0, 31, 0), // 5 bit same register used as
-                                                // both source and target
-                                                // {OP_*_RS}
-    ArgumentDesc('s', 'g', FIELD_RS, 0, 31, 0), // 5 bit source register
-                                                // specifier {OP_*_RS}
-    ArgumentDesc('t', 'g', FIELD_RT, 0, 31, 0), // 5 bit target register
-                                                // {OP_*_RT}
-    ArgumentDesc('u', 'n', FIELD_IMMEDIATE, 0, 0xffff, 0), // 16 bit upper 16
-                                                           // bits of address
-                                                           // {OP_*_IMMEDIATE}
-    ArgumentDesc('v', 'g', FIELD_RS, 0, 31, 0), // 5 bit same register used as
-                                                // both source and destination
-                                                // {OP_*_RS}
-    ArgumentDesc('w', 'g', FIELD_RT, 0, 31, 0), // 5 bit same register used as
-                                                // both target and destination
-                                                // {OP_*_RT}
-    ArgumentDesc('U', 'g', FIELD_RD, 0, 31, 0), // 5 bit same destination
-                                                // register in both OP_*_RD and
-                                                // OP_*_RT
-    ArgumentDesc('G', 'g', FIELD_RD, 0, 31, 0), // 5 destination register used
-                                                // in MFC0, MTC0 {used by clo
-                                                // and clz}
-    ArgumentDesc('C', 'n', FIELD_COPZ, 0, 0x1ffffff, 0), // 25 bit coprocessor
-                                                         // function code
-                                                         // {OP_*_COPZ}
-    ArgumentDesc('B', 'n', FIELD_CODE20, 0, 0xfffff, 0), // 20 bit
-                                                         // syscall/breakpoint
-                                                         // function code
-                                                         // {OP_*_CODE20}
-    ArgumentDesc('J', 'n', FIELD_CODE19, 0, 0x7ffff, 0), // 19 bit wait function
-                                                         // code {OP_*_CODE19}
-    ArgumentDesc('x', 'g', FIELD_IGNORE, 0, 31, 0),      // accept and ignore
-                                                         // register name
-    ArgumentDesc('z', 'n', FIELD_IGNORE, 0, 0, 0), // must be zero register
+    ArgumentDesc('d', 'g', 0, 0x1f, {{{5, 7}}, 0}),
+    ArgumentDesc('s', 'g', 0, 0x1f, {{{5, 15}}, 0}),
+    ArgumentDesc('t', 'g', 0, 0x1f, {{{5, 20}}, 0}),
+    ArgumentDesc('j', 'n', -0x800, 0x7ff, {{{12, 20}}, 0}),
+    ArgumentDesc('>', 'n', 0, 0x1f, {{{5, 20}}, 0}),
+    ArgumentDesc('a', 'a', -0x80000, 0x7ffff, {{{11, 21}, {1, 20}, {8, 12}, {1, 31}}, 1}),
+    ArgumentDesc('u', 'n', 0, 0xfffff, {{{20, 12}}, 12}),
+    ArgumentDesc('p', 'p', -0x800, 0x7ff, {{{4, 8}, {6, 25}, {1, 7}, {1, 31}}, 1}),
+    ArgumentDesc('o', 'o', -0x800, 0x7ff, {{{12, 20}}, 0}),
+    ArgumentDesc('q', 'o', -0x800, 0x7ff, {{{5, 7}, {7, 25}}, 0}),
 };
 
 static const ArgumentDesc *argdesbycode[(int)('z' + 1)];
@@ -238,9 +162,9 @@ struct InstructionMap {
 #define IT_UNKNOWN Instruction::UNKNOWN
 
 static const struct InstructionMap LOAD_map[] = {
-    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_LOAD}, // LB
+    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {"d", "o(s)"}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_LOAD}, // LB
     IM_UNKNOWN, // LH
-    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_LOAD}, // LW
+    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {"d", "o(s)"}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_LOAD}, // LW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -250,7 +174,7 @@ static const struct InstructionMap LOAD_map[] = {
 
 static const struct InstructionMap OP_IMM_map[] = {
     {"ADDI",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00000013, .flags = FLAGS_ALU_I}, // ADDI
-    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "j"}, 0xfe00707f, 0x00001013, .flags = FLAGS_ALU_I}, // SLLI
+    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", ">"}, 0xfe00707f, 0x00001013, .flags = FLAGS_ALU_I}, // SLLI
     {"SLTI",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00002013, .flags = FLAGS_ALU_I}, // SLTI
     {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00003013, .flags = FLAGS_ALU_I}, // SLTIU
     {"XORI",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00004013, .flags = FLAGS_ALU_I}, // XORI
@@ -260,9 +184,9 @@ static const struct InstructionMap OP_IMM_map[] = {
 };
 
 static const struct InstructionMap STORE_map[] = {
-    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_STORE}, // SB
+    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {"t", "q(s)"}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_STORE}, // SB
     IM_UNKNOWN, // SH
-    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_STORE}, // SW
+    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {"t", "q(s)"}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_STORE}, // SW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -289,14 +213,14 @@ static const struct InstructionMap OP_map[] = {
 
 constexpr const int FLAGS_BRANCH = IMF_SUPPORTED | IMF_BRANCH | IMF_BJR_REQ_RS;
 static const struct InstructionMap BRANCH_map[] = {
-    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD}, // BEQ
-    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT}, // BNE
+    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD}, // BEQ
+    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT}, // BNE
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {}, 0x0000707f, 0x00004063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLT
-    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {}, 0x0000707f, 0x00005063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGE
-    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {}, 0x0000707f, 0x00006063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLTU
-    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {}, 0x0000707f, 0x00007063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGEU
+    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00004063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLT
+    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00005063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGE
+    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00006063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLTU
+    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00007063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGEU
 };
 
 static const struct InstructionMap I_inst_map[] = {
@@ -327,7 +251,7 @@ static const struct InstructionMap I_inst_map[] = {
     {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
-    {"JAL", IT_J, NOALU, NOMEM, nullptr, {}, 0x0000007f, 0x0000006f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
+    {"JAL", IT_J, NOALU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000007f, 0x0000006f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
     IM_UNKNOWN, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
@@ -369,40 +293,6 @@ Instruction::Instruction() {
 Instruction::Instruction(uint32_t inst) {
     this->dt = inst;
 }
-
-// Instruction::Instruction(
-//     uint8_t opcode,
-//     uint8_t rs,
-//     uint8_t rt,
-//     uint8_t rd,
-//     uint8_t shamt,
-//     uint8_t funct) {
-//     this->dt = 0;
-//     this->dt |= opcode << 26;
-//     this->dt |= rs << 21;
-//     this->dt |= rt << 16;
-//     this->dt |= rd << 11;
-//     this->dt |= shamt << 6;
-//     this->dt |= funct;
-// }
-
-// Instruction::Instruction(
-//     uint8_t opcode,
-//     uint8_t rs,
-//     uint8_t rt,
-//     uint16_t immediate) {
-//     this->dt = 0;
-//     this->dt |= opcode << 26;
-//     this->dt |= rs << 21;
-//     this->dt |= rt << 16;
-//     this->dt |= immediate;
-// }
-
-// Instruction::Instruction(uint8_t opcode, Address address) {
-//     this->dt = 0;
-//     this->dt |= opcode << 26;
-//     this->dt |= address.get_raw();
-// }
 
 Instruction::Instruction(const Instruction &i) {
     this->dt = i.data();
@@ -565,14 +455,7 @@ QString Instruction::to_str(Address inst_addr) const {
                 res += ao;
                 continue;
             }
-            uint bits = IMF_SUB_GET_BITS(adesc->loc);
-            uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
-            uint32_t field = MASK(bits, shift);
-            if ((adesc->min < 0) && (field & (1 << (bits - 1)))) {
-                field -= 1 << bits;
-            }
-
-            field <<= adesc->shift;
+            uint32_t field = adesc->arg.decode(this->dt);
             switch (adesc->kind) {
             case 'g':
                 if (symbolic_registers_fl) {
@@ -704,8 +587,6 @@ static void reloc_append(
     const QString &filename = "",
     int line = 0,
     int options = 0) {
-    uint bits = IMF_SUB_GET_BITS(adesc->loc);
-    uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
     QString expression = "";
     QString allowed_operators = "+-/*|&^~";
     int i = 0;
@@ -724,8 +605,8 @@ static void reloc_append(
     }
 
     reloc->append(new RelocExpression(
-        inst_addr, expression, offset, adesc->min, adesc->max, shift, bits,
-        adesc->shift, filename, line, options));
+        inst_addr, expression, offset, adesc->min, adesc->max, &adesc->arg,
+        filename, line, options));
     if (chars_taken != nullptr) {
         *chars_taken = i;
     }
