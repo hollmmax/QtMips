@@ -19,7 +19,7 @@ bool Instruction::symbolic_registers_fl = false;
 
 #define IMF_SUB_ENCODE(bits, shift) (((bits) << 8) | (shift))
 #define IMF_SUB_GET_BITS(subcode) (((subcode) >> 8) & 0xff)
-#define IMF_SUB_GET_SHIFT(subcode) ((subcode)&0xff)
+#define IMF_SUB_GET_SHIFT(subcode) ((subcode) & 0xff)
 
 #define RS_SHIFT 21
 #define RT_SHIFT 16
@@ -150,7 +150,10 @@ struct InstructionMap {
     const QStringList args;
     uint32_t code;
     uint32_t mask;
-    unsigned int flags;
+    union {
+        unsigned int flags;
+        BitArg::Field subfield;
+    };
 };
 
 #define IT_R Instruction::R
@@ -201,7 +204,7 @@ static const struct InstructionMap ADD_map[] = {
 
 // TODO: subtrees are ugly, maybe a union would help?
 static const struct InstructionMap OP_map[] = {
-    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0xbe00707f, 0x00000033, .flags = IMF_SUB_ENCODE(1, 30)},
+    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0xbe00707f, 0x00000033, .subfield = {1, 30}},
     {"SLL",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00001033, .flags = FLAGS_ALU_T_R_STD}, // SLL
     {"SLT",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00002033, .flags = FLAGS_ALU_T_R_STD}, // SLT
     {"SLTU", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00003033, .flags = FLAGS_ALU_T_R_STD}, // SLTU
@@ -224,19 +227,19 @@ static const struct InstructionMap BRANCH_map[] = {
 };
 
 static const struct InstructionMap I_inst_map[] = {
-    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // LOAD
+    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, .subfield = {3, 12}}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
-    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // OP-IMM
+    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, .subfield = {3, 12}}, // OP-IMM
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // STORE
+    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, .subfield = {3, 12}}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
-    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // OP
+    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, .subfield = {3, 12}}, // OP
     IM_UNKNOWN, // LUI
     IM_UNKNOWN, // OP-32
     IM_UNKNOWN, // 64b
@@ -248,7 +251,7 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-2/rv128
     IM_UNKNOWN, // 48b
-    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, .flags = IMF_SUB_ENCODE(3, 12)}, // BRANCH
+    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, .subfield = {3, 12}}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
     {"JAL", IT_J, NOALU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000007f, 0x0000006f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
@@ -262,29 +265,34 @@ static const struct InstructionMap C_inst_map[] = {
     IM_UNKNOWN,
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"I", IT_UNKNOWN, NOALU, NOMEM, I_inst_map, {}, 0x3, 0x3, .flags = IMF_SUB_ENCODE(5, 2)},
+    {"I", IT_UNKNOWN, NOALU, NOMEM, I_inst_map, {}, 0x3, 0x3, .subfield = {5, 2}},
 };
 
-#undef IM_UNKNOWN
-
-const int32_t instruction_map_opcode_field = IMF_SUB_ENCODE(2, 0);
+const BitArg::Field instruction_map_opcode_field = {2, 0};
 
 static inline const struct InstructionMap &InstructionMapFind(uint32_t code) {
+    const struct InstructionMap* im = &C_inst_map[instruction_map_opcode_field.decode(code)];
+    while (im->subclass != nullptr) im = &im->subclass[im->subfield.decode(code)];
+    return *im;
     // const struct InstructionMap *im = instruction_map;
-    const struct InstructionMap *im = C_inst_map;
-    uint32_t flags = instruction_map_opcode_field;
-    do {
-        unsigned int bits = IMF_SUB_GET_BITS(flags);
-        unsigned int shift = IMF_SUB_GET_SHIFT(flags);
-        im = im + ((code >> shift) & ((1 << bits) - 1));
-        qDebug("%du, %s", ((code >> shift) & ((1 << bits) - 1)), im->name);
-        if (im->subclass == nullptr) {
-            return *im;
-        }
-        flags = im->flags;
-        im = im->subclass;
-    } while (true);
+    // const struct InstructionMap *im = C_inst_map;
+    // uint32_t flags = instruction_map_opcode_field;
+    // do {
+    //     unsigned int bits = IMF_SUB_GET_BITS(flags);
+    //     unsigned int shift = IMF_SUB_GET_SHIFT(flags);
+    //     im = im + ((code >> shift) & ((1 << bits) - 1));
+    //     if (im->subclass == nullptr) {
+    //         return *im;
+    //     }
+    //     flags = im->flags;
+    //     im = im->subclass;
+    // } while (true);
 }
+
+#undef IM_UNKNOWN
+#undef IMF_SUB_ENCODE
+#undef IMF_SUB_GET_BITS
+#undef IMF_SUB_GET_SHIFT
 
 Instruction::Instruction() {
     this->dt = 0;
@@ -490,24 +498,24 @@ QString Instruction::to_str(Address inst_addr) const {
 QMultiMap<QString, uint32_t> str_to_instruction_code_map;
 
 void instruction_from_string_build_base(
-    const InstructionMap *im = nullptr,
-    unsigned int flags = 0,
-    uint32_t base_code = 0) {
+    const InstructionMap *im,
+    BitArg::Field field,
+    uint32_t base_code) {
     uint32_t code;
 
     if (im == nullptr) {
         // im = instruction_map;
         im = C_inst_map;
-        flags = instruction_map_opcode_field;
+        field = instruction_map_opcode_field;
         base_code = 0;
     }
-    unsigned int bits = IMF_SUB_GET_BITS(flags);
-    unsigned int shift = IMF_SUB_GET_SHIFT(flags);
+    uint8_t bits = field.count;
+    uint8_t shift = field.offset;
 
     for (unsigned int i = 0; i < 1U << bits; i++, im++) {
         code = base_code | (i << shift);
         if (im->subclass) {
-            instruction_from_string_build_base(im->subclass, im->flags, code);
+            instruction_from_string_build_base(im->subclass, im->subfield, code);
             continue;
         }
         if (!(im->flags & IMF_SUPPORTED)) {
@@ -526,6 +534,10 @@ void instruction_from_string_build_base(
          i != str_to_instruction_code_map.end(); i++)
         std::cout << i.key().toStdString() << ' ';
 #endif
+}
+
+void instruction_from_string_build_base() {
+    return instruction_from_string_build_base(C_inst_map, instruction_map_opcode_field, 0);
 }
 
 static int parse_reg_from_string(QString str, uint *chars_taken = nullptr) {
@@ -612,7 +624,7 @@ static void reloc_append(
     }
 }
 
-#define CFS_OPTION_SILENT_MASK 0x100
+// #define CFS_OPTION_SILENT_MASK 0x100
 
 ssize_t Instruction::code_from_string(
     uint32_t *code,
@@ -625,7 +637,7 @@ ssize_t Instruction::code_from_string(
     const QString &filename,
     int line,
     bool pseudo_opt,
-    int options) {
+    bool silent) {
     const char *err = "unknown instruction";
     if (str_to_instruction_code_map.isEmpty()) {
         instruction_from_string_build_base();
@@ -676,9 +688,9 @@ ssize_t Instruction::code_from_string(
                     fl = fl.mid(1);
                     continue;
                 }
-                uint bits = IMF_SUB_GET_BITS(adesc->loc);
-                uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
-                int shift_right = adesc->shift;
+                // uint bits = IMF_SUB_GET_BITS(adesc->loc);
+                // uint shift = IMF_SUB_GET_SHIFT(adesc->loc);
+                // int shift_right = adesc->shift;
                 uint64_t val = 0;
                 uint chars_taken = 0;
 
@@ -688,10 +700,9 @@ ssize_t Instruction::code_from_string(
 
                 switch (adesc->kind) {
                 case 'g': val += parse_reg_from_string(fl, &chars_taken); break;
-                case 'p': val -= (inst_addr + 4).get_raw(); FALLTROUGH
+                case 'p': val -= (inst_addr + 4).get_raw(); FALLTROUGH // TODO may need to have constant adjusted
                 case 'o':
                 case 'n':
-                    shift_right += options & 0xff;
                     if (fl.at(0).isDigit() || (reloc == nullptr)) {
                         uint64_t num_val;
                         int i;
@@ -725,12 +736,11 @@ ssize_t Instruction::code_from_string(
                     if (need_reloc && (reloc != nullptr)) {
                         reloc_append(
                             reloc, fl, inst_addr, val, adesc, &chars_taken,
-                            filename, line, options);
+                            filename, line);
                         val = 0;
                     }
                     break;
                 case 'a':
-                    shift_right += options & 0xff;
                     val -= ((inst_addr + 4) & ~(int64_t)0x0fffffff).get_raw();
                     if (fl.at(0).isDigit() || (reloc == nullptr)) {
                         uint64_t num_val;
@@ -757,7 +767,7 @@ ssize_t Instruction::code_from_string(
                     if (need_reloc && (reloc != nullptr)) {
                         reloc_append(
                             reloc, fl, inst_addr, val, adesc, &chars_taken,
-                            filename, line, options);
+                            filename, line, silent);
                         val = 0;
                     }
                     break;
@@ -767,18 +777,12 @@ ssize_t Instruction::code_from_string(
                     field = -1;
                     break;
                 }
-                if ((val & ((1 << adesc->shift) - 1))
-                    && !(options & CFS_OPTION_SILENT_MASK)) {
-                    err = "low bits of argument has to be zero";
-                    field = -1;
-                    break;
-                }
-                if (adesc->min >= 0) {
-                    val = (val >> shift_right);
-                } else {
-                    val = (uint64_t)((int64_t)val >> shift_right);
-                }
-                if (!(options & CFS_OPTION_SILENT_MASK)) {
+                // if (adesc->min >= 0) {
+                //     val = (val >> shift_right);
+                // } else {
+                //     val = (uint64_t)((int64_t)val >> shift_right);
+                // }
+                if (!silent) {
                     if (adesc->min < 0) {
                         if (((int64_t)val < adesc->min)
                             || ((int64_t)val > adesc->max)) {
@@ -795,8 +799,8 @@ ssize_t Instruction::code_from_string(
                         }
                     }
                 }
-                val = (val & ((1 << bits) - 1)) << shift;
-                inst_code += val;
+                // val = (val & ((1 << bits) - 1)) << shift;
+                inst_code |= adesc->arg.encode(val);
                 fl = fl.mid(chars_taken);
             }
             if (field == -1) {
@@ -820,31 +824,28 @@ ssize_t Instruction::code_from_string(
 
     ssize_t ret = -1;
     inst_code = 0;
-    if ((inst_base == "NOP") && (inst_fields.empty())) {
-        inst_code = 0;
-        ret = 4;
-    } else if (pseudo_opt) {
-        if (((inst_base == "LA") || (inst_base == "LI"))
-            && (inst_fields.size() == 2)) {
-            if (code_from_string(
-                    code, buffsize, "LUI", inst_fields, error, inst_addr, reloc,
-                    filename, line, false, CFS_OPTION_SILENT_MASK + 16)
-                < 0) {
-                error = QString("error in LUI element of " + inst_base);
-                return -1;
-            }
-            inst_fields.insert(1, inst_fields.at(0));
-            if (code_from_string(
-                    code + 1, buffsize - 4, "ORI", inst_fields, error,
-                    inst_addr + 4, reloc, filename, line, false,
-                    CFS_OPTION_SILENT_MASK + 0)
-                < 0) {
-                error = QString("error in ORI element of " + inst_base);
-                return -1;
-            }
-            return 8;
-        }
-    }
+    // if (pseudo_opt) {
+    //     if (((inst_base == "LA") || (inst_base == "LI"))
+    //         && (inst_fields.size() == 2)) {
+    //         if (code_from_string(
+    //                 code, buffsize, "LUI", inst_fields, error, inst_addr, reloc,
+    //                 filename, line, false, CFS_OPTION_SILENT_MASK + 16)
+    //             < 0) {
+    //             error = QString("error in LUI element of " + inst_base);
+    //             return -1;
+    //         }
+    //         inst_fields.insert(1, inst_fields.at(0));
+    //         if (code_from_string(
+    //                 code + 1, buffsize - 4, "ORI", inst_fields, error,
+    //                 inst_addr + 4, reloc, filename, line, false,
+    //                 CFS_OPTION_SILENT_MASK + 0)
+    //             < 0) {
+    //             error = QString("error in ORI element of " + inst_base);
+    //             return -1;
+    //         }
+    //         return 8;
+    //     }
+    // }
     if (buffsize >= 4) {
         *code = inst_code;
     }
@@ -864,7 +865,7 @@ ssize_t Instruction::code_from_string(
     const QString &filename,
     int line,
     bool pseudo_opt,
-    int options) {
+    bool silent) {
     int k = 0, l;
     while (k < str.count()) {
         if (!str.at(k).isSpace()) {
@@ -893,24 +894,14 @@ ssize_t Instruction::code_from_string(
 
     return code_from_string(
         code, buffsize, inst_base, inst_fields, error, inst_addr, reloc,
-        filename, line, pseudo_opt, options);
+        filename, line, pseudo_opt, silent);
 }
 
 bool Instruction::update(int64_t val, RelocExpression *relocexp) {
-    int64_t mask = (((int64_t)1 << relocexp->bits) - 1) << relocexp->lsb_bit;
-    dt &= ~mask;
+    dt &= ~relocexp->arg->encode(~0);
     val += relocexp->offset;
-    if ((val & ((1 << relocexp->shift) - 1))
-        && !(relocexp->options & CFS_OPTION_SILENT_MASK)) {
-        return false;
-    }
-    int shift_right = relocexp->shift + (relocexp->options & 0xff);
-    if (relocexp->min >= 0) {
-        val = (val >> shift_right);
-    } else {
-        val = (uint64_t)((int64_t)val >> shift_right);
-    }
-    if (!(relocexp->options & CFS_OPTION_SILENT_MASK)) {
+    if (!relocexp->silent && (val & ((1 << relocexp->arg->shift) - 1))) return false;
+    if (!(relocexp->silent)) {
         if (relocexp->min < 0) {
             if (((int64_t)val < relocexp->min)
                 || ((int64_t)val > relocexp->max)) {
@@ -926,7 +917,8 @@ bool Instruction::update(int64_t val, RelocExpression *relocexp) {
             }
         }
     }
-    dt |= (val << relocexp->lsb_bit) & mask;
+    dt |= relocexp->arg->encode(val);
+    // (val << relocexp->lsb_bit) & mask;
     return true;
 }
 
@@ -937,9 +929,6 @@ void Instruction::append_recognized_instructions(QStringList &list) {
 
     foreach (const QString &str, str_to_instruction_code_map.keys())
         list.append(str);
-    list.append("LA");
-    list.append("LI");
-    list.append("NOP");
 }
 
 void Instruction::set_symbolic_registers(bool enable) {

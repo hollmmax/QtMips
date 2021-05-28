@@ -596,8 +596,8 @@ bool SimpleAsm::process_line(
             if (chars_taken != s.size()) {
                 val = 0;
                 reloc.append(new machine::RelocExpression(
-                    address, s, 0, -0xffffffff, 0xffffffff, 0, 32, 0, filename,
-                    line_number, 0));
+                    address, s, 0, -0xffffffff, 0xffffffff, new machine::BitArg({{32, 0}}, 0),
+                    filename, line_number, false));
             }
             if (!fatal_occured) {
                 mem->write_u32(address, val, ae::INTERNAL);
