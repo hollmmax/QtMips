@@ -435,12 +435,12 @@ Instruction &Instruction::operator=(const Instruction &c) {
 }
 
 QString Instruction::to_str(Address inst_addr) const {
+    if (dt == 0) {
+        return QString("ILLEGAL");
+    }
     const InstructionMap &im = InstructionMapFind(dt);
     // TODO there are exception where some fields are zero and such so we should
     // not print them in such case
-    if (dt == 0) {
-        return QString("NOP");
-    }
     SANITY_ASSERT(
         argdesbycode_filled, QString("argdesbycode_filled not initialized"));
     QString res;
