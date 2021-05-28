@@ -8,6 +8,7 @@ on:
       - packaging
       - svgscene
       - rv-visualization
+      - risc-v
   workflow_dispatch:
 
 jobs:
