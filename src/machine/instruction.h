@@ -63,7 +63,7 @@ struct BitArg {
         }
         template<typename T>
         T encode(T val) const {
-            return (val & ((1L << count) - 1) << offset);
+            return ((val & ((1L << count) - 1)) << offset);
         }
     };
     const std::vector<Field> fields;

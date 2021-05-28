@@ -165,9 +165,9 @@ struct InstructionMap {
 #define IT_UNKNOWN Instruction::UNKNOWN
 
 static const struct InstructionMap LOAD_map[] = {
-    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {"d", "o(s)"}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_LOAD}, // LB
+    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {"d", "o(s)"}, 0x00000003, 0x0000707f, .flags = FLAGS_ALU_I_LOAD}, // LB
     IM_UNKNOWN, // LH
-    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {"d", "o(s)"}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_LOAD}, // LW
+    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {"d", "o(s)"}, 0x00002003, 0x0000707f, .flags = FLAGS_ALU_I_LOAD}, // LW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -176,20 +176,20 @@ static const struct InstructionMap LOAD_map[] = {
 };
 
 static const struct InstructionMap OP_IMM_map[] = {
-    {"ADDI",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00000013, .flags = FLAGS_ALU_I}, // ADDI
-    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", ">"}, 0xfe00707f, 0x00001013, .flags = FLAGS_ALU_I}, // SLLI
-    {"SLTI",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00002013, .flags = FLAGS_ALU_I}, // SLTI
-    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00003013, .flags = FLAGS_ALU_I}, // SLTIU
-    {"XORI",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00004013, .flags = FLAGS_ALU_I}, // XORI
+    {"ADDI",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x00000013, 0x0000707f, .flags = FLAGS_ALU_I}, // ADDI
+    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", ">"}, 0x00001013, 0xfe00707f, .flags = FLAGS_ALU_I}, // SLLI
+    {"SLTI",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x00002013, 0x0000707f, .flags = FLAGS_ALU_I}, // SLTI
+    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x00003013, 0x0000707f, .flags = FLAGS_ALU_I}, // SLTIU
+    {"XORI",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x00004013, 0x0000707f, .flags = FLAGS_ALU_I}, // XORI
     IM_UNKNOWN, // SRLI, SRAI
-    {"ORI",   IT_I, AluOp::OR,   NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00006013, .flags = FLAGS_ALU_I}, // ORI
-    {"ANDI",  IT_I, AluOp::AND,  NOMEM, nullptr, {"d", "s", "j"}, 0x0000707f, 0x00007013, .flags = FLAGS_ALU_I}, // ANDI
+    {"ORI",   IT_I, AluOp::OR,   NOMEM, nullptr, {"d", "s", "j"}, 0x00006013, 0x0000707f, .flags = FLAGS_ALU_I}, // ORI
+    {"ANDI",  IT_I, AluOp::AND,  NOMEM, nullptr, {"d", "s", "j"}, 0x00007013, 0x0000707f, .flags = FLAGS_ALU_I}, // ANDI
 };
 
 static const struct InstructionMap STORE_map[] = {
-    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {"t", "q(s)"}, 0x0000707f, 0x00000003, .flags = FLAGS_ALU_I_STORE}, // SB
+    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {"t", "q(s)"}, 0x00000023, 0x0000707f, .flags = FLAGS_ALU_I_STORE}, // SB
     IM_UNKNOWN, // SH
-    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {"t", "q(s)"}, 0x0000707f, 0x00002003, .flags = FLAGS_ALU_I_STORE}, // SW
+    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {"t", "q(s)"}, 0x00002023, 0x0000707f, .flags = FLAGS_ALU_I_STORE}, // SW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -198,48 +198,48 @@ static const struct InstructionMap STORE_map[] = {
 };
 
 static const struct InstructionMap ADD_map[] = {
-    {"ADD", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00000033, .flags = FLAGS_ALU_T_R_STD},
-    {"SUB", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00000033, .flags = FLAGS_ALU_T_R_STD | IMF_ALU_MOD},
+    {"ADD", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x00000033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD},
+    {"SUB", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x40000033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD | IMF_ALU_MOD},
 };
 
 // TODO: subtrees are ugly, maybe a union would help?
 static const struct InstructionMap OP_map[] = {
-    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0xbe00707f, 0x00000033, .subfield = {1, 30}},
-    {"SLL",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00001033, .flags = FLAGS_ALU_T_R_STD}, // SLL
-    {"SLT",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00002033, .flags = FLAGS_ALU_T_R_STD}, // SLT
-    {"SLTU", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00003033, .flags = FLAGS_ALU_T_R_STD}, // SLTU
-    {"XOR",  IT_R, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00004033, .flags = FLAGS_ALU_T_R_STD}, // XOR
+    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0x00000033, 0xbe00707f, .subfield = {1, 30}},
+    {"SLL",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0x00001033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // SLL
+    {"SLT",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0x00002033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // SLT
+    {"SLTU", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0x00003033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // SLTU
+    {"XOR",  IT_R, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "t"}, 0x00004033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // XOR
     IM_UNKNOWN, // SRL, SRA
-    {"OR",   IT_R, AluOp::OR,   NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00006033, .flags = FLAGS_ALU_T_R_STD}, // OR
-    {"AND",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0xfe00707f, 0x00007033, .flags = FLAGS_ALU_T_R_STD}, // AND
+    {"OR",   IT_R, AluOp::OR,   NOMEM, nullptr, {"d", "s", "t"}, 0x00006033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // OR
+    {"AND",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0x00007033, 0xfe00707f, .flags = FLAGS_ALU_T_R_STD}, // AND
 };
 
 constexpr const int FLAGS_BRANCH = IMF_SUPPORTED | IMF_BRANCH | IMF_BJR_REQ_RS;
 static const struct InstructionMap BRANCH_map[] = {
-    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00000063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD}, // BEQ
-    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00001063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT}, // BNE
+    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00000063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD}, // BEQ
+    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00001063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT}, // BNE
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00004063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLT
-    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00005063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGE
-    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00006063, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLTU
-    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x0000707f, 0x00007063, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGEU
+    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00004063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLT
+    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00005063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGE
+    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00006063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH}, // BLTU
+    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00007063, 0x0000707f, .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT}, // BGEU
 };
 
 static const struct InstructionMap I_inst_map[] = {
-    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, .subfield = {3, 12}}, // LOAD
+    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x7f, 0x03, .subfield = {3, 12}}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
-    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, .subfield = {3, 12}}, // OP-IMM
+    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x7f, 0x13, .subfield = {3, 12}}, // OP-IMM
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, .subfield = {3, 12}}, // STORE
+    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x7f, 0x23, .subfield = {3, 12}}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
-    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, .subfield = {3, 12}}, // OP
+    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x7f, 0x33, .subfield = {3, 12}}, // OP
     IM_UNKNOWN, // LUI
     IM_UNKNOWN, // OP-32
     IM_UNKNOWN, // 64b
@@ -251,10 +251,10 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-2/rv128
     IM_UNKNOWN, // 48b
-    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, .subfield = {3, 12}}, // BRANCH
+    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x7f, 0x63, .subfield = {3, 12}}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
-    {"JAL", IT_J, NOALU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000007f, 0x0000006f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
+    {"JAL", IT_J, NOALU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000006f, 0x0000007f, .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP}, // JAL
     IM_UNKNOWN, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
@@ -467,9 +467,9 @@ QString Instruction::to_str(Address inst_addr) const {
             switch (adesc->kind) {
             case 'g':
                 if (symbolic_registers_fl) {
-                    res += "$" + QString(regbycode[field].name);
+                    res += QString(Rv_regnames[field].c_str());
                 } else {
-                    res += "$" + QString::number(field);
+                    res += "x" + QString::number(field);
                 }
                 break;
             case 'o':
@@ -502,13 +502,6 @@ void instruction_from_string_build_base(
     BitArg::Field field,
     uint32_t base_code) {
     uint32_t code;
-
-    if (im == nullptr) {
-        // im = instruction_map;
-        im = C_inst_map;
-        field = instruction_map_opcode_field;
-        base_code = 0;
-    }
     uint8_t bits = field.count;
     uint8_t shift = field.offset;
 
@@ -544,7 +537,7 @@ static int parse_reg_from_string(QString str, uint *chars_taken = nullptr) {
     int res;
     int i;
     uint ctk;
-    if (str.count() < 2 || str.at(0) != '$') {
+    if (str.count() < 2 || str.at(0) != 'x') {
         return -1;
     }
 
