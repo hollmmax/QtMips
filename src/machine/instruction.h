@@ -55,8 +55,16 @@ enum InstructionFlags {
 
 struct BitArg {
     struct Field {
-        size_t count;
-        size_t offset;
+        uint8_t count;
+        uint8_t offset;
+        template<typename T>
+        T decode(T val) const {
+            return (val >> offset) & ((1L << count) - 1);
+        }
+        template<typename T>
+        T encode(T val) const {
+            return (val & ((1L << count) - 1) << offset);
+        }
     };
     const std::vector<Field> fields;
     size_t shift;
@@ -68,7 +76,7 @@ struct BitArg {
         uint32_t ret = 0;
         size_t offset = 0;
         for (Field field : *this) {
-            ret |= (ins >> field.offset & ((1 << field.count) - 1)) << offset;
+            ret |= field.decode(ins) << offset;
             offset += field.offset;
         }
         return ret << shift;
@@ -77,7 +85,7 @@ struct BitArg {
         uint32_t ret = 0;
         imm >>= shift;
         for (Field field : *this) {
-            ret |= (imm & ((1 << field.count) - 1)) << field.offset;
+            ret |= field.encode(imm);
             imm >>= field.count;
         }
         return ret;
@@ -96,16 +104,16 @@ struct RelocExpression {
         const BitArg* arg,
         QString filename,
         int line,
-        int options) {
+        bool silent) {
         this->location = location;
         this->expression = std::move(expression);
         this->offset = offset;
         this->min = min;
         this->max = max;
-        this-> arg = arg;
+        this->arg = arg;
         this->filename = std::move(filename);
         this->line = line;
-        this->options = options;
+        this->silent = silent;
     }
     Address location;
     QString expression;
@@ -115,7 +123,7 @@ struct RelocExpression {
     const BitArg* arg;
     QString filename;
     int line;
-    int options;
+    bool silent;
 };
 
 typedef QVector<RelocExpression *> RelocExpressionList;
@@ -182,7 +190,7 @@ public:
         const QString &filename = "",
         int line = 0,
         bool pseudo_opt = false,
-        int options = 0);
+        bool silent = false);
 
     static ssize_t code_from_string(
         uint32_t *code,
@@ -194,7 +202,7 @@ public:
         const QString &filename = "",
         int line = 0,
         bool pseudo_opt = false,
-        int options = 0);
+        bool silent = false);
 
     bool update(int64_t val, RelocExpression *relocexp);
 
