@@ -147,6 +147,8 @@ public:
     // Instruction(uint8_t opcode, Address address); // Type J
     Instruction(const Instruction &);
 
+    static const Instruction NOP;
+
     enum Type { R, I, S, B, U, J, UNKNOWN };
 
     uint8_t opcode() const;

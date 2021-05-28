@@ -320,6 +320,8 @@ static inline const struct InstructionMap &InstructionMapFind(uint32_t code) {
 #undef IMF_SUB_GET_BITS
 #undef IMF_SUB_GET_SHIFT
 
+const Instruction Instruction::NOP = Instruction(0x00000013);
+
 Instruction::Instruction() {
     this->dt = 0;
 }
