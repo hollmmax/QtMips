@@ -29,37 +29,38 @@ enum ForwardFrom {
     FORWARD_FROM_M = 0b10,
 };
 struct FetchInterstage {
-    Instruction inst;  // Loaded instruction
-    Address inst_addr; // Address of instruction
-    enum ExceptionCause excause;
-    bool in_delay_slot;
-    bool is_valid;
+    Instruction inst = Instruction::NOP;  // Loaded instruction
+    Address inst_addr = 0_addr; // Address of instruction
+    enum ExceptionCause excause = EXCAUSE_NONE;
+    bool in_delay_slot = false;
+    bool is_valid = true;
 };
 struct FetchInternalState {
-    RegisterValue fetched_value;
+    RegisterValue fetched_value = 0;
     unsigned excause_num = 0;
 };
 struct DecodeInterstage {
-    Instruction inst;
-    bool memread;    // If memory should be read
-    bool memwrite;   // If memory should write input
-    bool alusrc;     // If second value to alu is immediate value (rt used
+    Instruction inst = Instruction::NOP;
+    bool memread = false;    // If memory should be read
+    bool memwrite = false;   // If memory should write input
+    bool alusrc = false;     // If second value to alu is immediate value (rt used
                      // otherwise)
-    bool regd;       // If rd is used (otherwise rt is used for write target)
-    bool regwrite;   // If output should be written back to register (which
+    bool regd = true;       // If rd is used (otherwise rt is used for write 
+                         // target)
+    bool regwrite = false;   // If output should be written back to register (which
                      // one depends on regd)
-    bool alu_req_rs; // requires rs value for ALU
-    bool alu_req_rt; // requires rt value for ALU or SW
-    bool bjr_req_rs; // requires rs for beq, bne, blez, bgtz, jr nad jalr
-    bool bjr_req_rt; // requires rt for beq, bne
-    bool branch;     // branch instruction
-    bool jump;       // jump
-    bool bj_not;     // negate branch condition
-    bool bgt_blez;   // BGTZ/BLEZ instead of BGEZ/BLTZ
-    bool nb_skip_ds; // Skip delay slot if branch is not taken
-    bool forward_m_d_rs; // forwarding required for beq, bne, blez, bgtz, jr
+    bool alu_req_rs = false; // requires rs value for ALU
+    bool alu_req_rt = false; // requires rt value for ALU or SW
+    bool bjr_req_rs = false; // requires rs for beq, bne, blez, bgtz, jr nad jalr
+    bool bjr_req_rt = false; // requires rt for beq, bne
+    bool branch = false;     // branch instruction
+    bool jump = false;       // jump
+    bool bj_not = false;     // negate branch condition
+    bool bgt_blez = false;   // BGTZ/BLEZ instead of BGEZ/BLTZ
+    bool nb_skip_ds = false; // Skip delay slot if branch is not taken
+    bool forward_m_d_rs = false; // forwarding required for beq, bne, blez, bgtz, jr
                          // nad jalr
-    bool forward_m_d_rt; // forwarding required for beq, bne
+    bool forward_m_d_rt = false; // forwarding required for beq, bne
     enum AluOp aluop;    // Decoded ALU operation
     enum AccessControl memctl;   // Decoded memory access type
     uint8_t num_rs1 = 0;         // Number of the register s1
@@ -67,21 +68,21 @@ struct DecodeInterstage {
     uint8_t num_rd = 0;          // Number of the register d
     uint8_t wb_num_rd = 0;       // Writeback register (multiplexed between rt
                                  // and
-    RegisterValue val_rs;        // Value from register rs
-    RegisterValue val_rs1_orig;  // Value from register rs1 without forwarding
-    RegisterValue val_rt;        // Value from register rt
-    RegisterValue val_rs2_orig;  // Value from register rs1 without forwarding
-    RegisterValue immediate_val; // Sign-extended immediate value
+    RegisterValue val_rs = 0;        // Value from register rs
+    RegisterValue val_rs1_orig = 0;  // Value from register rs1 without forwarding
+    RegisterValue val_rt = 0;        // Value from register rt
+    RegisterValue val_rs2_orig = 0;  // Value from register rs1 without forwarding
+    RegisterValue immediate_val = 0; // Sign-extended immediate value
                                  // rd according to regd)
-    ForwardFrom ff_rs1;
-    ForwardFrom ff_rs2;
-    Address inst_addr; // Address of instruction
-    enum ExceptionCause excause;
-    bool in_delay_slot;
-    bool stall;
-    bool stop_if;
-    bool is_valid;
-    bool alu_mod; // alternative versions of ADD and right-shift
+    ForwardFrom ff_rs1 = FORWARD_NONE;
+    ForwardFrom ff_rs2 = FORWARD_NONE;
+    Address inst_addr = 0_addr; // Address of instruction
+    enum ExceptionCause excause = EXCAUSE_NONE;
+    bool in_delay_slot = false;
+    bool stall = false;
+    bool stop_if = false;
+    bool is_valid = false;
+    bool alu_mod = false; // alternative versions of ADD and right-shift
 };
 struct DecodeInternalState {
     /**
@@ -94,29 +95,29 @@ struct DecodeInternalState {
 };
 struct ExecuteInterstage {
     Instruction inst;
-    bool memread;
-    bool memwrite;
-    bool regwrite;
+    bool memread = false;
+    bool memwrite = false;
+    bool regwrite = false;
     enum AccessControl memctl;
-    RegisterValue val_rt;
+    RegisterValue val_rt = 0;
     uint8_t num_rd = 0;
     // Writeback register (multiplexed between rt and rd according to regd)
-    RegisterValue alu_val; // Result of ALU execution
-    Address inst_addr;     // Address of instruction
-    enum ExceptionCause excause;
-    bool in_delay_slot;
-    bool stop_if;
-    bool is_valid;
+    RegisterValue alu_val = 0; // Result of ALU execution
+    Address inst_addr = 0_addr;     // Address of instruction
+    enum ExceptionCause excause = EXCAUSE_NONE;
+    bool in_delay_slot = false;
+    bool stop_if = false;
+    bool is_valid = false;
 };
 struct ExecuteInternalState {
-    bool alu_src;
-    bool alu_zero;
-    bool branch;
-    RegisterValue alu_src1 { 0 };
-    RegisterValue alu_src2 { 0 };
-    RegisterValue immediate { 0 };
-    RegisterValue rs1 { 0 };
-    RegisterValue rs2 { 0 };
+    bool alu_src = false;
+    bool alu_zero = false;
+    bool branch = false;
+    RegisterValue alu_src1 = 0;
+    RegisterValue alu_src2 = 0;
+    RegisterValue immediate = 0;
+    RegisterValue rs1 = 0;
+    RegisterValue rs2 = 0;
     unsigned stall_status = 0;
     /**
      * ALU OP as a number.
@@ -138,33 +139,33 @@ struct ExecuteInternalState {
 };
 struct MemoryInterstage {
     Instruction inst;
-    bool memtoreg;
-    bool regwrite;
+    bool memtoreg = false;
+    bool regwrite = false;
     uint8_t num_rd = 0;
-    RegisterValue towrite_val;
-    Address mem_addr;  // Address used to access memory
-    Address inst_addr; // Address of instruction
-    enum ExceptionCause excause;
-    bool in_delay_slot;
-    bool stop_if;
-    bool is_valid;
+    RegisterValue towrite_val = 0;
+    Address mem_addr = 0_addr;  // Address used to access memory
+    Address inst_addr = 0_addr; // Address of instruction
+    enum ExceptionCause excause = EXCAUSE_NONE;
+    bool in_delay_slot = false;
+    bool stop_if = false;
+    bool is_valid = false;
 };
 struct MemoryInternalState {
-    bool memwrite;
-    bool memread;
-    RegisterValue mem_read_val;
-    RegisterValue mem_write_val;
+    bool memwrite = false;
+    bool memread = false;
+    RegisterValue mem_read_val = 0;
+    RegisterValue mem_write_val = 0;
     unsigned excause_num = 0;
 };
 struct WritebackInternalState {
-    Instruction inst;
-    Address inst_addr;
-    bool regwrite;
+    Instruction inst = Instruction::NOP;
+    Address inst_addr = 0_addr;
+    bool regwrite = false;
 };
 struct FetchState {
-    FetchInternalState internal;
-    FetchInterstage result;
-    FetchInterstage final;
+    FetchInternalState internal {};
+    FetchInterstage result {};
+    FetchInterstage final {};
 
     FetchState(
         const FetchInternalState &stage,
@@ -179,9 +180,9 @@ struct FetchState {
     FetchState(const FetchState &) = default;
 };
 struct DecodeState {
-    DecodeInternalState internal;
-    DecodeInterstage result;
-    DecodeInterstage final;
+    DecodeInternalState internal {};
+    DecodeInterstage result {};
+    DecodeInterstage final {};
 
     DecodeState(
         const DecodeInternalState &stage,
@@ -196,9 +197,9 @@ struct DecodeState {
     DecodeState(const DecodeState &) = default;
 };
 struct ExecuteState {
-    ExecuteInternalState internal;
-    ExecuteInterstage result;
-    ExecuteInterstage final;
+    ExecuteInternalState internal {};
+    ExecuteInterstage result {};
+    ExecuteInterstage final {};
 
     ExecuteState(
         const ExecuteInternalState &stage,
@@ -212,9 +213,9 @@ struct ExecuteState {
     ExecuteState(const ExecuteState &) = default;
 };
 struct MemoryState {
-    MemoryInternalState internal;
-    MemoryInterstage result;
-    MemoryInterstage final;
+    MemoryInternalState internal {};
+    MemoryInterstage result {};
+    MemoryInterstage final {};
 
     MemoryState(
         const MemoryInternalState &stage,
@@ -237,11 +238,11 @@ struct WritebackState {
 };
 
 struct Pipeline {
-    FetchState fetch;
-    DecodeState decode;
-    ExecuteState execute;
-    MemoryState memory;
-    WritebackState writeback;
+    FetchState fetch {};
+    DecodeState decode {};
+    ExecuteState execute {};
+    MemoryState memory {};
+    WritebackState writeback {};
 };
 } // namespace machine
 
