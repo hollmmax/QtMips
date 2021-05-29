@@ -1037,7 +1037,7 @@ bool SimpleAsmWithEditorCheck::process_pragma(
     };
 #endif
     if ((operands.count() < 2)
-        || QString::compare(operands.at(0), "qtmips", Qt::CaseInsensitive)) {
+        || QString::compare(operands.at(0), "simulator", Qt::CaseInsensitive)) {
         return true;
     }
     QString op = operands.at(1).toLower();
