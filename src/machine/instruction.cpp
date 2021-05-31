@@ -50,17 +50,8 @@ struct ArgumentDesc {
     int64_t min;
     int64_t max;
     BitArg arg;
-    inline ArgumentDesc(
-        char name,
-        char kind,
-        int64_t min,
-        int64_t max,
-        BitArg arg)
-        : name(name)
-        , kind(kind)
-        , min(min)
-        , max(max)
-        , arg(arg) {}
+    inline ArgumentDesc(char name, char kind, int64_t min, int64_t max, BitArg arg)
+        : name(name), kind(kind), min(min), max(max), arg(arg) {}
 };
 
 static const ArgumentDesc argdeslist[] = {
@@ -88,29 +79,9 @@ static bool fill_argdesbycode() {
 
 bool argdesbycode_filled = fill_argdesbycode();
 
-struct RegisterDesc {
-    int kind;
-    int number;
-    const char *name;
-};
-
 #define REGISTER_CODES 32
 
-const RegisterDesc regbycode[REGISTER_CODES] = {
-    [0] = { 0, 0, "zero" }, [1] = { 0, 1, "at" },   [2] = { 0, 2, "v0" },
-    [3] = { 0, 3, "v1" },   [4] = { 0, 4, "a0" },   [5] = { 0, 5, "a1" },
-    [6] = { 0, 6, "a2" },   [7] = { 0, 7, "a3" },   [8] = { 0, 8, "t0" },
-    [9] = { 0, 9, "t1" },   [10] = { 0, 10, "t2" }, [11] = { 0, 11, "t3" },
-    [12] = { 0, 12, "t4" }, [13] = { 0, 13, "t5" }, [14] = { 0, 14, "t6" },
-    [15] = { 0, 15, "t7" }, [16] = { 0, 16, "s0" }, [17] = { 0, 17, "s1" },
-    [18] = { 0, 18, "s2" }, [19] = { 0, 19, "s3" }, [20] = { 0, 20, "s4" },
-    [21] = { 0, 21, "s5" }, [22] = { 0, 22, "s6" }, [23] = { 0, 23, "s7" },
-    [24] = { 0, 24, "t8" }, [25] = { 0, 25, "t9" }, [26] = { 0, 26, "k0" },
-    [27] = { 0, 27, "k1" }, [28] = { 0, 28, "gp" }, [29] = { 0, 29, "sp" },
-    [30] = { 0, 30, "s8" }, [31] = { 0, 31, "ra" },
-};
-
-const std::string Rv_regnames[32] = {
+const char *const Rv_regnames[32] = {
     "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",
     "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
     "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
@@ -146,7 +117,7 @@ const std::string Rv_regnames[32] = {
 #define NOMEM .mem_ctl = AC_NONE
 
 #define IM_UNKNOWN                                                             \
-    { "UNKNOWN", Instruction::UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0 }
+    { "unknown", Instruction::UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0 }
 // TODO NOTE: if unknown is defined as all 0, instruction map can be
 // significanly simplified using zero initialization.
 
@@ -452,7 +423,7 @@ QString Instruction::to_str(Address inst_addr) const {
     QString res;
     QString next_delim = " ";
     if (im.type == UNKNOWN) {
-        return QString("UNKNOWN");
+        return QString("unknown");
     }
 
     res += im.name;
@@ -473,7 +444,7 @@ QString Instruction::to_str(Address inst_addr) const {
             switch (adesc->kind) {
             case 'g':
                 if (symbolic_registers_fl) {
-                    res += QString(Rv_regnames[field].c_str());
+                    res += QString(Rv_regnames[field]);
                 } else {
                     res += "x" + QString::number(field);
                 }
@@ -542,52 +513,38 @@ void instruction_from_string_build_base() {
 }
 
 static int parse_reg_from_string(QString str, uint *chars_taken = nullptr) {
-    int res;
-    int i;
-    uint ctk;
-    if (str.count() < 2 || str.at(0) != 'x') {
+    if (str.size() < 2) {
         return -1;
     }
-
-    if (str.at(1).isLetter()) {
-        int k = 1;
-        while (k < str.count()) {
-            if (!str.at(k).isLetterOrNumber()) {
+    if (str.at(0) == 'x') {
+        int res = 0;
+        int ctk = 1;
+        for (; ctk < str.size(); ctk += 1) {
+            auto c = str.at(*chars_taken);
+            if (c >= '0' && c <= '9') {
+                res *= 10;
+                res += c.unicode();
+            } else {
                 break;
             }
-            k++;
         }
-        str = str.mid(1, k - 1);
-        for (i = 0; i < REGISTER_CODES; i++) {
-            if (str == regbycode[i].name) {
-                if (chars_taken != nullptr) {
-                    *chars_taken = k;
-                }
-                return regbycode[i].number;
+        if (ctk == 0) {
+            return -1;
+        } else {
+            *chars_taken = ctk;
+            return res;
+        }
+    } else {
+        auto data = str.toLocal8Bit();
+        for (int i = 0; i < REGISTER_CODES; i++) {
+            int len = std::strlen(Rv_regnames[i]);
+            if (std::strncmp(data.data(), Rv_regnames[i], std::min(str.size(), len)) == 0) {
+                *chars_taken = len;
+                return i;
             }
         }
         return -1;
     }
-
-    char cstr[str.count() + 1];
-    for (i = 0; i < str.count(); i++) {
-        cstr[i] = str.at(i).toLatin1();
-    }
-    cstr[i] = 0;
-    const char *p = cstr + 1;
-    char *r;
-    res = std::strtol(p, &r, 0);
-    ctk = r - p + 1;
-    if (p == r) {
-        return -1;
-    }
-    if (res > 31) {
-        return -1;
-    }
-    if (chars_taken != nullptr) {
-        *chars_taken = ctk;
-    }
-    return res;
 }
 
 static void reloc_append(
@@ -947,7 +904,7 @@ inline uint32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
 void Instruction::append_recognized_registers(QStringList &list) {
     int i;
     for (i = 0; i < REGISTER_CODES; i++) {
-        QString name = regbycode[i].name;
+        QString name = Rv_regnames[i];
         if (name != "") {
             list.append(name);
         }
