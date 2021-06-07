@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>samples/simple-lw-sw-ia.S</file>
+        <file>samples/demo.S</file>
     </qresource>
 </RCC>
