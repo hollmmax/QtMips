@@ -12,6 +12,7 @@
 #include "registers.h"
 #include "simulator_exception.h"
 #include "symboltable.h"
+#include "predictor.h"
 
 #include <QObject>
 #include <QTimer>
@@ -121,6 +122,7 @@ private:
     Cache *cch_program = nullptr;
     Cache *cch_data = nullptr;
     Cop0State *cop0st = nullptr;
+    Predictor *predictor = nullptr;
     Core *cr = nullptr;
 
     QTimer *run_t = nullptr;

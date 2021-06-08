@@ -51,6 +51,7 @@ enum InstructionFlags {
     IMF_STOP_IF = 1L << 23,    /**< Stop instruction fetch until instruction
                                   processed */
     IMF_ALU_MOD = 1L << 24, /**< ADD and right-shift modifier */
+    IMF_PC_TO_ALU = 1L << 25, /**< PC is loaded instead of RS to ALU */
 };
 
 struct BitArg {
