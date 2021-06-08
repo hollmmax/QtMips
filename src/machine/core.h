@@ -11,6 +11,7 @@
 #include "register_value.h"
 #include "registers.h"
 #include "simulator_exception.h"
+#include "predictor.h"
 
 #include <QObject>
 
@@ -28,7 +29,6 @@ public:
         Address inst_addr,
         Address next_addr,
         Address jump_branch_pc,
-        bool in_delay_slot,
         Address mem_ref_addr)
         = 0;
 };
@@ -43,7 +43,6 @@ public:
         Address inst_addr,
         Address next_addr,
         Address jump_branch_pc,
-        bool in_delay_slot,
         Address mem_ref_addr) override;
 };
 
@@ -52,6 +51,7 @@ class Core : public QObject {
 public:
     Core(
         Registers *regs,
+        Predictor *predictor,
         FrontendMemory *mem_program,
         FrontendMemory *mem_data,
         unsigned int min_cache_row_size = 1,
@@ -68,6 +68,7 @@ public:
 
     Registers *get_regs();
     Cop0State *get_cop0state();
+    Predictor *get_predictor();
     FrontendMemory *get_mem_data();
     FrontendMemory *get_mem_program();
     void register_exception_handler(
@@ -132,11 +133,9 @@ signals:
     void decode_memwrite_value(uint32_t);
     void decode_memread_value(uint32_t);
     void decode_alusrc_value(uint32_t);
-    void decode_regdest_value(uint32_t);
     void decode_rs_num_value(uint32_t);
     void decode_rt_num_value(uint32_t);
     void decode_rd_num_value(uint32_t);
-    void decode_regd31_value(uint32_t);
     void forward_m_d_rs_value(uint32_t);
     void forward_m_d_rt_value(uint32_t);
     void execute_inst_addr_value(machine::Address);
@@ -194,11 +193,11 @@ protected:
         Address inst_addr,
         Address next_addr,
         Address jump_branch_pc,
-        bool in_delay_slot,
         Address mem_ref_addr);
 
     Registers *regs;
     Cop0State *cop0state;
+    Predictor *predictor;
     FrontendMemory *mem_data, *mem_program;
     QMap<ExceptionCause, ExceptionHandler *> ex_handlers;
     ExceptionHandler *ex_default_handler;
@@ -208,7 +207,7 @@ protected:
     ExecuteState execute(const DecodeInterstage &);
     MemoryState memory(const ExecuteInterstage &);
     WritebackState writeback(const MemoryInterstage &);
-    bool handle_pc(const DecodeInterstage &);
+    Address handle_pc(const ExecuteInterstage &);
 
     enum ExceptionCause memory_special(
         enum AccessControl memctl,
@@ -230,6 +229,7 @@ class CoreSingle : public Core {
 public:
     CoreSingle(
         Registers *regs,
+        Predictor *predictor,
         FrontendMemory *mem_program,
         FrontendMemory *mem_data,
         unsigned int min_cache_row_size = 1,
@@ -247,6 +247,7 @@ class CorePipelined : public Core {
 public:
     CorePipelined(
         Registers *regs,
+        Predictor *predictor,
         FrontendMemory *mem_program,
         FrontendMemory *mem_data,
         enum MachineConfig::HazardUnit hazard_unit
@@ -261,6 +262,9 @@ protected:
 private:
         MachineConfig::HazardUnit hazard_unit;
 };
+
+std::tuple<bool, Address> predict(Instruction inst, Address addr);
+
 
 } // namespace machine
 
