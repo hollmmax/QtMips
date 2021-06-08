@@ -144,9 +144,9 @@ const struct {
         { QStringLiteral("decode-rs2"),
           LENS(CoreState, pipeline.decode.result.val_rt) },
         { QStringLiteral("exec-rs1"),
-            LENS(CoreState, pipeline.execute.internal.rs1) },
+            LENS(CoreState, pipeline.execute.internal.rs) },
         { QStringLiteral("exec-rs2"),
-            LENS(CoreState, pipeline.execute.internal.rs2) },
+            LENS(CoreState, pipeline.execute.internal.rt) },
         { QStringLiteral("wb"),
           LENS(CoreState, pipeline.memory.result.towrite_val) },
     };
@@ -160,9 +160,9 @@ const struct {
         { QStringLiteral("wb-rd"),
           LENS(CoreState, pipeline.decode.result.wb_num_rd) },
         { QStringLiteral("rs1"),
-          LENS(CoreState, pipeline.decode.result.num_rs1) },
+          LENS(CoreState, pipeline.decode.result.num_rs) },
         { QStringLiteral("rs2"),
-          LENS(CoreState, pipeline.decode.result.num_rs2) },
+          LENS(CoreState, pipeline.decode.result.num_rt) },
     };
     const unordered_map<QStringView, Lens<CoreState, unsigned>> DEBUG {
         { QStringLiteral("cycle-count"), LENS(CoreState, cycle_count) },
