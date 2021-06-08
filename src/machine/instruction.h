@@ -78,7 +78,7 @@ struct BitArg {
         size_t offset = 0;
         for (Field field : *this) {
             ret |= field.decode(ins) << offset;
-            offset += field.offset;
+            offset += field.count;
         }
         return ret << shift;
     }
