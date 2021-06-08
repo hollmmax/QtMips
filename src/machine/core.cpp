@@ -284,7 +284,7 @@ DecodeState Core::decode(const FetchInterstage &dt) {
     uint8_t num_rd = dt.inst.rd();
     RegisterValue val_rs = regs->read_gp(num_rs);
     RegisterValue val_rt = regs->read_gp(num_rt);
-    uint32_t immediate_val;
+    int32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
 
     immediate_val = dt.inst.immediate();
@@ -504,6 +504,7 @@ WritebackState Core::writeback(const MemoryInterstage &dt) {
         .inst_addr = dt.inst_addr,
         .regwrite = dt.regwrite,
         .num_rd = dt.num_rd,
+        .to_write_val = dt.towrite_val,
     } };
 }
 
@@ -592,7 +593,7 @@ CoreSingle::CoreSingle(
 }
 
 void CoreSingle::do_step(bool skip_break) {
-    qDebug("start step");
+    qDebug("start step_output");
     state.pipeline.fetch = fetch(skip_break);
     qDebug("fetch");
     state.pipeline.decode = decode(state.pipeline.fetch.final);
@@ -615,10 +616,11 @@ void CoreSingle::do_step(bool skip_break) {
         return;
     }
     prev_inst_addr = state.pipeline.memory.final.inst_addr;
-    qDebug("end of step");
+    qDebug("end of step_output");
 }
 
 void CoreSingle::do_reset() {
+    state.pipeline = {};
     prev_inst_addr = Address::null();
 }
 
@@ -808,22 +810,7 @@ void CorePipelined::do_step(bool skip_break) {
 }
 
 void CorePipelined::do_reset() {
-    dtFetchInit(state.pipeline.fetch.final);
-    dtFetchInit(state.pipeline.fetch.result);
-    state.pipeline.fetch.final.inst_addr = 0x0_addr;
-    state.pipeline.fetch.result.inst_addr = 0x0_addr;
-    dtDecodeInit(state.pipeline.decode.result);
-    dtDecodeInit(state.pipeline.decode.final);
-    state.pipeline.decode.result.inst_addr = 0x0_addr;
-    state.pipeline.decode.final.inst_addr = 0x0_addr;
-    dtExecuteInit(state.pipeline.execute.result);
-    dtExecuteInit(state.pipeline.execute.final);
-    state.pipeline.execute.result.inst_addr = 0x0_addr;
-    state.pipeline.execute.final.inst_addr = 0x0_addr;
-    dtMemoryInit(state.pipeline.memory.result);
-    dtMemoryInit(state.pipeline.memory.final);
-    state.pipeline.memory.result.inst_addr = 0x0_addr;
-    state.pipeline.memory.final.inst_addr = 0x0_addr;
+    state.pipeline = {};
 }
 
 bool StopExceptionHandler::handle_exception(
