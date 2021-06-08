@@ -503,6 +503,7 @@ WritebackState Core::writeback(const MemoryInterstage &dt) {
         .inst = dt.inst,
         .inst_addr = dt.inst_addr,
         .regwrite = dt.regwrite,
+        .num_rd = dt.num_rd,
     } };
 }
 

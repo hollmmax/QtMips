@@ -230,6 +230,7 @@ struct WritebackInternalState {
     Instruction inst = Instruction::NOP;
     Address inst_addr = 0_addr;
     bool regwrite = false;
+    uint8_t num_rd;
 };
 
 struct WritebackState {
