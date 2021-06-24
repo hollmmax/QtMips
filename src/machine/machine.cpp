@@ -268,7 +268,6 @@ void Machine::pause() {
 }
 
 void Machine::step_internal(bool skip_break) {
-    qDebug("start step internal");
     CTL_GUARD;
     enum Status stat_prev = stat;
     set_status(ST_BUSY);
@@ -295,7 +294,6 @@ void Machine::step_internal(bool skip_break) {
         }
     }
     emit post_tick();
-    qDebug("end step internal");
 }
 
 void Machine::step() {
