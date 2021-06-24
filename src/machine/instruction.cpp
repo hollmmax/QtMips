@@ -327,8 +327,8 @@ uint8_t Instruction::cop0sel() const {
     return (uint8_t)MASK(3, 0);
 }
 
-uint32_t Instruction::immediate() const {
-    uint32_t ret = 0;
+int32_t Instruction::immediate() const {
+    int32_t ret = 0;
     switch (this->type()) {
     case R: break;
     case I: ret = extend(MASK(12, 20), 12); break;
@@ -911,7 +911,7 @@ void Instruction::set_symbolic_registers(bool enable) {
     symbolic_registers_fl = enable;
 }
 
-inline uint32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
+inline int32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
     return value | this->imm_sign() * ~((1 << used_bits) - 1);
 }
 

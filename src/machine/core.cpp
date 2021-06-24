@@ -43,7 +43,6 @@ void Core::step(bool skip_break) {
     emit cycle_c_value(state.cycle_count);
     do_step(skip_break);
     emit step_done();
-    qDebug("step done");
 }
 
 void Core::reset() {
@@ -284,7 +283,7 @@ DecodeState Core::decode(const FetchInterstage &dt) {
     uint8_t num_rd = dt.inst.rd();
     RegisterValue val_rs = regs->read_gp(num_rs);
     RegisterValue val_rt = regs->read_gp(num_rt);
-    uint32_t immediate_val;
+    int32_t immediate_val;
     bool regwrite = flags & IMF_REGWRITE;
 
     immediate_val = dt.inst.immediate();
@@ -349,16 +348,12 @@ ExecuteState Core::execute(const DecodeInterstage &dt) {
     RegisterValue alu_fst = dt.alu_pc ? RegisterValue(dt.inst_addr.get_raw()) : dt.val_rs;
     RegisterValue alu_sec = dt.alusrc ? dt.immediate_val : dt.val_rt;
     if (dt.alu_pc) {
-        qDebug("alu PC: %ld", alu_fst.as_u64());
-        qDebug("alu src: %d, imm: %d", dt.alusrc, dt.immediate_val.as_i32());
     }
 
     RegisterValue alu_val = 0;
     if (excause == EXCAUSE_NONE) {
-        qDebug("alufst: %d, alusec: %d", alu_fst.as_i32(), alu_sec.as_i32());
         alu_val = alu_combined_operate({.alu_op = dt.aluop}, AluComponent::ALU, true, dt.alu_mod, alu_fst, alu_sec);
     }
-    qDebug("aluval: %d", alu_val.as_i32());
     Address target = 0_addr;
     if (dt.branch) target = dt.inst_addr + dt.immediate_val.as_i64();
 
@@ -502,19 +497,18 @@ WritebackState Core::writeback(const MemoryInterstage &dt) {
         .inst = dt.inst,
         .inst_addr = dt.inst_addr,
         .regwrite = dt.regwrite,
+        .num_rd = dt.num_rd,
     } };
 }
 
 Address Core::handle_pc(const ExecuteInterstage &dt) {
     emit instruction_program_counter(
         dt.inst, dt.inst_addr, EXCAUSE_NONE, dt.is_valid);
-    qDebug("jump: %d, branch: %d", dt.jump, dt.branch);
 
     if (dt.jump) return Address(dt.alu_val.as_u64());
 
     if (dt.branch) {
         bool taken = !dt.bj_not ^ bool(dt.alu_val.as_u64());
-        qDebug("bjnot: %d, aluval: %ld, taken: %d", dt.bj_not, dt.alu_val.as_u64(), taken);
         return taken ? dt.branch_target : dt.inst_addr + 4;
     }
 
@@ -591,20 +585,13 @@ CoreSingle::CoreSingle(
 }
 
 void CoreSingle::do_step(bool skip_break) {
-    qDebug("start step");
     state.pipeline.fetch = fetch(skip_break);
-    qDebug("fetch");
     state.pipeline.decode = decode(state.pipeline.fetch.final);
-    qDebug("decode");
     state.pipeline.execute = execute(state.pipeline.decode.final);
-    qDebug("execute");
     state.pipeline.memory = memory(state.pipeline.execute.final);
-    qDebug("memory");
     state.pipeline.writeback = writeback(state.pipeline.memory.final);
-    qDebug("writeback");
 
     regs->write_pc(handle_pc(state.pipeline.execute.final));
-    qDebug("programcounter");
 
     if (state.pipeline.memory.final.excause != EXCAUSE_NONE) {
         handle_exception(
@@ -614,7 +601,6 @@ void CoreSingle::do_step(bool skip_break) {
         return;
     }
     prev_inst_addr = state.pipeline.memory.final.inst_addr;
-    qDebug("end of step");
 }
 
 void CoreSingle::do_reset() {
@@ -692,7 +678,6 @@ void CorePipelined::do_step(bool skip_break) {
     state.pipeline.decode.final.ff_rs = FORWARD_NONE;
     state.pipeline.decode.final.ff_rt = FORWARD_NONE;
 
-    qDebug("hazard unit: %d", hazard_unit);
     if (hazard_unit != MachineConfig::HU_NONE) {
         // Note: We make exception with $0 as that has no effect when
         // written and is used in nop instruction
@@ -716,9 +701,7 @@ void CorePipelined::do_step(bool skip_break) {
         // decode internal so nothing has to be done for that internal
         auto& mem = state.pipeline.memory.final;
         auto& dec = state.pipeline.decode.final;
-        qDebug("rw: %d, rd: %d, reqrs: %d, rs: %d, reqrt: %d, rt: %d", mem.regwrite, mem.num_rd, dec.alu_req_rs, dec.num_rs, dec.alu_req_rt, dec.num_rt);
         if (HAZARD(state.pipeline.memory)) {
-            qDebug("hazard detected");
             // Hazard with instruction in memory internal
             if (hazard_unit == MachineConfig::HU_STALL_FORWARD) {
                 // Forward result value
