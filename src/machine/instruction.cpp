@@ -219,19 +219,19 @@ static const struct InstructionMap BRANCH_map[] = {
 };
 
 static const struct InstructionMap I_inst_map[] = {
-    {"load", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x7f, 0x03, { .subfield = {3, 12} }}, // LOAD
+    {"load", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, { .subfield = {3, 12} }}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
-    {"op-imm", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x7f, 0x13, { .subfield = {3, 12} }}, // OP-IMM
+    {"op-imm", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, { .subfield = {3, 12} }}, // OP-IMM
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    {"store", IT_I, NOALU, NOMEM, STORE_map, {}, 0x7f, 0x23, { .subfield = {3, 12} }}, // STORE
+    {"store", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, { .subfield = {3, 12} }}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
-    {"op", IT_R, NOALU, NOMEM, OP_map, {}, 0x7f, 0x33, { .subfield = {3, 12} }}, // OP
+    {"op", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, { .subfield = {3, 12} }}, // OP
     IM_UNKNOWN, // LUI
     IM_UNKNOWN, // OP-32
     IM_UNKNOWN, // 64b
@@ -243,10 +243,10 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-2/rv128
     IM_UNKNOWN, // 48b
-    {"branch", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x7f, 0x63, { .subfield = {3, 12} }}, // BRANCH
+    {"branch", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, { .subfield = {3, 12} }}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
-    {"jal", IT_J, AluOp::ADD, NOMEM, nullptr, {"d", "a"}, 0x0000006f, 0x0000007f, { .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP | IMF_PC_TO_ALU | IMF_ALUSRC}}, // JAL
+    {"jal", IT_J, AluOp::ADD, NOMEM, nullptr, {"d", "a"}, 0x6f, 0x7f, { .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP | IMF_PC_TO_ALU | IMF_ALUSRC}}, // JAL
     IM_UNKNOWN, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
