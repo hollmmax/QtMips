@@ -218,6 +218,11 @@ static const struct InstructionMap BRANCH_map[] = {
     {"bgeu", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00007063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT | IMF_BJ_NOT }}, // BGEU
 };
 
+static const struct InstructionMap SYSTEM_map[] = {
+    {"ecall", IT_I, NOALU, NOMEM, nullptr, {}, 0x00000073, 0xffffffff, { .flags = 0 }},
+    {"ebreak", IT_I, NOALU, NOMEM, nullptr, {}, 0x00100073, 0xffffffff, { .flags = 0 }},
+};
+
 static const struct InstructionMap I_inst_map[] = {
     {"load", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, { .subfield = {3, 12} }}, // LOAD
     IM_UNKNOWN, // LOAD-FP
@@ -247,7 +252,7 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
     {"jal", IT_J, AluOp::ADD, NOMEM, nullptr, {"d", "a"}, 0x6f, 0x7f, { .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP | IMF_PC_TO_ALU | IMF_ALUSRC}}, // JAL
-    IM_UNKNOWN, // SYSTEM
+    {"system", IT_I, NOALU, NOMEM, SYSTEM_map, {}, 0x73, 0x7f, { .subfield = {1, 20} }}, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
     IM_UNKNOWN, // >= 80b
