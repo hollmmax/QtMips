@@ -9,12 +9,15 @@
 #ifndef QTRVSIM_VALUE_HANDLERS_H
 #define QTRVSIM_VALUE_HANDLERS_H
 
+#include <QList>
 #include <instruction.h>
 #include <machine/memory/address.h>
 #include <machine/register_value.h>
 #include <machine/registers.h>
 #include <svgscene/components/simpletextitem.h>
 #include <svgscene/utils/memory_ownership.h>
+#include <utility>
+#include <vector>
 
 class BoolValue {
 public:
@@ -48,9 +51,7 @@ private:
 
 class RegValue {
 public:
-    RegValue(
-        svgscene::SimpleTextItem *element,
-        const machine::RegisterValue &data);
+    RegValue(svgscene::SimpleTextItem *element, const machine::RegisterValue &data);
     void update();
     static const QString COMPONENT_NAME;
 
@@ -96,8 +97,7 @@ private:
 };
 
 class InstructionValue {
-    using Data
-        = std::pair<const machine::Instruction &, const machine::Address &>;
+    using Data = std::pair<const machine::Instruction &, const machine::Address &>;
 
 public:
     InstructionValue(svgscene::SimpleTextItem *element, Data data);
@@ -108,6 +108,34 @@ private:
     BORROWED svgscene::SimpleTextItem *const element;
     const machine::Instruction &instruction_data;
     const machine::Address &address_data;
+};
+
+template<typename SOURCE>
+class Multiplexer {
+public:
+    Multiplexer(
+        std::vector<BORROWED QGraphicsPathItem *> connections,
+        const SOURCE &active_connection)
+        : connections(std::move(connections))
+        , active_connection(active_connection)
+        , current_active_connection(0) {
+        // Hide all but first
+        for (size_t i = 1; i < this->connections.size(); ++i) {
+            this->connections.at(i)->hide();
+        }
+    }
+    void update() {
+        if (current_active_connection != active_connection) {
+            connections.at(static_cast<unsigned>(current_active_connection))->hide();
+            connections.at(static_cast<unsigned>(active_connection))->show();
+            current_active_connection = active_connection;
+        }
+    }
+
+private:
+    const std::vector<BORROWED QGraphicsPathItem *> connections;
+    const SOURCE &active_connection;
+    SOURCE current_active_connection;
 };
 
 #endif // QTRVSIM_VALUE_HANDLERS_H

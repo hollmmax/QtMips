@@ -1,5 +1,7 @@
 #include "value_handlers.h"
 
+#include <QGraphicsPathItem>
+
 using svgscene::SimpleTextItem;
 
 const QString BoolValue::COMPONENT_NAME = QStringLiteral("bool-value");
@@ -7,10 +9,8 @@ const QString PCValue::COMPONENT_NAME = QStringLiteral("pc-value");
 const QString RegValue::COMPONENT_NAME = QStringLiteral("reg-value");
 const QString RegIdValue::COMPONENT_NAME = QStringLiteral("reg-id-value");
 const QString DebugValue::COMPONENT_NAME = QStringLiteral("debug-value");
-const QString MultiTextValue::COMPONENT_NAME
-    = QStringLiteral("multi-text-value");
-const QString InstructionValue::COMPONENT_NAME
-    = QStringLiteral("instruction-value");
+const QString MultiTextValue::COMPONENT_NAME = QStringLiteral("multi-text-value");
+const QString InstructionValue::COMPONENT_NAME = QStringLiteral("instruction-value");
 
 BoolValue::BoolValue(SimpleTextItem *const element, const bool &data)
     : element(element)
@@ -77,3 +77,4 @@ InstructionValue::InstructionValue(SimpleTextItem *const element, Data data)
 void InstructionValue::update() {
     element->setText(instruction_data.to_str(address_data));
 }
+
