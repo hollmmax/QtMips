@@ -9,6 +9,7 @@ on:
       - svgscene
       - rv-visualization
       - risc-v
+      - rv2
   workflow_dispatch:
 
 jobs:
