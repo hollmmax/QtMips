@@ -20,7 +20,7 @@ class BoolValue {
 public:
     BoolValue(svgscene::SimpleTextItem *element, const bool &data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "bool-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -37,9 +37,9 @@ signals:
 
 public:
     PCValue(svgscene::SimpleTextItem *element, const machine::Address &data);
-    PCValue(const PCValue&);
+    PCValue(const PCValue &);
     void update();
-    static constexpr const char *COMPONENT_NAME = "pc-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -52,7 +52,7 @@ public:
         svgscene::SimpleTextItem *element,
         const machine::RegisterValue &data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "reg-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -63,7 +63,7 @@ class RegIdValue {
 public:
     RegIdValue(svgscene::SimpleTextItem *element, const uint8_t &data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "reg-id-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -74,7 +74,7 @@ class DebugValue {
 public:
     DebugValue(svgscene::SimpleTextItem *element, const unsigned int &data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "debug-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -87,7 +87,7 @@ class MultiTextValue {
 public:
     MultiTextValue(svgscene::SimpleTextItem *element, Data data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "multi-text-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
@@ -102,7 +102,7 @@ class InstructionValue {
 public:
     InstructionValue(svgscene::SimpleTextItem *element, Data data);
     void update();
-    static constexpr const char *COMPONENT_NAME = "instruction-value";
+    static const QString COMPONENT_NAME;
 
 private:
     BORROWED svgscene::SimpleTextItem *const element;
