@@ -164,7 +164,7 @@ const struct {
         { QStringLiteral("rs2"),
           LENS(CoreState, pipeline.decode.result.num_rt) },
     };
-    const unordered_map<QStringView, Lens<CoreState, unsigned>> DEBUG {
+    const unordered_map<QStringView, Lens<CoreState, unsigned>> DEBUG_VAL {
         { QStringLiteral("cycle-count"), LENS(CoreState, cycle_count) },
         { QStringLiteral("stall-count"), LENS(CoreState, stall_count) },
         { QStringLiteral("decode-alu-op"),
