@@ -44,6 +44,7 @@ enum ExceptionCause {
     EXCAUSE_NONE = 0, // Use zero as default value when no exception is
     // pending.
     EXCAUSE_INT = 1, // Int is 0 on real CPU and in Cause register.
+    EXCAUSE_UNKNOWN = 2,
     EXCAUSE_ADDRL = 4,
     EXCAUSE_ADDRS = 5,
     EXCAUSE_IBUS = 6,

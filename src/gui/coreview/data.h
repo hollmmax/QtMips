@@ -34,7 +34,8 @@ static const std::vector<QString> EXCEPTION_NAME_TABLE
         { "BREAK" },     // machine::EXCAUSE_BREAK
         { "OVERFLOW" },  // machine::EXCAUSE_OVERFLOW
         { "TRAP" },      // machine::EXCAUSE_TRAP
-        { "HWBREAK" } }; // machine::EXCAUSE_HWBREAK
+        { "HWBREAK" },   // machine::EXCAUSE_HWBREAK
+        { "UNKNOWN" } }; // machine::EXCAUSE_UNKNOWN
 
 static const std::vector<QString> STALL_TEXT_TABLE
     = { { "NORMAL" }, { "STALL" }, { "FORWARD" } };

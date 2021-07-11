@@ -190,6 +190,7 @@ protected:
         Core *core,
         Registers *regs,
         ExceptionCause excause,
+        Instruction inst,
         Address inst_addr,
         Address next_addr,
         Address jump_branch_pc,
@@ -208,6 +209,7 @@ protected:
     MemoryState memory(const ExecuteInterstage &);
     WritebackState writeback(const MemoryInterstage &);
     Address handle_pc(const ExecuteInterstage &);
+    void flush();
 
     enum ExceptionCause memory_special(
         enum AccessControl memctl,

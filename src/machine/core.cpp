@@ -122,11 +122,19 @@ bool Core::handle_exception(
     Core *core,
     Registers *regs,
     ExceptionCause excause,
+    Instruction inst,
     Address inst_addr,
     Address next_addr,
     Address jump_branch_pc,
     Address mem_ref_addr) {
     bool ret = false;
+    if (excause == EXCAUSE_UNKNOWN) {
+        throw SIMULATOR_EXCEPTION(
+            UnsupportedInstruction,
+            "Instruction with following encoding is not supported",
+            QString::number(inst.data(), 16));
+    }
+
     if (excause == EXCAUSE_HWBREAK) {
         regs->write_pc(inst_addr);
     }
@@ -272,10 +280,7 @@ DecodeState Core::decode(const FetchInterstage &dt) {
     dt.inst.flags_alu_op_mem_ctl(flags, alu_op, mem_ctl);
 
     if (!(flags & IMF_SUPPORTED)) {
-        throw SIMULATOR_EXCEPTION(
-            UnsupportedInstruction,
-            "Instruction with following encoding is not supported",
-            QString::number(dt.inst.data(), 16));
+        excause = EXCAUSE_UNKNOWN;
     }
 
     uint8_t num_rs = dt.inst.rs();
@@ -515,6 +520,30 @@ Address Core::handle_pc(const ExecuteInterstage &dt) {
     return dt.inst_addr + 4;
 }
 
+void Core::flush() {
+    dtExecuteInit(state.pipeline.execute.final);
+    emit instruction_executed(
+        state.pipeline.execute.final.inst,
+        state.pipeline.execute.final.inst_addr,
+        state.pipeline.execute.final.excause,
+        state.pipeline.execute.final.is_valid);
+    emit execute_inst_addr_value(STAGEADDR_NONE);
+    dtDecodeInit(state.pipeline.decode.final);
+    emit instruction_decoded(
+        state.pipeline.decode.final.inst,
+        state.pipeline.decode.final.inst_addr,
+        state.pipeline.decode.final.excause,
+        state.pipeline.decode.final.is_valid);
+    emit decode_inst_addr_value(STAGEADDR_NONE);
+    dtFetchInit(state.pipeline.fetch.final);
+    emit instruction_fetched(
+        state.pipeline.fetch.final.inst,
+        state.pipeline.fetch.final.inst_addr,
+        state.pipeline.fetch.final.excause,
+        state.pipeline.fetch.final.is_valid);
+    emit fetch_inst_addr_value(STAGEADDR_NONE);
+}
+
 void Core::dtFetchInit(FetchInterstage &dt) {
     dt.inst = Instruction(NOP_HEX);
     dt.excause = EXCAUSE_NONE;
@@ -596,6 +625,7 @@ void CoreSingle::do_step(bool skip_break) {
     if (state.pipeline.memory.final.excause != EXCAUSE_NONE) {
         handle_exception(
             this, regs, state.pipeline.memory.final.excause,
+            state.pipeline.memory.final.inst,
             state.pipeline.memory.final.inst_addr, regs->read_pc(),
             prev_inst_addr, state.pipeline.memory.final.mem_addr);
         return;
@@ -623,7 +653,6 @@ CorePipelined::CorePipelined(
 
 void CorePipelined::do_step(bool skip_break) {
     bool stall = false;
-    bool excpt_in_progress;
     Address jump_branch_pc = state.pipeline.memory.final.inst_addr;
 
     // Process stages
@@ -632,47 +661,15 @@ void CorePipelined::do_step(bool skip_break) {
     state.pipeline.execute = execute(state.pipeline.decode.final);
     state.pipeline.decode = decode(state.pipeline.fetch.final);
 
-    // Resolve exceptions
-    excpt_in_progress = state.pipeline.memory.final.excause != EXCAUSE_NONE;
-    if (excpt_in_progress) {
-        dtExecuteInit(state.pipeline.execute.final);
-        emit instruction_executed(
-            state.pipeline.execute.final.inst,
-            state.pipeline.execute.final.inst_addr,
-            state.pipeline.execute.final.excause,
-            state.pipeline.execute.final.is_valid);
-        emit execute_inst_addr_value(STAGEADDR_NONE);
-    }
-    excpt_in_progress = excpt_in_progress
-                        || state.pipeline.execute.final.excause != EXCAUSE_NONE;
-    if (excpt_in_progress) {
-        dtDecodeInit(state.pipeline.decode.final);
-        emit instruction_decoded(
-            state.pipeline.decode.final.inst,
-            state.pipeline.decode.final.inst_addr,
-            state.pipeline.decode.final.excause,
-            state.pipeline.decode.final.is_valid);
-        emit decode_inst_addr_value(STAGEADDR_NONE);
-    }
-    excpt_in_progress = excpt_in_progress
-                        || state.pipeline.execute.final.excause != EXCAUSE_NONE;
-    if (excpt_in_progress) {
-        dtFetchInit(state.pipeline.fetch.final);
-        emit instruction_fetched(
-            state.pipeline.fetch.final.inst,
-            state.pipeline.fetch.final.inst_addr,
-            state.pipeline.fetch.final.excause,
-            state.pipeline.fetch.final.is_valid);
-        emit fetch_inst_addr_value(STAGEADDR_NONE);
-        if (state.pipeline.memory.final.excause != EXCAUSE_NONE) {
-            regs->write_pc(state.pipeline.execute.final.inst_addr);
-            handle_exception(
-                this, regs, state.pipeline.memory.final.excause,
-                state.pipeline.memory.final.inst_addr,
-                state.pipeline.execute.final.inst_addr, jump_branch_pc,
-                state.pipeline.memory.final.mem_addr);
-        }
-        return;
+    if (state.pipeline.memory.final.excause != EXCAUSE_NONE) {
+        flush();
+        regs->write_pc(state.pipeline.execute.final.inst_addr);
+        handle_exception(
+            this, regs, state.pipeline.memory.final.excause,
+            state.pipeline.memory.final.inst,
+            state.pipeline.memory.final.inst_addr,
+            state.pipeline.execute.final.inst_addr, jump_branch_pc,
+            state.pipeline.memory.final.mem_addr);
     }
 
     state.pipeline.decode.final.ff_rs = FORWARD_NONE;
