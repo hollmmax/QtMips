@@ -219,8 +219,8 @@ static const struct InstructionMap BRANCH_map[] = {
 };
 
 static const struct InstructionMap SYSTEM_map[] = {
-    {"ecall", IT_I, NOALU, NOMEM, nullptr, {}, 0x00000073, 0xffffffff, { .flags = 0 }},
-    {"ebreak", IT_I, NOALU, NOMEM, nullptr, {}, 0x00100073, 0xffffffff, { .flags = 0 }},
+    {"ecall", IT_I, NOALU, NOMEM, nullptr, {}, 0x00000073, 0xffffffff, { .flags = IMF_SUPPORTED | IMF_EXCEPTION | IMF_ECALL }},
+    {"ebreak", IT_I, NOALU, NOMEM, nullptr, {}, 0x00100073, 0xffffffff, { .flags = IMF_SUPPORTED | IMF_EXCEPTION | IMF_EBREAK }},
 };
 
 static const struct InstructionMap I_inst_map[] = {
@@ -394,24 +394,6 @@ void Instruction::flags_alu_op_mem_ctl(
         flags = (enum InstructionFlags)(flags & ~IMF_SUPPORTED);
     }
 #endif
-}
-
-enum ExceptionCause Instruction::encoded_exception() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    if (!(im.flags & IMF_EXCEPTION)) {
-        return EXCAUSE_NONE;
-    }
-    switch (im.alu) {
-    // case ALU_OP_BREAK: return EXCAUSE_BREAK;
-    // case ALU_OP_SYSCALL: return EXCAUSE_SYSCALL;
-    default: return EXCAUSE_NONE;
-    }
-}
-
-bool Instruction::is_break() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    // return im.alu == ALU_OP_BREAK;
-    return false;
 }
 
 bool Instruction::operator==(const Instruction &c) const {

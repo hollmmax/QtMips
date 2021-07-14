@@ -294,7 +294,11 @@ DecodeState Core::decode(const FetchInterstage &dt) {
     immediate_val = dt.inst.immediate();
 
     if ((flags & IMF_EXCEPTION) && (excause == EXCAUSE_NONE)) {
-        excause = dt.inst.encoded_exception();
+        if (flags & IMF_EBREAK) {
+            excause = EXCAUSE_BREAK;
+        } else if (flags & IMF_ECALL) {
+            excause = EXCAUSE_SYSCALL;
+        }
     }
 
     emit decode_inst_addr_value(dt.inst_addr);
