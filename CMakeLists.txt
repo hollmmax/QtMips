@@ -51,6 +51,7 @@ set(PACKAGE_OUTPUT_PATH "${EXECUTABLE_OUTPUT_PATH}/pkg"
 # Generated variables
 # =============================================================================
 
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 	set(WASM true)
 else()
@@ -128,6 +129,7 @@ endif()
 
 if("${WASM}")
 	message(STATUS "WASM build detected")
+
 
 	message(STATUS "Enabled WASM exception handling")
 	add_link_options("SHELL:-s DISABLE_EXCEPTION_CATCHING=0")

@@ -99,7 +99,7 @@ CoreViewScene::CoreViewScene(
         document, values.reg_id_values, VALUE_SOURCE_NAME_MAPS.REG_ID,
         core_state);
     install_values_from_document(
-        document, values.debug_values, VALUE_SOURCE_NAME_MAPS.DEBUG_VAL,
+        document, values.debug_values, VALUE_SOURCE_NAME_MAPS.DEBUG,
         core_state);
     install_values_from_document(
         document, values.pc_values, VALUE_SOURCE_NAME_MAPS.PC, core_state);

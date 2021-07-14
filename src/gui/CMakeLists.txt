@@ -23,6 +23,7 @@ set(gui_SOURCES
     #        coreview/deprecated/registers.cpp
     #        coreview/deprecated/value.cpp
     coreview/scene.cpp
+
     extprocess.cpp
     fontsize.cpp
     gotosymboldialog.cpp
@@ -73,6 +74,7 @@ set(gui_HEADERS
     #        coreview/deprecated/registers.h
     #        coreview/deprecated/value.h
     coreview/scene.h
+
     extprocess.h
     fontsize.h
     gotosymboldialog.h
@@ -178,4 +180,3 @@ install(TARGETS gui
         RUNTIME DESTINATION bin
         BUNDLE DESTINATION ${EXECUTABLE_OUTPUT_PATH}
         )
-

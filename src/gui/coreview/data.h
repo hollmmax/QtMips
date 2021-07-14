@@ -34,7 +34,8 @@ static const std::vector<QString> EXCEPTION_NAME_TABLE
         { "BREAK" },     // machine::EXCAUSE_BREAK
         { "OVERFLOW" },  // machine::EXCAUSE_OVERFLOW
         { "TRAP" },      // machine::EXCAUSE_TRAP
-        { "HWBREAK" } }; // machine::EXCAUSE_HWBREAK
+        { "HWBREAK" },   // machine::EXCAUSE_HWBREAK
+        { "UNKNOWN" } }; // machine::EXCAUSE_UNKNOWN
 
 static const std::vector<QString> STALL_TEXT_TABLE
     = { { "NORMAL" }, { "STALL" }, { "FORWARD" } };
@@ -144,9 +145,9 @@ const struct {
         { QStringLiteral("decode-rs2"),
           LENS(CoreState, pipeline.decode.result.val_rt) },
         { QStringLiteral("exec-rs1"),
-            LENS(CoreState, pipeline.execute.internal.rs1) },
+            LENS(CoreState, pipeline.execute.internal.rs) },
         { QStringLiteral("exec-rs2"),
-            LENS(CoreState, pipeline.execute.internal.rs2) },
+            LENS(CoreState, pipeline.execute.internal.rt) },
         { QStringLiteral("wb"),
           LENS(CoreState, pipeline.memory.result.towrite_val) },
     };
@@ -160,11 +161,11 @@ const struct {
         { QStringLiteral("wb-rd"),
           LENS(CoreState, pipeline.decode.result.wb_num_rd) },
         { QStringLiteral("rs1"),
-          LENS(CoreState, pipeline.decode.result.num_rs1) },
+          LENS(CoreState, pipeline.decode.result.num_rs) },
         { QStringLiteral("rs2"),
-          LENS(CoreState, pipeline.decode.result.num_rs2) },
+          LENS(CoreState, pipeline.decode.result.num_rt) },
     };
-    const unordered_map<QStringView, Lens<CoreState, unsigned>> DEBUG_VAL {
+    const unordered_map<QStringView, Lens<CoreState, unsigned>> DEBUG {
         { QStringLiteral("cycle-count"), LENS(CoreState, cycle_count) },
         { QStringLiteral("stall-count"), LENS(CoreState, stall_count) },
         { QStringLiteral("decode-alu-op"),

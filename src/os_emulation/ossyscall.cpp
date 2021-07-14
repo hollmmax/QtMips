@@ -1042,7 +1042,6 @@ bool OsSyscallExceptionHandler::handle_exception(
     Address inst_addr,
     Address next_addr,
     Address jump_branch_pc,
-    bool in_delay_slot,
     Address mem_ref_addr) {
     unsigned int syscall_num = regs->read_gp(2).as_u32();
     const mips_syscall_desc_t *sdesc;
@@ -1060,10 +1059,10 @@ bool OsSyscallExceptionHandler::handle_exception(
     printf(
         "Exception cause %d instruction PC 0x%08lx next PC 0x%08lx jump branch "
         "PC 0x%08lx "
-        "in_delay_slot %d registers PC 0x%08lx mem ref 0x%08lx\n",
+        "registers PC 0x%08lx mem ref 0x%08lx\n",
         excause, (unsigned long)inst_addr.get_raw(),
         (unsigned long)next_addr.get_raw(),
-        (unsigned long)jump_branch_pc.get_raw(), (int)in_delay_slot,
+        (unsigned long)jump_branch_pc.get_raw(),
         (unsigned long)regs->read_pc().get_raw(),
         (unsigned long)mem_ref_addr.get_raw());
 #else
@@ -1073,7 +1072,6 @@ bool OsSyscallExceptionHandler::handle_exception(
     (void)mem_ref_addr;
     (void)regs;
     (void)jump_branch_pc;
-    (void)in_delay_slot;
 #endif
 
     if (syscall_num >= 1 && syscall_num < 1 + spim_syscall_args_size) {

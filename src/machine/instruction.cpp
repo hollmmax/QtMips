@@ -50,40 +50,21 @@ struct ArgumentDesc {
     int64_t min;
     int64_t max;
     BitArg arg;
-    inline ArgumentDesc(
-        char name,
-        char kind,
-        int64_t min,
-        int64_t max,
-        BitArg arg)
-        : name(name)
-        , kind(kind)
-        , min(min)
-        , max(max)
-        , arg(arg) {}
+    inline ArgumentDesc(char name, char kind, int64_t min, int64_t max, BitArg arg)
+        : name(name), kind(kind), min(min), max(max), arg(arg) {}
 };
 
 static const ArgumentDesc argdeslist[] = {
-    ArgumentDesc('d', 'g', 0, 0x1f, { { { 5, 7 } }, 0 }),
-    ArgumentDesc('s', 'g', 0, 0x1f, { { { 5, 15 } }, 0 }),
-    ArgumentDesc('t', 'g', 0, 0x1f, { { { 5, 20 } }, 0 }),
-    ArgumentDesc('j', 'n', -0x800, 0x7ff, { { { 12, 20 } }, 0 }),
-    ArgumentDesc('>', 'n', 0, 0x1f, { { { 5, 20 } }, 0 }),
-    ArgumentDesc(
-        'a',
-        'a',
-        -0x80000,
-        0x7ffff,
-        { { { 11, 21 }, { 1, 20 }, { 8, 12 }, { 1, 31 } }, 1 }),
-    ArgumentDesc('u', 'n', 0, 0xfffff, { { { 20, 12 } }, 12 }),
-    ArgumentDesc(
-        'p',
-        'p',
-        -0x800,
-        0x7ff,
-        { { { 4, 8 }, { 6, 25 }, { 1, 7 }, { 1, 31 } }, 1 }),
-    ArgumentDesc('o', 'o', -0x800, 0x7ff, { { { 12, 20 } }, 0 }),
-    ArgumentDesc('q', 'o', -0x800, 0x7ff, { { { 5, 7 }, { 7, 25 } }, 0 }),
+    ArgumentDesc('d', 'g', 0,        0x1f,    {{{5, 7}}, 0}),
+    ArgumentDesc('s', 'g', 0,        0x1f,    {{{5, 15}}, 0}),
+    ArgumentDesc('t', 'g', 0,        0x1f,    {{{5, 20}}, 0}),
+    ArgumentDesc('j', 'n', -0x800,   0x7ff,   {{{12, 20}}, 0}),
+    ArgumentDesc('>', 'n', 0,        0x1f,    {{{5, 20}}, 0}),
+    ArgumentDesc('a', 'a', -0x80000, 0x7ffff, {{{10, 21}, {1, 20}, {8, 12}, {1, 31}}, 1}),
+    ArgumentDesc('u', 'n', 0,        0xfffff, {{{20, 12}}, 12}),
+    ArgumentDesc('p', 'p', -0x800,   0x7ff,   {{{4, 8}, {6, 25}, {1, 7}, {1, 31}}, 1}),
+    ArgumentDesc('o', 'o', -0x800,   0x7ff,   {{{12, 20}}, 0}),
+    ArgumentDesc('q', 'o', -0x800,   0x7ff,   {{{5, 7}, {7, 25}}, 0}),
 };
 
 static const ArgumentDesc *argdesbycode[(int)('z' + 1)];
@@ -98,29 +79,9 @@ static bool fill_argdesbycode() {
 
 bool argdesbycode_filled = fill_argdesbycode();
 
-struct RegisterDesc {
-    int kind;
-    int number;
-    const char *name;
-};
-
 #define REGISTER_CODES 32
 
-const RegisterDesc regbycode[REGISTER_CODES] = {
-    [0] = { 0, 0, "zero" }, [1] = { 0, 1, "at" },   [2] = { 0, 2, "v0" },
-    [3] = { 0, 3, "v1" },   [4] = { 0, 4, "a0" },   [5] = { 0, 5, "a1" },
-    [6] = { 0, 6, "a2" },   [7] = { 0, 7, "a3" },   [8] = { 0, 8, "t0" },
-    [9] = { 0, 9, "t1" },   [10] = { 0, 10, "t2" }, [11] = { 0, 11, "t3" },
-    [12] = { 0, 12, "t4" }, [13] = { 0, 13, "t5" }, [14] = { 0, 14, "t6" },
-    [15] = { 0, 15, "t7" }, [16] = { 0, 16, "s0" }, [17] = { 0, 17, "s1" },
-    [18] = { 0, 18, "s2" }, [19] = { 0, 19, "s3" }, [20] = { 0, 20, "s4" },
-    [21] = { 0, 21, "s5" }, [22] = { 0, 22, "s6" }, [23] = { 0, 23, "s7" },
-    [24] = { 0, 24, "t8" }, [25] = { 0, 25, "t9" }, [26] = { 0, 26, "k0" },
-    [27] = { 0, 27, "k1" }, [28] = { 0, 28, "gp" }, [29] = { 0, 29, "sp" },
-    [30] = { 0, 30, "s8" }, [31] = { 0, 31, "ra" },
-};
-
-const std::string Rv_regnames[32] = {
+const char *const Rv_regnames[32] = {
     "zero", "ra", "sp", "gp", "tp",  "t0",  "t1", "t2", "s0", "s1", "a0",
     "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
     "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
@@ -156,7 +117,7 @@ const std::string Rv_regnames[32] = {
 #define NOMEM .mem_ctl = AC_NONE
 
 #define IM_UNKNOWN                                                             \
-    { "UNKNOWN", Instruction::UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0 }
+    { "unknown", Instruction::UNKNOWN, NOALU, NOMEM, nullptr, {}, 0, 0, 0 }
 // TODO NOTE: if unknown is defined as all 0, instruction map can be
 // significanly simplified using zero initialization.
 
@@ -187,9 +148,9 @@ struct InstructionMap {
 // clang-format off
 
 static const struct InstructionMap LOAD_map[] = {
-    {"LB", IT_I, AluOp::ADD, AC_U8, nullptr, {"d", "o(s)"}, 0x00000003, 0x0000707f, { .flags = FLAGS_ALU_I_LOAD }}, // LB
+    {"lb", IT_I, AluOp::ADD, AC_U8, nullptr, {"d", "o(s)"}, 0x00000003, 0x0000707f, { .flags = FLAGS_ALU_I_LOAD }}, // LB
     IM_UNKNOWN, // LH
-    {"LW", IT_I, AluOp::ADD, AC_U32, nullptr, {"d", "o(s)"}, 0x00002003, 0x0000707f, { .flags = FLAGS_ALU_I_LOAD }}, // LW
+    {"lw", IT_I, AluOp::ADD, AC_U32, nullptr, {"d", "o(s)"}, 0x00002003, 0x0000707f, { .flags = FLAGS_ALU_I_LOAD }}, // LW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -197,21 +158,26 @@ static const struct InstructionMap LOAD_map[] = {
     IM_UNKNOWN,
 };
 
+static const struct InstructionMap SRI_map[] = {
+    {"srli", IT_I, AluOp::SR, NOMEM, nullptr, {"d", "s", ">"}, 0x00005013, 0xfe00707f, { .flags = FLAGS_ALU_I }}, // SRLI
+    {"srai", IT_I, AluOp::SR, NOMEM, nullptr, {"d", "s", ">"}, 0x40005013, 0xfe00707f, { .flags = FLAGS_ALU_I }}, // SRAI
+};
+
 static const struct InstructionMap OP_IMM_map[] = {
-    {"ADDI",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x00000013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ADDI
-    {"SLLI",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", ">"}, 0x00001013, 0xfe00707f, { .flags = FLAGS_ALU_I }}, // SLLI
-    {"SLTI",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x00002013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // SLTI
-    {"SLTIU", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x00003013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // SLTIU
-    {"XORI",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x00004013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // XORI
-    IM_UNKNOWN, // SRLI, SRAI
-    {"ORI",   IT_I, AluOp::OR,   NOMEM, nullptr, {"d", "s", "j"}, 0x00006013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ORI
-    {"ANDI",  IT_I, AluOp::AND,  NOMEM, nullptr, {"d", "s", "j"}, 0x00007013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ANDI
+    {"addi",  IT_I, AluOp::ADD,  NOMEM, nullptr, {"d", "s", "j"}, 0x00000013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ADDI
+    {"slli",  IT_I, AluOp::SLL,  NOMEM, nullptr, {"d", "s", ">"}, 0x00001013, 0xfe00707f, { .flags = FLAGS_ALU_I }}, // SLLI
+    {"slti",  IT_I, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "j"}, 0x00002013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // SLTI
+    {"sltiu", IT_I, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "j"}, 0x00003013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // SLTIU
+    {"xori",  IT_I, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "j"}, 0x00004013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // XORI
+    {"sri",   IT_I, NOALU,       NOMEM, SRI_map,              {}, 0x00005013, 0xbe00707f, { .subfield = {1, 30} }}, // SRLI, SRAI
+    {"ori",   IT_I, AluOp::OR,   NOMEM, nullptr, {"d", "s", "j"}, 0x00006013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ORI
+    {"andi",  IT_I, AluOp::AND,  NOMEM, nullptr, {"d", "s", "j"}, 0x00007013, 0x0000707f, { .flags = FLAGS_ALU_I }}, // ANDI
 };
 
 static const struct InstructionMap STORE_map[] = {
-    {"SB", IT_S, AluOp::ADD, AC_U8, nullptr, {"t", "q(s)"}, 0x00000023, 0x0000707f, { .flags = FLAGS_ALU_I_STORE }}, // SB
+    {"sb", IT_S, AluOp::ADD, AC_U8, nullptr, {"t", "q(s)"}, 0x00000023, 0x0000707f, { .flags = FLAGS_ALU_I_STORE }}, // SB
     IM_UNKNOWN, // SH
-    {"SW", IT_S, AluOp::ADD, AC_U32, nullptr, {"t", "q(s)"}, 0x00002023, 0x0000707f, { .flags = FLAGS_ALU_I_STORE }}, // SW
+    {"sw", IT_S, AluOp::ADD, AC_U32, nullptr, {"t", "q(s)"}, 0x00002023, 0x0000707f, { .flags = FLAGS_ALU_I_STORE }}, // SW
     IM_UNKNOWN, // LD
     IM_UNKNOWN, // LBU
     IM_UNKNOWN, // LHU
@@ -220,48 +186,57 @@ static const struct InstructionMap STORE_map[] = {
 };
 
 static const struct InstructionMap ADD_map[] = {
-    {"ADD", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x00000033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }},
-    {"SUB", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x40000033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD | IMF_ALU_MOD }},
+    {"add", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x00000033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }},
+    {"sub", IT_R, AluOp::ADD, NOMEM, nullptr, {"d", "s", "t"}, 0x40000033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD | IMF_ALU_MOD }},
 };
 
-// TODO: subtrees are ugly, maybe a union would help?
+static const struct InstructionMap SR_map[] = {
+    {"srl", IT_R, AluOp::SR, NOMEM, nullptr, {"d", "s", "t"}, 0x00005033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SRL
+    {"sra", IT_R, AluOp::SR, NOMEM, nullptr, {"d", "s", "t"}, 0x40005033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SRA
+};
+
 static const struct InstructionMap OP_map[] = {
-    {"ADD/SUB", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0x00000033, 0xbe00707f, { .subfield = {1, 30} }},
-    {"SLL",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0x00001033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLL
-    {"SLT",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0x00002033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLT
-    {"SLTU", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0x00003033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLTU
-    {"XOR",  IT_R, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "t"}, 0x00004033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // XOR
-    IM_UNKNOWN, // SRL, SRA
-    {"OR",   IT_R, AluOp::OR,   NOMEM, nullptr, {"d", "s", "t"}, 0x00006033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // OR
-    {"AND",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0x00007033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // AND
+    {"add/sub", IT_R, NOALU,    NOMEM, ADD_map,              {}, 0x00000033, 0xbe00707f, { .subfield = {1, 30} }},
+    {"sll",  IT_R, AluOp::SLL,  NOMEM, nullptr, {"d", "s", "t"}, 0x00001033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLL
+    {"slt",  IT_R, AluOp::SLT,  NOMEM, nullptr, {"d", "s", "t"}, 0x00002033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLT
+    {"sltu", IT_R, AluOp::SLTU, NOMEM, nullptr, {"d", "s", "t"}, 0x00003033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // SLTU
+    {"xor",  IT_R, AluOp::XOR,  NOMEM, nullptr, {"d", "s", "t"}, 0x00004033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // XOR
+    {"sr",   IT_R, NOALU,       NOMEM,  SR_map,              {}, 0x00005033, 0xbe00707f, { .subfield = {1, 30} }}, // SRL, SRA
+    {"or",   IT_R, AluOp::OR,   NOMEM, nullptr, {"d", "s", "t"}, 0x00006033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // OR
+    {"and",  IT_R, AluOp::AND,  NOMEM, nullptr, {"d", "s", "t"}, 0x00007033, 0xfe00707f, { .flags = FLAGS_ALU_T_R_STD }}, // AND
 };
 
 constexpr const int FLAGS_BRANCH = IMF_SUPPORTED | IMF_BRANCH | IMF_BJR_REQ_RS;
 static const struct InstructionMap BRANCH_map[] = {
-    {"BEQ",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00000063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD }}, // BEQ
-    {"BNE",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00001063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_MOD | IMF_BJ_NOT }}, // BNE
+    {"beq",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00000063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT | IMF_ALU_MOD }}, // BEQ
+    {"bne",  IT_B, AluOp::ADD, NOMEM, nullptr, {"s", "t", "p"}, 0x00001063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT | IMF_ALU_MOD | IMF_BJ_NOT }}, // BNE
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"BLT",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00004063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH }}, // BLT
-    {"BGE",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00005063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT }}, // BGE
-    {"BLTU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00006063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH }}, // BLTU
-    {"BGEU", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00007063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_BJ_NOT }}, // BGEU
+    {"blt",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00004063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT }}, // BLT
+    {"bge",  IT_B, AluOp::SLT, NOMEM, nullptr, {"s", "t", "p"}, 0x00005063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT | IMF_BJ_NOT }}, // BGE
+    {"bltu", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00006063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT }}, // BLTU
+    {"bgeu", IT_B, AluOp::SLTU, NOMEM, nullptr, {"s", "t", "p"}, 0x00007063, 0x0000707f, { .flags = IMF_SUPPORTED | IMF_BRANCH | IMF_ALU_REQ_RS | IMF_ALU_REQ_RT | IMF_BJ_NOT }}, // BGEU
+};
+
+static const struct InstructionMap SYSTEM_map[] = {
+    {"ecall", IT_I, NOALU, NOMEM, nullptr, {}, 0x00000073, 0xffffffff, { .flags = IMF_SUPPORTED | IMF_EXCEPTION | IMF_ECALL }},
+    {"ebreak", IT_I, NOALU, NOMEM, nullptr, {}, 0x00100073, 0xffffffff, { .flags = IMF_SUPPORTED | IMF_EXCEPTION | IMF_EBREAK }},
 };
 
 static const struct InstructionMap I_inst_map[] = {
-    {"LOAD", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x7f, 0x03, { .subfield = {3, 12} }}, // LOAD
+    {"load", IT_I, NOALU, NOMEM, LOAD_map, {}, 0x03, 0x7f, { .subfield = {3, 12} }}, // LOAD
     IM_UNKNOWN, // LOAD-FP
     IM_UNKNOWN, // custom-0
     IM_UNKNOWN, // MISC-MEM
-    {"OP-IMM", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x7f, 0x13, { .subfield = {3, 12} }}, // OP-IMM
+    {"op-imm", IT_I, NOALU, NOMEM, OP_IMM_map, {}, 0x13, 0x7f, { .subfield = {3, 12} }}, // OP-IMM
     IM_UNKNOWN, // AUIPC
     IM_UNKNOWN, // OP-IMM-32
     IM_UNKNOWN, // 48b
-    {"STORE", IT_I, NOALU, NOMEM, STORE_map, {}, 0x7f, 0x23, { .subfield = {3, 12} }}, // STORE
+    {"store", IT_I, NOALU, NOMEM, STORE_map, {}, 0x23, 0x7f, { .subfield = {3, 12} }}, // STORE
     IM_UNKNOWN, // STORE-FP
     IM_UNKNOWN, // custom-1
     IM_UNKNOWN, // AMO
-    {"OP", IT_R, NOALU, NOMEM, OP_map, {}, 0x7f, 0x33, { .subfield = {3, 12} }}, // OP
+    {"op", IT_R, NOALU, NOMEM, OP_map, {}, 0x33, 0x7f, { .subfield = {3, 12} }}, // OP
     IM_UNKNOWN, // LUI
     IM_UNKNOWN, // OP-32
     IM_UNKNOWN, // 64b
@@ -273,11 +248,11 @@ static const struct InstructionMap I_inst_map[] = {
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-2/rv128
     IM_UNKNOWN, // 48b
-    {"BRANCH", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x7f, 0x63, { .subfield = {3, 12} }}, // BRANCH
+    {"branch", IT_B, NOALU, NOMEM, BRANCH_map, {}, 0x63, 0x7f, { .subfield = {3, 12} }}, // BRANCH
     IM_UNKNOWN, // JALR
     IM_UNKNOWN, // reserved
-    {"JAL", IT_J, NOALU, NOMEM, nullptr, {"d", "s", "j"}, 0x0000006f, 0x0000007f, { .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP }}, // JAL
-    IM_UNKNOWN, // SYSTEM
+    {"jal", IT_J, AluOp::ADD, NOMEM, nullptr, {"d", "a"}, 0x6f, 0x7f, { .flags = FLAGS_J_B_PC_TO_R31 | IMF_JUMP | IMF_PC_TO_ALU | IMF_ALUSRC}}, // JAL
+    {"system", IT_I, NOALU, NOMEM, SYSTEM_map, {}, 0x73, 0x7f, { .subfield = {1, 20} }}, // SYSTEM
     IM_UNKNOWN, // reserved
     IM_UNKNOWN, // custom-3/rv128
     IM_UNKNOWN, // >= 80b
@@ -287,7 +262,7 @@ static const struct InstructionMap C_inst_map[] = {
     IM_UNKNOWN,
     IM_UNKNOWN,
     IM_UNKNOWN,
-    {"I", IT_UNKNOWN, NOALU, NOMEM, I_inst_map, {}, 0x3, 0x3, { .subfield = {5, 2} }},
+    {"i", IT_UNKNOWN, NOALU, NOMEM, I_inst_map, {}, 0x3, 0x3, { .subfield = {5, 2} }},
 };
 
 // clang-format on
@@ -295,24 +270,11 @@ static const struct InstructionMap C_inst_map[] = {
 const BitArg::Field instruction_map_opcode_field = { 2, 0 };
 
 static inline const struct InstructionMap &InstructionMapFind(uint32_t code) {
-    const struct InstructionMap *im
-        = &C_inst_map[instruction_map_opcode_field.decode(code)];
-    while (im->subclass != nullptr)
+    const struct InstructionMap *im = &C_inst_map[instruction_map_opcode_field.decode(code)];
+    while (im->subclass != nullptr) {
         im = &im->subclass[im->subfield.decode(code)];
+    }
     return *im;
-    // const struct InstructionMap *im = instruction_map;
-    // const struct InstructionMap *im = C_inst_map;
-    // uint32_t flags = instruction_map_opcode_field;
-    // do {
-    //     unsigned int bits = IMF_SUB_GET_BITS(flags);
-    //     unsigned int shift = IMF_SUB_GET_SHIFT(flags);
-    //     im = im + ((code >> shift) & ((1 << bits) - 1));
-    //     if (im->subclass == nullptr) {
-    //         return *im;
-    //     }
-    //     flags = im->flags;
-    //     im = im->subclass;
-    // } while (true);
 }
 
 #undef IM_UNKNOWN
@@ -365,17 +327,16 @@ uint8_t Instruction::cop0sel() const {
     return (uint8_t)MASK(3, 0);
 }
 
-uint32_t Instruction::immediate() const {
-    uint32_t ret = 0;
+int32_t Instruction::immediate() const {
+    int32_t ret = 0;
     switch (this->type()) {
     case R: break;
     case I: ret = extend(MASK(12, 20), 12); break;
     case S: ret = extend(MASK(7, 25) << 5 | MASK(5, 7), 12); break;
-    case B:
-        ret = extend(
-            MASK(4, 8) << 1 | MASK(6, 25) << 5 | MASK(1, 7) << 11
-                | MASK(1, 31) << 12,
-            12);
+    case B: ret = extend(
+            MASK(4, 8) << 1 | MASK(6, 25) << 5 | MASK(1, 7) << 11 | MASK(1, 31) << 12,
+            12
+        );
         break;
     case U: ret = this->dt & ~((1 << 7) - 1); break;
     case J:
@@ -434,24 +395,6 @@ void Instruction::flags_alu_op_mem_ctl(
 #endif
 }
 
-enum ExceptionCause Instruction::encoded_exception() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    if (!(im.flags & IMF_EXCEPTION)) {
-        return EXCAUSE_NONE;
-    }
-    switch (im.alu) {
-    // case ALU_OP_BREAK: return EXCAUSE_BREAK;
-    // case ALU_OP_SYSCALL: return EXCAUSE_SYSCALL;
-    default: return EXCAUSE_NONE;
-    }
-}
-
-bool Instruction::is_break() const {
-    const struct InstructionMap &im = InstructionMapFind(dt);
-    // return im.alu == ALU_OP_BREAK;
-    return false;
-}
-
 bool Instruction::operator==(const Instruction &c) const {
     return (this->data() == c.data());
 }
@@ -468,18 +411,14 @@ Instruction &Instruction::operator=(const Instruction &c) {
 }
 
 QString Instruction::to_str(Address inst_addr) const {
-    if (dt == 0) {
-        return QString("ILLEGAL");
-    }
     const InstructionMap &im = InstructionMapFind(dt);
     // TODO there are exception where some fields are zero and such so we should
     // not print them in such case
-    SANITY_ASSERT(
-        argdesbycode_filled, QString("argdesbycode_filled not initialized"));
+    SANITY_ASSERT(argdesbycode_filled, QString("argdesbycode_filled not initialized"));
     QString res;
     QString next_delim = " ";
     if (im.type == UNKNOWN) {
-        return QString("UNKNOWN");
+        return QString("unknown");
     }
 
     res += im.name;
@@ -496,31 +435,25 @@ QString Instruction::to_str(Address inst_addr) const {
                 res += ao;
                 continue;
             }
-            uint32_t field = adesc->arg.decode(this->dt);
+            int32_t field = adesc->arg.decode(this->dt);
+            if (adesc->min < 0) {
+                field = extend(field, [&](){ int sum = adesc->arg.shift; for (auto chunk : adesc->arg) sum += chunk.count; return sum-1;}());
+            }
             switch (adesc->kind) {
             case 'g':
                 if (symbolic_registers_fl) {
-                    res += QString(Rv_regnames[field].c_str());
+                    res += QString(Rv_regnames[field]);
                 } else {
                     res += "x" + QString::number(field);
                 }
                 break;
             case 'o':
-            case 'n':
+            case 'n': case 'p': case 'a':
                 if (adesc->min < 0) {
                     res += QString::number((int32_t)field, 10).toUpper();
                 } else {
                     res += "0x" + QString::number(field, 16).toUpper();
                 }
-                break;
-            case 'p':
-                field += (inst_addr + 4).get_raw();
-                res += "0x" + QString::number((uint32_t)field, 16).toUpper();
-                break;
-            case 'a':
-                Address target
-                    = (inst_addr & 0xF0000000) | (address() << 2).get_raw();
-                res += " 0x" + QString::number(target.get_raw(), 16).toUpper();
                 break;
             }
         }
@@ -569,52 +502,38 @@ void instruction_from_string_build_base() {
 }
 
 static int parse_reg_from_string(QString str, uint *chars_taken = nullptr) {
-    int res;
-    int i;
-    uint ctk;
-    if (str.count() < 2 || str.at(0) != 'x') {
+    if (str.size() < 2) {
         return -1;
     }
-
-    if (str.at(1).isLetter()) {
-        int k = 1;
-        while (k < str.count()) {
-            if (!str.at(k).isLetterOrNumber()) {
+    if (str.at(0) == 'x') {
+        int res = 0;
+        int ctk = 1;
+        for (; ctk < str.size(); ctk += 1) {
+            auto c = str.at(ctk);
+            if (c >= '0' && c <= '9') {
+                res *= 10;
+                res += c.unicode() - '0';
+            } else {
                 break;
             }
-            k++;
         }
-        str = str.mid(1, k - 1);
-        for (i = 0; i < REGISTER_CODES; i++) {
-            if (str == regbycode[i].name) {
-                if (chars_taken != nullptr) {
-                    *chars_taken = k;
-                }
-                return regbycode[i].number;
+        if (ctk == 0) {
+            return -1;
+        } else {
+            *chars_taken = ctk;
+            return res;
+        }
+    } else {
+        auto data = str.toLocal8Bit();
+        for (int i = 0; i < REGISTER_CODES; i++) {
+            int len = std::strlen(Rv_regnames[i]);
+            if (std::strncmp(data.data(), Rv_regnames[i], std::min(str.size(), len)) == 0) {
+                *chars_taken = len;
+                return i;
             }
         }
         return -1;
     }
-
-    char cstr[str.count() + 1];
-    for (i = 0; i < str.count(); i++) {
-        cstr[i] = str.at(i).toLatin1();
-    }
-    cstr[i] = 0;
-    const char *p = cstr + 1;
-    char *r;
-    res = std::strtol(p, &r, 0);
-    ctk = r - p + 1;
-    if (p == r) {
-        return -1;
-    }
-    if (res > 31) {
-        return -1;
-    }
-    if (chars_taken != nullptr) {
-        *chars_taken = ctk;
-    }
-    return res;
 }
 
 static void reloc_append(
@@ -729,10 +648,11 @@ ssize_t Instruction::code_from_string(
                 switch (adesc->kind) {
                 case 'g': val += parse_reg_from_string(fl, &chars_taken); break;
                 case 'p':
-                    val -= (inst_addr + 4).get_raw();
+                    // val -= (inst_addr + 4).get_raw();
                     FALLTROUGH // TODO may need to have constant adjusted
-                        case 'o' : case 'n'
-                        : if (fl.at(0).isDigit() || (reloc == nullptr)) {
+                case 'o':
+                case 'n':
+                    if (fl.at(0).isDigit() || fl.at(0) == '-' || (reloc == nullptr)) {
                         uint64_t num_val;
                         int i;
                         // Qt functions are limited, toLongLong would be usable
@@ -756,6 +676,7 @@ ssize_t Instruction::code_from_string(
                         if (*r && std::strchr("+-/*|&^~", *r)) {
                             need_reloc = true;
                         } else {
+                            // extend signed bits
                             val += num_val;
                         }
                         chars_taken = r - p;
@@ -911,7 +832,7 @@ ssize_t Instruction::code_from_string(
         }
         l++;
     }
-    QString inst_base = str.mid(k, l - k).toUpper();
+    QString inst_base = str.mid(k, l - k).toLower();
     str = str.mid(l + 1).trimmed();
     QStringList inst_fields;
     if (str.count()) {
@@ -967,14 +888,14 @@ void Instruction::set_symbolic_registers(bool enable) {
     symbolic_registers_fl = enable;
 }
 
-inline uint32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
-    return value | this->imm_sign() * ~((1 << used_bits) - 1);
+inline int32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
+    return value | ~((value & (1 << used_bits)) - 1);
 }
 
 void Instruction::append_recognized_registers(QStringList &list) {
     int i;
     for (i = 0; i < REGISTER_CODES; i++) {
-        QString name = regbycode[i].name;
+        QString name = Rv_regnames[i];
         if (name != "") {
             list.append(name);
         }

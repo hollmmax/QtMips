@@ -51,12 +51,15 @@ enum InstructionFlags {
     IMF_STOP_IF = 1L << 23,    /**< Stop instruction fetch until instruction
                                   processed */
     IMF_ALU_MOD = 1L << 24, /**< ADD and right-shift modifier */
+    IMF_PC_TO_ALU = 1L << 25, /**< PC is loaded instead of RS to ALU */
+    IMF_ECALL = 1L << 26, // seems easiest to encode ecall and ebreak as flags, but they might
+    IMF_EBREAK = 1L << 27, // be moved elsewhere in case we run out of InstructionFlag space.
 };
 
 struct BitArg {
     struct Field {
-        uint8_t count;
-        uint8_t offset;
+        const uint8_t count;
+        const uint8_t offset;
         template<typename T>
         T decode(T val) const {
             return (val >> offset) & ((1L << count) - 1);
@@ -67,7 +70,7 @@ struct BitArg {
         }
     };
     const std::vector<Field> fields;
-    size_t shift;
+    const size_t shift;
 
     BitArg(const std::vector<Field> fields, size_t shift = 0) : fields(fields), shift(shift) {}
     std::vector<Field>::const_iterator begin() const { return fields.begin(); }
@@ -77,7 +80,7 @@ struct BitArg {
         size_t offset = 0;
         for (Field field : *this) {
             ret |= field.decode(ins) << offset;
-            offset += field.offset;
+            offset += field.count;
         }
         return ret << shift;
     }
@@ -158,7 +161,7 @@ public:
     uint8_t shamt() const;
     uint16_t funct() const;
     uint8_t cop0sel() const;
-    uint32_t immediate() const;
+    int32_t immediate() const;
     Address address() const;
     uint32_t data() const;
     bool imm_sign() const;
@@ -166,14 +169,11 @@ public:
     enum InstructionFlags flags() const;
     enum AluOp alu_op() const;
     enum AccessControl mem_ctl() const;
-    enum ExceptionCause encoded_exception() const;
 
     void flags_alu_op_mem_ctl(
         enum InstructionFlags &flags,
         enum AluOp &alu_op,
         enum AccessControl &mem_ctl) const;
-
-    bool is_break() const;
 
     bool operator==(const Instruction &c) const;
     bool operator!=(const Instruction &c) const;
@@ -215,7 +215,7 @@ public:
 private:
     uint32_t dt;
     static bool symbolic_registers_fl;
-    inline uint32_t extend(uint32_t value, uint32_t used_bits) const;
+    inline int32_t extend(uint32_t value, uint32_t used_bits) const;
 };
 
 } // namespace machine

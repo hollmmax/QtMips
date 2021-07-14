@@ -23,7 +23,7 @@ Machine::Machine(MachineConfig config, bool load_symtab, bool load_executable)
         }
         program_end = program.end();
         if (program.get_executable_entry() != 0x0_addr) {
-            regs->pc_abs_jmp(program.get_executable_entry());
+            regs->write_pc(program.get_executable_entry());
         }
         mem = new Memory(*mem_program_only);
     } else {
@@ -60,13 +60,14 @@ Machine::Machine(MachineConfig config, bool load_symtab, bool load_executable)
     }
 
     cop0st = new Cop0State();
+    predictor = new FalsePredictor();
 
     if (machine_config.pipelined()) {
         cr = new CorePipelined(
-            regs, cch_program, cch_data, machine_config.hazard_unit(),
+            regs, predictor, cch_program, cch_data, machine_config.hazard_unit(),
             min_cache_row_size, cop0st);
     } else {
-        cr = new CoreSingle(regs, cch_program, cch_data, min_cache_row_size, cop0st);
+        cr = new CoreSingle(regs, predictor, cch_program, cch_data, min_cache_row_size, cop0st);
     }
     connect(
         this, &Machine::set_interrupt_signal, cop0st,
