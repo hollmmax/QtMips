@@ -60,7 +60,7 @@ static const ArgumentDesc argdeslist[] = {
     ArgumentDesc('t', 'g', 0,        0x1f,    {{{5, 20}}, 0}),
     ArgumentDesc('j', 'n', -0x800,   0x7ff,   {{{12, 20}}, 0}),
     ArgumentDesc('>', 'n', 0,        0x1f,    {{{5, 20}}, 0}),
-    ArgumentDesc('a', 'a', -0x80000, 0x7ffff, {{{11, 21}, {1, 20}, {8, 12}, {1, 31}}, 1}),
+    ArgumentDesc('a', 'a', -0x80000, 0x7ffff, {{{10, 21}, {1, 20}, {8, 12}, {1, 31}}, 1}),
     ArgumentDesc('u', 'n', 0,        0xfffff, {{{20, 12}}, 12}),
     ArgumentDesc('p', 'p', -0x800,   0x7ff,   {{{4, 8}, {6, 25}, {1, 7}, {1, 31}}, 1}),
     ArgumentDesc('o', 'o', -0x800,   0x7ff,   {{{12, 20}}, 0}),
@@ -333,11 +333,10 @@ int32_t Instruction::immediate() const {
     case R: break;
     case I: ret = extend(MASK(12, 20), 12); break;
     case S: ret = extend(MASK(7, 25) << 5 | MASK(5, 7), 12); break;
-    case B:
-        ret = extend(
-            MASK(4, 8) << 1 | MASK(6, 25) << 5 | MASK(1, 7) << 11
-                | MASK(1, 31) << 12,
-            12);
+    case B: ret = extend(
+            MASK(4, 8) << 1 | MASK(6, 25) << 5 | MASK(1, 7) << 11 | MASK(1, 31) << 12,
+            12
+        );
         break;
     case U: ret = this->dt & ~((1 << 7) - 1); break;
     case J:
@@ -436,7 +435,10 @@ QString Instruction::to_str(Address inst_addr) const {
                 res += ao;
                 continue;
             }
-            uint32_t field = adesc->arg.decode(this->dt);
+            int32_t field = adesc->arg.decode(this->dt);
+            if (adesc->min < 0) {
+                field = extend(field, [&](){ int sum = adesc->arg.shift; for (auto chunk : adesc->arg) sum += chunk.count; return sum-1;}());
+            }
             switch (adesc->kind) {
             case 'g':
                 if (symbolic_registers_fl) {
@@ -446,21 +448,12 @@ QString Instruction::to_str(Address inst_addr) const {
                 }
                 break;
             case 'o':
-            case 'n':
+            case 'n': case 'p': case 'a':
                 if (adesc->min < 0) {
                     res += QString::number((int32_t)field, 10).toUpper();
                 } else {
                     res += "0x" + QString::number(field, 16).toUpper();
                 }
-                break;
-            case 'p':
-                field += (inst_addr + 4).get_raw();
-                res += "0x" + QString::number((uint32_t)field, 16).toUpper();
-                break;
-            case 'a':
-                Address target
-                    = (inst_addr & 0xF0000000) | (address() << 2).get_raw();
-                res += " 0x" + QString::number(target.get_raw(), 16).toUpper();
                 break;
             }
         }
@@ -516,10 +509,10 @@ static int parse_reg_from_string(QString str, uint *chars_taken = nullptr) {
         int res = 0;
         int ctk = 1;
         for (; ctk < str.size(); ctk += 1) {
-            auto c = str.at(*chars_taken);
+            auto c = str.at(ctk);
             if (c >= '0' && c <= '9') {
                 res *= 10;
-                res += c.unicode();
+                res += c.unicode() - '0';
             } else {
                 break;
             }
@@ -655,10 +648,11 @@ ssize_t Instruction::code_from_string(
                 switch (adesc->kind) {
                 case 'g': val += parse_reg_from_string(fl, &chars_taken); break;
                 case 'p':
-                    val -= (inst_addr + 4).get_raw();
+                    // val -= (inst_addr + 4).get_raw();
                     FALLTROUGH // TODO may need to have constant adjusted
-                        case 'o' : case 'n'
-                        : if (fl.at(0).isDigit() || (reloc == nullptr)) {
+                case 'o':
+                case 'n':
+                    if (fl.at(0).isDigit() || fl.at(0) == '-' || (reloc == nullptr)) {
                         uint64_t num_val;
                         int i;
                         // Qt functions are limited, toLongLong would be usable
@@ -682,6 +676,7 @@ ssize_t Instruction::code_from_string(
                         if (*r && std::strchr("+-/*|&^~", *r)) {
                             need_reloc = true;
                         } else {
+                            // extend signed bits
                             val += num_val;
                         }
                         chars_taken = r - p;
@@ -894,7 +889,7 @@ void Instruction::set_symbolic_registers(bool enable) {
 }
 
 inline int32_t Instruction::extend(uint32_t value, uint32_t used_bits) const {
-    return value | this->imm_sign() * ~((1 << used_bits) - 1);
+    return value | ~((value & (1 << used_bits)) - 1);
 }
 
 void Instruction::append_recognized_registers(QStringList &list) {
